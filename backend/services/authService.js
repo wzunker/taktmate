@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const User = require('../models/User');
 const Session = require('../models/Session');
+const SecurityUtils = require('../utils/security');
 
 /**
  * Authentication service for TaktMate
@@ -27,12 +28,7 @@ class AuthService {
    * Generate JWT token for user
    */
   generateJWT(user) {
-    const payload = {
-      userId: user.id,
-      email: user.email,
-      name: user.name,
-      emailVerified: user.email_verified
-    };
+    const payload = SecurityUtils.createJWTPayload(user);
 
     return jwt.sign(payload, this.jwtSecret, {
       expiresIn: this.jwtExpiresIn,
@@ -138,6 +134,15 @@ class AuthService {
         throw new Error('Invalid email or password');
       }
 
+      // Check if account is active
+      if (!user.is_active) {
+        await User.logAuditEvent(user.id, 'login_failed', 'Users', options.ipAddress, {
+          email: email,
+          reason: 'account_deactivated'
+        });
+        throw new Error('Account is deactivated. Please contact support.');
+      }
+
       // Check if user has a password (might be OAuth-only user)
       if (!user.password_hash) {
         await User.logAuditEvent(user.id, 'login_failed', 'Users', options.ipAddress, {
@@ -145,6 +150,18 @@ class AuthService {
           reason: 'no_password_set'
         });
         throw new Error('This account uses social login. Please sign in with Google or Microsoft.');
+      }
+
+      // Check for suspicious activity before password verification
+      const suspiciousActivity = await Session.detectSuspiciousActivity(user.id, options.ipAddress);
+      if (suspiciousActivity.suspicious) {
+        await User.logAuditEvent(user.id, 'suspicious_login_attempt', 'Users', options.ipAddress, {
+          email: email,
+          suspicious_indicators: suspiciousActivity
+        });
+        
+        // For now, just log but allow login - in production might want to require additional verification
+        console.warn(`⚠️  Suspicious login activity detected for user ${user.id}`);
       }
 
       // Verify password
@@ -170,14 +187,16 @@ class AuthService {
       // Log successful login
       await User.logAuditEvent(user.id, 'login_success', 'Users', options.ipAddress, {
         email: user.email,
-        session_id: session.session_id
+        session_id: session.session_id,
+        suspicious_activity: suspiciousActivity.suspicious
       });
 
       return {
         user,
         session,
         token: this.generateJWT(user),
-        requiresEmailVerification: !user.email_verified
+        requiresEmailVerification: !user.email_verified,
+        suspiciousActivity: suspiciousActivity.suspicious
       };
 
     } catch (error) {
