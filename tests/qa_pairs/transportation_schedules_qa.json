@@ -1,0 +1,206 @@
+[
+  {
+    "question": "Which route demands the steepest fare?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Coast Highway", "Coastal Lines", "R003"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [15.75, "15.75", "$15.75"]
+      }
+    }
+  },
+  {
+    "question": "Enumerate all Metro Transit operations",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Blue Line Express", "Red Line Local", "Green Line", "Morning Commuter", "Late Evening"],
+      "invalid_values": ["Airport Shuttle", "Coast Highway", "Express Route 66", "Night Owl", "Shopping Express", "Weekend Special", "Cross Town"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [5, "5", "five"]
+      }
+    }
+  },
+  {
+    "question": "What's the median journey duration across all services?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [90, "90", "90 minutes", "1.5 hours"]
+    }
+  },
+  {
+    "question": "Display routes with capacity exceeding 250 passengers",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Blue Line Express", "Green Line", "Morning Commuter", "Late Evening"],
+      "invalid_values": ["Airport Shuttle", "Coast Highway", "Red Line Local", "Express Route 66", "Night Owl", "Shopping Express", "Weekend Special", "Cross Town"],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": ["300", "280", "320", "250"]
+      }
+    }
+  },
+  {
+    "question": "Which operator manages the most economical service?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Night Transit"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [4.00, "4.00", "$4.00", "4"]
+      }
+    }
+  },
+  {
+    "question": "Calculate total passenger capacity for all Train services",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [1600, "1600"]
+    }
+  },
+  {
+    "question": "Show services departing before 08:00",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Blue Line Express", "Airport Shuttle", "Morning Commuter"],
+      "invalid_values": ["Coast Highway", "Red Line Local", "Express Route 66", "Green Line", "Night Owl", "Shopping Express", "Weekend Special", "Cross Town", "Late Evening"]
+    }
+  },
+  {
+    "question": "What percentage of routes utilize Bus transportation?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [50, "50%", "0.5", "6/12"]
+    }
+  },
+  {
+    "question": "Identify the swiftest journey option",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Airport Shuttle", "City Bus", "R002"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [45, "45", "45 minutes"]
+      }
+    }
+  },
+  {
+    "question": "List all destinations accessible from Central Station",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["North Terminal"],
+      "invalid_values": ["Downtown Hub", "Airport", "Beach City", "Mountain View", "South Station", "East Plaza", "City Center", "Suburb Mall", "West End", "University", "Residential Park", "Business District", "Mall Plaza", "Outlet Center", "Recreation Center", "Sports Complex", "East Side", "West Side"]
+    }
+  },
+  {
+    "question": "Which route offers optimal value per minute of travel?",
+    "query_type": "division_and_filter",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Night Owl", "Night Transit", "R007"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [0.044, "0.044", "4.00/90"]
+      }
+    }
+  },
+  {
+    "question": "How many distinct operators serve the transportation network?",
+    "query_type": "count",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [8, "8", "eight"],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": ["Metro Transit", "City Bus", "Coastal Lines", "Express Bus Co", "Night Transit", "Retail Transit", "Cross City", "Weekend Rails"]
+      }
+    }
+  },
+  {
+    "question": "Display evening departures (≥18:00)",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Night Owl", "Late Evening"],
+      "invalid_values": ["Blue Line Express", "Airport Shuttle", "Coast Highway", "Red Line Local", "Express Route 66", "Green Line", "Morning Commuter", "Shopping Express", "Weekend Special", "Cross Town"]
+    }
+  },
+  {
+    "question": "What's the average fare for Train services exclusively?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [11.50, "11.50", "$11.50", "11.5"]
+    }
+  },
+  {
+    "question": "Identify routes connecting residential areas to business districts",
+    "query_type": "semantic",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Morning Commuter"],
+      "invalid_values": ["Blue Line Express", "Airport Shuttle", "Coast Highway", "Red Line Local", "Express Route 66", "Green Line", "Night Owl", "Shopping Express", "Weekend Special", "Cross Town", "Late Evening"]
+    }
+  },
+  {
+    "question": "Which service accommodates the maximum passenger load?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Morning Commuter", "Metro Transit", "R008"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [320, "320"]
+      }
+    }
+  },
+  {
+    "question": "Show routes with journey times spanning 90+ minutes",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Blue Line Express", "Coast Highway", "Red Line Local", "Express Route 66", "Night Owl", "Morning Commuter", "Weekend Special", "Cross Town"],
+      "invalid_values": ["Airport Shuttle", "Green Line", "Shopping Express", "Late Evening"]
+    }
+  },
+  {
+    "question": "Calculate combined revenue potential if all routes operate at full capacity",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [20878.75, "20878.75", "$20878.75", "20879"]
+    }
+  },
+  {
+    "question": "Determine the most frequent origin point",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Central Station"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [2, "2", "two"]
+      }
+    }
+  },
+  {
+    "question": "Identify premium transportation options for leisure activities",
+    "query_type": "semantic",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Coast Highway", "Weekend Special", "Shopping Express"],
+      "invalid_values": ["Blue Line Express", "Airport Shuttle", "Red Line Local", "Express Route 66", "Green Line", "Night Owl", "Morning Commuter", "Cross Town", "Late Evening"]
+    }
+  }
+]

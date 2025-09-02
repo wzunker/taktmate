@@ -1,0 +1,29 @@
+{
+  "name": "taktmate-eval",
+  "version": "1.0.0",
+  "description": "Automated evaluation framework for TaktMate CSV Chat",
+  "main": "eval-framework.js",
+  "scripts": {
+    "eval": "node eval-runner.js --all",
+    "eval:watch": "nodemon eval-runner.js --all",
+    "eval:all": "node eval-runner.js --all",
+    "eval:astronomy_events": "node eval-runner.js --dataset=astronomy_events",
+    "eval:sports_statistics": "node eval-runner.js --dataset=sports_statistics",
+    "eval:employee_payroll": "node eval-runner.js --dataset=employee_payroll",
+    "eval:product_inventory": "node eval-runner.js --dataset=product_inventory",
+    "eval:transportation_schedules": "node eval-runner.js --dataset=transportation_schedules",
+    "test": "npm run eval"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "form-data": "^4.0.0",
+    "chalk": "^4.1.2",
+    "cli-table3": "^0.6.3",
+    "commander": "^9.4.1",
+    "fast-levenshtein": "^3.0.0",
+    "natural": "^6.5.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

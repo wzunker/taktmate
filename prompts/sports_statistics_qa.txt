@@ -1,0 +1,11 @@
+I have added a new file, `sports_statistics_qa.json`. Please generate additional questions based on the corresponding CSV file. Include a mix of **structured** and **unstructured/semantic** questions.
+
+* For **structured questions**, use any of the following operations:
+  `min, max, greater_equal, greater, less_equal, less, equals, not_equal, sum, average, count, before_date, after_date, between_dates, latest_n, earliest_n, sort_asc, sort_desc, contains, not_contains`.
+
+* Avoid using overly common phrasing; vary language and try less typical wording or symbolic representations where appropriate.
+
+Additionally:
+
+* Update the `npm run eval` script to run evaluations for **both QA JSON files**.
+* Make it possible to run evaluations for specific files individually, e.g., `npm run eval:sports_statistics_qa`.

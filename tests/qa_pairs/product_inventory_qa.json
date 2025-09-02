@@ -1,0 +1,201 @@
+[
+  {
+    "question": "Which product commands the highest price point?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Winter Jacket", "WarmWear", "P011"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [159.99, "159.99", "$159.99", "159"]
+      }
+    }
+  },
+  {
+    "question": "What's the total inventory value for Electronics category?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [8439.14, "8439.14", "$8439.14", "8439"]
+    }
+  },
+  {
+    "question": "Enumerate products with stock levels beneath 30 units",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Laptop Stand", "Bluetooth Speaker", "Winter Jacket"],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": ["23", "18", "28"]
+      }
+    }
+  },
+  {
+    "question": "Which warehouse houses the most diverse product portfolio?",
+    "query_type": "count",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Warehouse B", "B"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [4, "4", "four"]
+      }
+    }
+  },
+  {
+    "question": "What's the median price across all inventory items?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [37.49, "37.49", "$37.49", "37.5"]
+    }
+  },
+  {
+    "question": "Display items requiring refrigeration or having short shelf life",
+    "query_type": "semantic",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Organic Apples", "Coffee Beans", "Olive Oil", "Green Tea"]
+    }
+  },
+  {
+    "question": "How many distinct brands populate our catalog?",
+    "query_type": "count",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [12, "12", "twelve"],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": ["SoundTech", "FreshFarm", "SportMax", "BrewMaster", "ErgoTech", "WellLife", "FlexFit", "MediterraneanGold", "SoundWave", "MuscleFuel", "WarmWear", "ZenLeaf"]
+      }
+    }
+  },
+  {
+    "question": "Which product exhibits the lowest stock-to-weight ratio?",
+    "query_type": "division_and_filter",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Winter Jacket", "WarmWear", "P011"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [15.56, "15.56", "28/1.8"]
+      }
+    }
+  },
+  {
+    "question": "Show merchandise expiring within the next 12 months",
+    "query_type": "date_filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Organic Apples", "Coffee Beans", "Olive Oil", "Green Tea"]
+    }
+  },
+  {
+    "question": "What's the average weight of Health category products?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [1.05, "1.05", "1.1"]
+    }
+  },
+  {
+    "question": "Identify the most budget-friendly item per category",
+    "query_type": "semantic",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Organic Apples", "Laptop Stand", "Running Shoes", "Vitamin D3", "Yoga Mat", "Green Tea"]
+    }
+  },
+  {
+    "question": "Which supplier provides the heaviest products on average?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Sports Nutrition", "Sports Nutrition"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [2.0, "2.0", "2"]
+      }
+    }
+  },
+  {
+    "question": "Calculate combined stock quantity for all Food items",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [490, "490"]
+    }
+  },
+  {
+    "question": "List products with premium pricing (≥$50)",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Wireless Headphones", "Running Shoes", "Bluetooth Speaker", "Winter Jacket"],
+      "invalid_values": ["Organic Apples", "Coffee Beans", "Laptop Stand", "Vitamin D3", "Yoga Mat", "Olive Oil", "Protein Powder", "Green Tea"],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": ["129.99", "89.99", "79.99", "159.99"]
+      }
+    }
+  },
+  {
+    "question": "What percentage of inventory consists of Electronics?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [25, "25%", "0.25", "3/12"]
+    }
+  },
+  {
+    "question": "Which product was most recently restocked?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Organic Apples", "FreshFarm", "P002"],
+      "bonus": {
+        "answer_type": "string",
+        "valid_values": ["2024-02-20", "February 20", "Feb 20"]
+      }
+    }
+  },
+  {
+    "question": "Show items weighing more than 1.5 kilograms",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Protein Powder", "Winter Jacket"],
+      "invalid_values": ["Wireless Headphones", "Organic Apples", "Running Shoes", "Coffee Beans", "Laptop Stand", "Vitamin D3", "Yoga Mat", "Olive Oil", "Bluetooth Speaker", "Green Tea"]
+    }
+  },
+  {
+    "question": "What's the total value of Warehouse A inventory?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [8439.14, "8439.14", "$8439.14", "8439"]
+    }
+  },
+  {
+    "question": "Identify products from tech-oriented suppliers",
+    "query_type": "semantic",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Wireless Headphones", "Laptop Stand", "Bluetooth Speaker"],
+      "invalid_values": ["Organic Apples", "Running Shoes", "Coffee Beans", "Vitamin D3", "Yoga Mat", "Olive Oil", "Protein Powder", "Winter Jacket", "Green Tea"]
+    }
+  },
+  {
+    "question": "Which brand offers the most competitively priced products?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["FreshFarm", "Fresh Farm"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [3.99, "3.99", "$3.99"]
+      }
+    }
+  }
+]

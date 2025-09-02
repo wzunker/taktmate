@@ -1,0 +1,213 @@
+[
+  {
+    "question": "Who is the highest paid employee?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Maya Patel", "Patel", "Maya", "E013"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [125000, "125000", "$125,000", "125k"]
+      }
+    }
+  },
+  {
+    "question": "Which department consumes the largest portion of the salary budget?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Engineering", "engineering"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [483000, "483000", "$483,000", "483k"]
+      }
+    }
+  },
+  {
+    "question": "Enumerate all staff members recruited during 2020",
+    "query_type": "date_filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Alice Johnson", "Emma Brown", "Jack Anderson", "Noah Rodriguez"],
+      "invalid_values": ["Bob Smith", "Frank Miller", "Henry Taylor", "Liam Garcia", "Maya Patel"]
+    }
+  },
+  {
+    "question": "What's the median compensation across the organization?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [72000, "72000", "$72,000", "72k"]
+    }
+  },
+  {
+    "question": "Display workforce members with stellar performance ratings (≥4.5)",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Carol Davis", "Frank Miller", "Maya Patel"],
+      "invalid_values": ["Alice Johnson", "Bob Smith", "David Wilson", "Emma Brown", "Grace Lee", "Henry Taylor", "Ivy Chen", "Jack Anderson", "Kelly White", "Liam Garcia", "Noah Rodriguez", "Olivia Martinez"],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": ["4.5", "4.7", "4.8"]
+      }
+    }
+  },
+  {
+    "question": "How many individuals are stationed in the Big Apple?",
+    "query_type": "count",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [6, "6", "six"],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": ["Alice Johnson", "Emma Brown", "Grace Lee", "Kelly White", "Olivia Martinez", "Carol Davis"]
+      }
+    }
+  },
+  {
+    "question": "Which location boasts the highest average remuneration?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["San Francisco", "SF"],
+      "bonus": {
+        "answer_type": "string",
+        "valid_values": ["$107,667", "107k", "107667", "107,667"]
+      }
+    }
+  },
+  {
+    "question": "Identify personnel logging excessive overtime (>15 hours)",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Carol Davis", "Frank Miller", "Jack Anderson", "Maya Patel"],
+      "invalid_values": ["Alice Johnson", "Bob Smith", "David Wilson", "Emma Brown", "Grace Lee", "Henry Taylor", "Ivy Chen", "Kelly White", "Liam Garcia", "Noah Rodriguez", "Olivia Martinez"]
+    }
+  },
+  {
+    "question": "What's the total headcount in Engineering?",
+    "query_type": "count",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [5, "5", "five"],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": ["Alice Johnson", "Carol Davis", "Frank Miller", "Jack Anderson", "Maya Patel"]
+      }
+    }
+  },
+  {
+    "question": "Show me the bottom 3 earners by salary",
+    "query_type": "sort_asc",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Ivy Chen", "David Wilson", "Kelly White"],
+      "invalid_values": ["Alice Johnson", "Frank Miller", "Maya Patel", "Jack Anderson", "Liam Garcia"],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": ["48000", "52000", "55000", "$48,000", "$52,000", "$55,000"]
+      }
+    }
+  },
+  {
+    "question": "Which employee has been with the company the longest?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Maya Patel", "Patel", "Maya"],
+      "bonus": {
+        "answer_type": "string",
+        "valid_values": ["2017-11-30", "2017", "November 2017", "Nov 2017"]
+      }
+    }
+  },
+  {
+    "question": "Calculate the combined salary expenditure for all Marketing personnel",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [182000, "182000", "$182,000", "182k"]
+    }
+  },
+  {
+    "question": "Find employees earning within the 60k-80k bracket",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Bob Smith", "Carol Davis", "Grace Lee", "Henry Taylor", "Noah Rodriguez"],
+      "invalid_values": ["Alice Johnson", "Frank Miller", "Maya Patel", "Jack Anderson", "Liam Garcia", "David Wilson", "Emma Brown", "Ivy Chen", "Kelly White", "Olivia Martinez"]
+    }
+  },
+  {
+    "question": "Who demonstrates the poorest performance metrics?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["David Wilson", "Wilson", "David"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [3.5, "3.5"]
+      }
+    }
+  },
+  {
+    "question": "What percentage of the workforce operates from California offices?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [40, "40%", "0.4", "6/15"],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": ["Los Angeles", "San Francisco", "Bob Smith", "Ivy Chen", "Noah Rodriguez", "Frank Miller", "Jack Anderson", "Maya Patel"]
+      }
+    }
+  },
+  {
+    "question": "List all Senior-level positions in the dataset",
+    "query_type": "semantic",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Senior Developer", "Senior Sales Rep", "Senior Analyst"],
+      "invalid_values": ["Junior Developer", "Marketing Manager", "HR Specialist", "Lead Developer", "Financial Analyst", "DevOps Engineer", "Recruiter", "Software Architect", "Account Manager", "Digital Marketer", "Sales Representative", "Content Creator"]
+    }
+  },
+  {
+    "question": "Which manager oversees the most direct reports?",
+    "query_type": "semantic",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["M001", "Manager M001"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [5, "5", "five"]
+      }
+    }
+  },
+  {
+    "question": "How many distinct job titles exist company-wide?",
+    "query_type": "count",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [15, "15", "fifteen"]
+    }
+  },
+  {
+    "question": "Show employees whose tenure exceeds 4 years",
+    "query_type": "date_filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Bob Smith", "Frank Miller", "Henry Taylor", "Liam Garcia", "Maya Patel"],
+      "invalid_values": ["Alice Johnson", "Carol Davis", "David Wilson", "Emma Brown", "Grace Lee", "Ivy Chen", "Jack Anderson", "Kelly White", "Noah Rodriguez", "Olivia Martinez"]
+    }
+  },
+  {
+    "question": "What's the average overtime commitment per employee?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [11.3, "11.3", "11", "about 11 hours"]
+    }
+  }
+]

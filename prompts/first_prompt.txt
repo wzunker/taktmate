@@ -1,0 +1,110 @@
+# Project: **TaktMate MVP – CSV Chat (Simplest Version)**
+
+## Goal
+
+Build a **minimal web app** where:
+
+1. The user uploads a `.csv` file.
+2. The user chats with GPT-5 about the file.
+3. GPT-5 answers using the CSV data provided.
+
+---
+
+## Tech Stack
+
+* **Frontend:** React + TailwindCSS
+* **Backend:** Node.js + Express + Multer
+* **CSV Parsing:** `csv-parser`
+* **AI:** OpenAI Chat Completions API (`gpt-5`)
+* **Storage:** In-memory (JavaScript object in backend)
+
+---
+
+## Functional Requirements
+
+### Upload CSV
+
+* User can upload **one CSV at a time**.
+* Backend parses CSV → array of objects (`[{ col1: value1, col2: value2 }, ...]`).
+* Store in memory: `{ fileId: { filename, rows } }`.
+* Return `fileId` to frontend.
+
+### Chat Interface
+
+* Chat window with:
+
+  * Message list
+  * Text input
+* On submit:
+
+  * Send `{ fileId, message }` to backend.
+  * Backend:
+
+    * Retrieve CSV data from memory
+
+    * Convert to **compact JSON** or **markdown table**
+
+    * Create a system prompt:
+
+      ```
+      You are a CSV data assistant.
+      Only answer questions using the CSV data provided.
+      If the answer is not in the CSV, say exactly: "No relevant data found."
+      Respond with minimal text and, when relevant, include the exact matching row(s) and the CSV file name.
+      CSV file name: {filename}
+      CSV data:
+      {csvString}
+      ```
+
+    * Send system + user messages to `gpt-5` via Chat Completions API.
+
+    * Return GPT-5’s reply.
+
+---
+
+## File Structure
+
+```
+taktmate-mvp/
+  frontend/
+    src/
+      App.jsx
+      components/
+        FileUpload.jsx
+        ChatBox.jsx
+    package.json
+  backend/
+    index.js
+    fileStore.js
+    processCsv.js
+    package.json
+```
+
+---
+
+## Implementation Notes
+
+* **Frontend**
+
+  * Use TailwindCSS for styling.
+  * `FileUpload` → sends file to `/upload` endpoint.
+  * `ChatBox` → sends messages to `/chat`.
+* **Backend**
+
+  * `POST /upload`: parse CSV and store in memory.
+  * `POST /chat`: format CSV into prompt and query GPT-5.
+* **Constraints**
+
+  * No auth
+  * No DB
+  * Resets on server restart
+  * Keep CSV small enough to fit GPT-5’s context window.
+
+---
+
+## Deployment
+
+* **Frontend:** Vercel
+* **Backend:** Render or Railway
+
+---

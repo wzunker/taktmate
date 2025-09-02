@@ -1,0 +1,11 @@
+name,age,department,salary,status
+John Smith,28,Engineering,75000,active
+Jane Doe,32,Marketing,65000,active
+Bob Johnson,45,Sales,80000,active
+Alice Brown,29,Engineering,72000,inactive
+Charlie Wilson,38,Marketing,68000,active
+Diana Davis,26,Engineering,70000,active
+Eve Miller,41,Sales,85000,active
+Frank Garcia,33,Engineering,78000,active
+Grace Lee,30,Marketing,62000,inactive
+Henry Taylor,35,Sales,82000,active

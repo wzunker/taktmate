@@ -1,0 +1,29 @@
+{
+  "name": "taktmate-mvp",
+  "version": "1.0.0",
+  "description": "TaktMate MVP - CSV Chat with AI",
+  "scripts": {
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm start",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd tests && npm install",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start",
+    "eval:setup": "cd tests && npm install",
+    "eval": "cd tests && npm run eval",
+    "eval:all": "cd tests && npm run eval:all",
+    "eval:watch": "cd tests && npm run eval:watch",
+    "eval:astronomy_events": "cd tests && npm run eval:astronomy_events",
+    "eval:sports_statistics": "cd tests && npm run eval:sports_statistics",
+    "eval:employee_payroll": "cd tests && npm run eval:employee_payroll",
+    "eval:product_inventory": "cd tests && npm run eval:product_inventory",
+    "eval:transportation_schedules": "cd tests && npm run eval:transportation_schedules",
+    "test:eval": "npm run eval"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": ["csv", "chat", "ai", "mvp"],
+  "author": "TaktMate",
+  "license": "MIT"
+}

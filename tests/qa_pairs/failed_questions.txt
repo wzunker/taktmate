@@ -1,0 +1,374 @@
+   {
+    "question": "Which events last longer than 4 hours?",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Jupiter Opposition", "Comet Flyby", "Supermoon", "Saturn Rings"],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": ["360", "480", "720", "300", "6 hours", "8 hours", "12 hours", "5 hours"]
+      }
+    }
+    Answer: astronomy_events.csv:
+event_id, event_name, event_type, date, time_utc, duration_minutes, magnitude, constellation, visibility, observer_location
+A003, Meteor Shower, Shower, 2024-05-08, 23:45, 240, 3.5, Perseus, Fair, Global
+A005, Jupiter Opposition, Opposition, 2024-07-19, 21:10, 360, 4.2, Sagittarius, Good, Global
+A006, Comet Flyby, Comet, 2024-08-03, 05:55, 480, 2.8, Ursa Major, Excellent, Northern Hemisphere
+A008, Supermoon, Moon Phase, 2024-10-27, 12:15, 720, 0.5, Cancer, Good, Global
+A010, Saturn Rings, Planetary, 2024-12-25, 20:05, 300, 3.7, Capricorn, Excellent, Global
+  },
+  
+  {
+    "question": "Which player averaged the most points per game?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Stephen Curry", "Curry", "Stephan Curry"]
+    }
+    Answer: Wilt Chamberlain averaged the most points per game with 37.91 points per game (3033 points / 80 games).
+  },
+
+    {
+    "question": "Which players participated in 80+ games?",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings", 
+      "valid_values": ["Michael Jordan", "Kareem Abdul-Jabbar", "Hakeem Olajuwon", "Dirk Nowitzki"]
+    }
+    Answer: player_id, player_name, team, games_played
+            P001, Michael Jordan, Bulls, 82
+            P008, Kareem Abdul-Jabbar, Lakers, 82
+            P011, Hakeem Olajuwon, Rockets, 82
+            P014, Dirk Nowitzki, Mavericks, 81
+            P009, Wilt Chamberlain, Warriors, 80
+  },
+
+    {
+    "question": "What's the average field goal percentage across all players?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [0.505, "0.505", "50.5%", "0.51", "51%"]
+    }
+    Answer: The average field goal percentage across all players is 0.507.
+  },
+
+    {
+    "question": "Show players with free throw percentage exceeding 85%",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Larry Bird", "Stephen Curry", "Kevin Durant", "Dirk Nowitzki"]
+    }
+
+    Answer: sports_statistics.csv: player_id, player_name, team, position, free_throw_percentage
+        P006, Larry Bird, Celtics, Forward, 0.886
+        P012, Stephen Curry, Warriors, Guard, 0.908
+        P005, Magic Johnson, Lakers, Guard, 0.848
+        P003, Kobe Bryant, Lakers, Guard, 0.837
+        P014, Dirk Nowitzki, Mavericks, Forward, 0.879
+  },
+
+   {
+    "question": "What's the combined point total for all Lakers players?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number", 
+      "valid_values": [11269, "11269", "11,269"]
+    }
+    Answer: The combined point total for all Lakers players is 10,503.
+  },
+
+    {
+    "question": "Identify personnel logging excessive overtime (>15 hours)",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Carol Davis", "Frank Miller", "Jack Anderson", "Maya Patel"]
+    }
+    Answer: employee_payroll.csv:
+employee_id, name, department, position, overtime_hours
+E003, Carol Davis, Engineering, Junior Developer, 18
+E006, Frank Miller, Engineering, Lead Developer, 22
+E010, Jack Anderson, Engineering, DevOps Engineer, 20
+E013, Maya Patel, Engineering, Software Architect, 25
+E008, Henry Taylor, Sales, Senior Sales Rep, 15
+  },
+
+    {
+    "question": "Show me the bottom 3 earners by salary",
+    "query_type": "sort_asc",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Ivy Chen", "David Wilson", "Kelly White"],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": ["48000", "52000", "55000", "$48,000", "$52,000", "$55,000"]
+      }
+    }
+    Answer: employee_payroll.csv:
+employee_id, name, department, position, salary, hire_date, performance_rating, overtime_hours, manager_id, location
+E009, Ivy Chen, Marketing, Content Creator, 48000, 2022-06-18, 4.3, 4, M002, Los Angeles
+E011, Kelly White, HR, Recruiter, 55000, 2021-07-19, 3.7, 2, M004, New York
+E015, Olivia Martinez, Marketing, Digital Marketer, 56000, 2022-04-14, 3.8, 6, M002, New York
+  },
+
+    {
+    "question": "Find employees earning within the 60k-80k bracket",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Bob Smith", "Carol Davis", "Grace Lee", "Henry Taylor", "Noah Rodriguez"]
+    }
+    Answer: employee_payroll.csv:
+employee_id, name, department, position, salary, hire_date, performance_rating, overtime_hours, manager_id, location
+E002, Bob Smith, Marketing, Marketing Manager, 78000, 2019-07-22, 3.8, 5, M002, Los Angeles
+E003, Carol Davis, Engineering, Junior Developer, 65000, 2021-11-08, 4.5, 18, M001, New York
+E007, Grace Lee, Finance, Financial Analyst, 72000, 2021-03-25, 4.0, 7, M005, New York
+E008, Henry Taylor, Sales, Senior Sales Rep, 68000, 2019-12-03, 3.9, 15, M003, Chicago
+E012, Liam Garcia, Finance, Senior Analyst, 82000, 2019-02-28, 4.2, 10, M005, Chicago
+E014, Noah Rodriguez, Sales, Account Manager, 74000, 2020-10-05, 4.0, 12, M003, Los Angeles
+  },
+
+    {
+    "question": "What percentage of the workforce operates from California offices?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [40, "40%", "0.4", "6/15"],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": ["Los Angeles", "San Francisco", "Bob Smith", "Ivy Chen", "Noah Rodriguez", "Frank Miller", "Jack Anderson", "Maya Patel"]
+      }
+    }
+    Answer: employee_payroll.csv:
+employee_id, name, department, position, salary, hire_date, performance_rating, overtime_hours, manager_id, location
+E006, Frank Miller, Engineering, Lead Developer, 110000, 2018-05-14, 4.7, 22, M001, San Francisco
+E010, Jack Anderson, Engineering, DevOps Engineer, 88000, 2020-08-11, 4.4, 20, M001, San Francisco
+
+There are 2 employees in California (San Francisco) out of 15 total employees.
+Percentage = (2/15) * 100 ≈ 13.33%
+  },
+
+    {
+    "question": "How many distinct job titles exist company-wide?",
+    "query_type": "count",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [15, "15", "fifteen"]
+    }
+    Answer: There are 13 distinct job titles company-wide.
+  },
+
+    {
+    "question": "Show employees whose tenure exceeds 4 years",
+    "query_type": "date_filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Bob Smith", "Frank Miller", "Henry Taylor", "Liam Garcia", "Maya Patel"]
+    }
+    Answer: employee_id, name, department, position, salary, hire_date, performance_rating, overtime_hours, manager_id, location
+E006, Frank Miller, Engineering, Lead Developer, 110000, 2018-05-14, 4.7, 22, M001, San Francisco
+E013, Maya Patel, Engineering, Software Architect, 125000, 2017-11-30, 4.8, 25, M001, San Francisco
+E012, Liam Garcia, Finance, Senior Analyst, 82000, 2019-02-28, 4.2, 10, M005, Chicago
+E002, Bob Smith, Marketing, Marketing Manager, 78000, 2019-07-22, 3.8, 5, M002, Los Angeles
+  },
+
+    {
+    "question": "Which player averaged the most points per game?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Stephen Curry", "Curry", "Stephan Curry"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [39.3, "39.3", "39"]
+      }
+    }
+    I THINK THE ANSWER WAS TOO LONG SO IT GOT CONFUSED.
+    ANSWER: To find the player who averaged the most points per game, divide points_scored by games_played for each player:
+
+- Wilt Chamberlain: 3033 / 80 = 37.91
+- Stephen Curry: 2987 / 76 = 39.30
+- Kareem Abdul-Jabbar: 2822 / 82 = 34.41
+- Michael Jordan: 2580 / 82 = 31.46
+- Kevin Durant: 2456 / 72 = 34.11
+- Hakeem Olajuwon: 2356 / 82 = 28.73
+- Kobe Bryant: 2323 / 78 = 29.78
+- LeBron James: 2145 / 75 = 28.60
+- Shaquille O'Neal: 2145 / 67 = 32.01
+- Larry Bird: 2115 / 79 = 26.80
+- Dirk Nowitzki: 2134 / 81 = 26.35
+- Magic Johnson: 1834 / 77 = 23.82
+- Tim Duncan: 1456 / 71 = 20.51
+- Bill Russell: 1423 / 78 = 18.24
+
+Stephen Curry averaged the most points per game: 39.30
+
+Row from sports_statistics.csv:
+{"player_id": "P012", "player_name": "Stephen Curry", "team": "Warriors", "position": "Guard", "games_played": "76", "points_scored": "2987", "assists": "634", "rebounds": "456", "field_goal_percentage": "0.473", "free_throw_percentage": "0.908", "minutes_per_game": "34.2", "age": "31"}
+  },
+
+    {
+    "question": "Which players participated in 80+ games?",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings", 
+      "valid_values": ["Michael Jordan", "Kareem Abdul-Jabbar", "Hakeem Olajuwon", "Dirk Nowitzki"]
+    }
+    ANSWER: sports_statistics.csv:
+- Michael Jordan, games_played: 82
+- Kareem Abdul-Jabbar, games_played: 82
+- Hakeem Olajuwon, games_played: 82
+- Dirk Nowitzki, games_played: 81
+- Wilt Chamberlain, games_played: 80
+- Larry Bird, games_played: 79
+  },
+
+    {
+    "question": "What's the average field goal percentage across all players?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [0.505, "0.505", "50.5%", "0.51", "51%"]
+    }
+    IT GOT THE ANSWER RIGHT BUT WAS CONFUSED BY ALL OTHER NUMBERS
+    ANSWER: To calculate the average field goal percentage:
+
+Sum of field_goal_percentage:
+0.497 + 0.525 + 0.449 + 0.506 + 0.520 + 0.496 + 0.582 + 0.559 + 0.540 + 0.440 + 0.512 + 0.473 + 0.498 + 0.471 = 7.068
+
+Number of players: 14
+
+Average = 7.068 / 14 = 0.505
+
+Average field goal percentage across all players: 0.505 (or 50.5%)
+ 
+ 
+  },
+
+    {
+    "question": "Show players with free throw percentage exceeding 85%",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Larry Bird", "Stephen Curry", "Kevin Durant", "Dirk Nowitzki"],
+      "invalid_values": ["Michael Jordan", "Wilt Chamberlain", "Shaquille O'Neal", "Bill Russell"]
+    }
+    VERY BAD ANSWER WAY TOO MUCH INFORMATION
+    ANSWER: sports_statistics.csv:
+[
+  {
+    "player_id": "P006",
+    "player_name": "Larry Bird",
+    "team": "Celtics",
+    "position": "Forward",
+    "games_played": "79",
+    "points_scored": "2115",
+    "assists": "645",
+    "rebounds": "834",
+    "field_goal_percentage": "0.496",
+    "free_throw_percentage": "0.886",
+    "minutes_per_game": "38.4",
+    "age": "29"
+  },
+  {
+    "player_id": "P012",
+    "player_name": "Stephen Curry",
+    "team": "Warriors",
+    "position": "Guard",
+    "games_played": "76",
+    "points_scored": "2987",
+    "assists": "634",
+    "rebounds": "456",
+    "field_goal_percentage": "0.473",
+    "free_throw_percentage": "0.908",
+    "minutes_per_game": "34.2",
+    "age": "31"
+  },
+  {
+    "player_id": "P013",
+    "player_name": "Kevin Durant",
+    "team": "Nets",
+    "position": "Forward",
+    "games_played": "72",
+    "points_scored": "2456",
+    "assists": "523",
+    "rebounds": "612",
+    "field_goal_percentage": "0.498",
+    "free_throw_percentage": "0.881",
+    "minutes_per_game": "35.8",
+    "age": "30"
+  },
+  {
+    "player_id": "P014",
+    "player_name": "Dirk Nowitzki",
+    "team": "Mavericks",
+    "position": "Forward",
+    "games_played": "81",
+    "points_scored": "2134",
+    "assists": "345",
+    "rebounds": "789",
+    "field_goal_percentage": "0.471",
+    "free_throw_percentage": "0.879",
+    "minutes_per_game": "33.2",
+    "age": "35"
+  }
+]
+  },
+
+
+    {
+    "question": "Find players scoring fewer than 2000 points total",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Tim Duncan", "Magic Johnson", "Bill Russell"],
+      "invalid_values": ["Michael Jordan", "LeBron James", "Kobe Bryant", "Wilt Chamberlain", "Stephen Curry"]
+    }
+    ANSWER: sports_statistics.csv:
+[
+  {
+    "player_id": "P004",
+    "player_name": "Tim Duncan",
+    "team": "Spurs",
+    "position": "Center",
+    "games_played": "71",
+    "points_scored": "1456",
+    "assists": "289",
+    "rebounds": "1047",
+    "field_goal_percentage": "0.506",
+    "free_throw_percentage": "0.696",
+    "minutes_per_game": "32.1",
+    "age": "31"
+  },
+  {
+    "player_id": "P010",
+    "player_name": "Bill Russell",
+    "team": "Celtics",
+    "position": "Center",
+    "games_played": "78",
+    "points_scored": "1423",
+    "assists": "456",
+    "rebounds": "1712",
+    "field_goal_percentage": "0.440",
+    "free_throw_percentage": "0.561",
+    "minutes_per_game": "42.3",
+    "age": "33"
+  },
+  {
+    "player_id": "P005",
+    "player_name": "Magic Johnson",
+    "team": "Lakers",
+    "position": "Guard",
+    "games_played": "77",
+    "points_scored": "1834",
+    "assists": "987",
+    "rebounds": "678",
+    "field_goal_percentage": "0.520",
+    "free_throw_percentage": "0.848",
+    "minutes_per_game": "36.3",
+    "age": "27"
+  }
+]
+  },

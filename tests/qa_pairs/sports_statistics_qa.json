@@ -1,0 +1,209 @@
+[
+  {
+    "question": "Which player averaged the most points per game?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Stephen Curry", "Curry", "Stephan Curry"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [39.3, "39.3", "39"]
+      }
+    }
+  },
+  {
+    "question": "Who dished out the maximum number of assists?",
+    "query_type": "structured", 
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Magic Johnson", "Johnson", "Magic"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [987, "987"]
+      }
+    }
+  },
+  {
+    "question": "Which athlete grabbed the most rebounds?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string", 
+      "valid_values": ["Wilt Chamberlain", "Chamberlain", "Wilt"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [2149, "2149"]
+      }
+    }
+  },
+  {
+    "question": "How many players suit up for the Lakers?",
+    "query_type": "count",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [5, "5", "five"],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": ["LeBron James", "Kobe Bryant", "Magic Johnson", "Shaquille O'Neal", "Kareem Abdul-Jabbar"]
+      }
+    }
+  },
+  {
+    "question": "List all Centers in the dataset",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Tim Duncan", "Shaquille O'Neal", "Kareem Abdul-Jabbar", "Wilt Chamberlain", "Bill Russell", "Hakeem Olajuwon"],
+      "invalid_values": ["Michael Jordan", "LeBron James", "Kobe Bryant", "Magic Johnson", "Larry Bird", "Stephen Curry", "Kevin Durant", "Dirk Nowitzki"]
+    }
+  },
+  {
+    "question": "Which players participated in 80+ games?",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings", 
+      "valid_values": ["Michael Jordan", "Kareem Abdul-Jabbar", "Hakeem Olajuwon", "Dirk Nowitzki"],
+      "invalid_values": ["Larry Bird", "Stephen Curry", "Magic Johnson", "Tim Duncan", "Bill Russell"]
+    }
+  },
+  {
+    "question": "What's the average field goal percentage across all players?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [0.505, "0.505", "50.5%", "0.51", "51%"]
+    }
+  },
+  {
+    "question": "Show players with free throw percentage exceeding 85%",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Larry Bird", "Stephen Curry", "Kevin Durant", "Dirk Nowitzki"],
+      "invalid_values": ["Michael Jordan", "Wilt Chamberlain", "Shaquille O'Neal", "Bill Russell"]
+    }
+  },
+  {
+    "question": "Who's the youngest player in the roster?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Shaquille O'Neal", "O'Neal", "Shaq"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [26, "26", "26 years old"]
+      }
+    }
+  },
+  {
+    "question": "Which player logged the most minutes per game?",
+    "query_type": "structured", 
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Wilt Chamberlain", "Chamberlain", "Wilt"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [45.8, "45.8", "45.8 minutes"]
+      }
+    }
+  },
+  {
+    "question": "How many different teams are represented?",
+    "query_type": "count",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [8, "8", "eight"],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": ["Bulls", "Lakers", "Spurs", "Celtics", "Warriors", "Rockets", "Nets", "Mavericks"]
+      }
+    }
+  },
+  {
+    "question": "Find players scoring fewer than 2000 points total",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Tim Duncan", "Magic Johnson", "Bill Russell"],
+      "invalid_values": ["Michael Jordan", "LeBron James", "Kobe Bryant", "Wilt Chamberlain", "Stephen Curry"]
+    }
+  },
+  {
+    "question": "What's the combined point total for all Lakers players?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number", 
+      "valid_values": [11269, "11269", "11,269"]
+    }
+  },
+  {
+    "question": "Identify players whose names contain 'Johnson'",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["Magic Johnson"],
+      "invalid_values": ["Michael Jordan", "LeBron James", "Kobe Bryant", "Tim Duncan", "Larry Bird"]
+    }
+  },
+  {
+    "question": "What percentage of players are Centers?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [42.86, "42.86%", "43%", "6/14", "0.43"]
+    }
+  },
+  {
+    "question": "Show the top 3 scorers by total points",
+    "query_type": "sort_desc",
+    "expected": {
+      "answer_type": "list_of_strings", 
+      "valid_values": ["Wilt Chamberlain", "Stephen Curry", "Kareem Abdul-Jabbar"],
+      "invalid_values": ["Michael Jordan", "LeBron James", "Kobe Bryant", "Kevin Durant"],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": ["3033", "2987", "2822"]
+      }
+    }
+  },
+  {
+    "question": "Which player has the worst free throw shooting?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Wilt Chamberlain", "Chamberlain", "Wilt"],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [0.511, "0.511", "51.1%", "51%"]
+      }
+    }
+  },
+  {
+    "question": "List all players aged 30 or older",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": ["LeBron James", "Kobe Bryant", "Tim Duncan", "Kareem Abdul-Jabbar", "Wilt Chamberlain", "Bill Russell", "Stephan Curry", "Kevin Durant", "Dirk Nowitzki"],
+      "invalid_values": ["Michael Jordan", "Magic Johnson", "Larry Bird", "Shaquille O'Neal", "Hakeem Olajuwon"]
+    }
+  },
+  {
+    "question": "What's the median games played across the dataset?",
+    "query_type": "aggregation", 
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [78, "78", "78 games"]
+    }
+  },
+  {
+    "question": "Which players points scored was closest to the average across all players?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": ["Kobe Bryant", "Bryant", "Kobe"],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": ["2323", "2272"]
+      }
+    }
+  }
+]

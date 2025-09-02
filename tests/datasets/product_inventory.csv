@@ -1,0 +1,13 @@
+product_id,product_name,category,brand,price,stock_quantity,warehouse_location,supplier,last_restocked,expiration_date,weight_kg
+P001,Wireless Headphones,Electronics,SoundTech,129.99,45,Warehouse A,TechSupply Co,2024-01-15,2026-01-15,0.3
+P002,Organic Apples,Food,FreshFarm,3.99,120,Warehouse B,Local Farms,2024-02-20,2024-03-05,1.0
+P003,Running Shoes,Footwear,SportMax,89.99,32,Warehouse C,SportGoods Inc,2024-01-28,2027-01-28,0.8
+P004,Coffee Beans,Food,BrewMaster,24.99,78,Warehouse B,Coffee Imports,2024-02-10,2025-02-10,0.5
+P005,Laptop Stand,Electronics,ErgoTech,49.99,23,Warehouse A,Office Supply,2024-01-22,2029-01-22,1.2
+P006,Vitamin D3,Health,WellLife,19.99,156,Warehouse D,Health Direct,2024-02-05,2026-02-05,0.1
+P007,Yoga Mat,Fitness,FlexFit,34.99,67,Warehouse C,Fitness Plus,2024-01-30,2028-01-30,1.5
+P008,Olive Oil,Food,MediterraneanGold,12.99,89,Warehouse B,Import Foods,2024-02-12,2025-08-12,0.75
+P009,Bluetooth Speaker,Electronics,SoundWave,79.99,18,Warehouse A,Audio Tech,2024-01-25,2027-01-25,0.6
+P010,Protein Powder,Health,MuscleFuel,39.99,94,Warehouse D,Sports Nutrition,2024-02-08,2026-02-08,2.0
+P011,Winter Jacket,Clothing,WarmWear,159.99,28,Warehouse C,Fashion Import,2024-01-18,2029-01-18,1.8
+P012,Green Tea,Food,ZenLeaf,8.99,203,Warehouse B,Tea Company,2024-02-15,2025-02-15,0.2

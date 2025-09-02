@@ -1,0 +1,450 @@
+[
+  {
+    "question": "What is the highest magnitude event?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": [
+        "A009",
+        "Asteroid Pass"
+      ],
+      "bonus": {
+        "answer_type": "string",
+        "valid_values": [
+          "5.1"
+        ]
+      }
+    }
+  },
+  {
+    "question": "Show events with excellent visibility",
+    "query_type": "semantic",
+    "expected": {
+      "answer_type": "list_of_objects",
+      "valid_values": [
+        {
+          "event_id": "A001",
+          "event_name": "Lunar Eclipse"
+        },
+        {
+          "event_id": "A004",
+          "event_name": "Solar Eclipse"
+        },
+        {
+          "event_id": "A006",
+          "event_name": "Comet Flyby"
+        },
+        {
+          "event_id": "A010",
+          "event_name": "Saturn Rings"
+        }
+      ],
+      "relevant_columns": [
+        "visibility"
+      ]
+    }
+  },
+  {
+    "question": "How many events are visible globally?",
+    "query_type": "count",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [
+        6,
+        "6",
+        "six"
+      ],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": [
+          "Lunar Eclipse",
+          "Meteor Shower",
+          "Jupiter Opposition",
+          "Mars Conjunction",
+          "Supermoon",
+          "Saturn Rings"
+        ]
+      }
+    }
+  },
+  {
+    "question": "Which events last longer than 4 hours?",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": [
+        "Jupiter Opposition",
+        "Comet Flyby",
+        "Supermoon",
+        "Saturn Rings"
+      ],
+      "invalid_values": [
+        "Lunar Eclipse",
+        "Venus Transit",
+        "Meteor Shower",
+        "Solar Eclipse",
+        "Mars Conjunction",
+        "Asteroid Pass",
+        "Binary Star Eclipse",
+        "Planetary Alignment"
+      ],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": [
+          "360",
+          "480",
+          "720",
+          "300",
+          "6 hours",
+          "8 hours",
+          "12 hours",
+          "5 hours"
+        ]
+      }
+    }
+  },
+  {
+    "question": "What types of events are in the dataset?",
+    "query_type": "unique_values",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": [
+        "Eclipse",
+        "Transit",
+        "Shower",
+        "Opposition",
+        "Comet",
+        "Conjunction",
+        "Moon Phase",
+        "Asteroid",
+        "Planetary",
+        "Alignment"
+      ],
+      "invalid_values": [
+        "Supernova",
+        "Pulsar",
+        "Nebula",
+        "Galaxy",
+        "Quasar"
+      ],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [
+          10,
+          "10",
+          "ten"
+        ]
+      }
+    }
+  },
+  {
+    "question": "Show all events in Leo constellation",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_objects",
+      "valid_values": [
+        {
+          "event_id": "A001",
+          "event_name": "Lunar Eclipse",
+          "constellation": "Leo"
+        }
+      ]
+    }
+  },
+  {
+    "question": "What's the average duration of eclipse events?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [
+        121.67,
+        "121.67",
+        "122",
+        "about 122 minutes"
+      ]
+    }
+  },
+  {
+    "question": "List events occurring in the first quarter of 2024",
+    "query_type": "date_filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": [
+        "Binary Star Eclipse",
+        "Planetary Alignment",
+        "Lunar Eclipse"
+      ],
+      "invalid_values": [
+        "Venus Transit",
+        "Meteor Shower",
+        "Solar Eclipse",
+        "Jupiter Opposition",
+        "Comet Flyby",
+        "Mars Conjunction",
+        "Supermoon",
+        "Asteroid Pass",
+        "Saturn Rings"
+      ],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": [
+          "2024-01-18",
+          "2024-02-09",
+          "2024-03-15",
+          "January",
+          "February",
+          "March"
+        ]
+      }
+    }
+  },
+  {
+    "question": "Which event has the highest magnitude to duration ratio?",
+    "query_type": "division_and_filter",
+    "expected": {
+      "answer_type": "strings",
+      "valid_values": [
+        "A009",
+        "Asteroid Pass"
+      ],
+      "bonus": {
+        "answer_type": "string",
+        "valid_values": [
+          "0.17"
+        ]
+      }
+    }
+  },
+  {
+    "question": "How many days passed between the planetary alignment and binary star eclipse?",
+    "query_type": "difference",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [
+        22,
+        "22",
+        "22 days"
+      ],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": [
+          "2024-01-18",
+          "2024-02-09"
+        ]
+      }
+    }
+  },
+  {
+    "question": "Which celestial phenomenon exhibits the faintest magnitude?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": [
+        "Supermoon",
+        "A008"
+      ],
+      "bonus": {
+        "answer_type": "number",
+        "valid_values": [
+          0.5,
+          "0.5"
+        ]
+      }
+    }
+  },
+  {
+    "question": "Enumerate observations scheduled prior to summer solstice",
+    "query_type": "date_filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": [
+        "Binary Star Eclipse",
+        "Planetary Alignment",
+        "Lunar Eclipse",
+        "Venus Transit",
+        "Meteor Shower",
+        "Solar Eclipse"
+      ],
+      "invalid_values": [
+        "Jupiter Opposition",
+        "Comet Flyby",
+        "Mars Conjunction",
+        "Supermoon",
+        "Asteroid Pass",
+        "Saturn Rings"
+      ]
+    }
+  },
+  {
+    "question": "Display events with brief durations (≤90 minutes)",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": [
+        "Venus Transit",
+        "Mars Conjunction",
+        "Asteroid Pass",
+        "Binary Star Eclipse"
+      ],
+      "invalid_values": [
+        "Lunar Eclipse",
+        "Solar Eclipse",
+        "Meteor Shower",
+        "Jupiter Opposition",
+        "Comet Flyby",
+        "Supermoon",
+        "Saturn Rings",
+        "Planetary Alignment"
+      ],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": [
+          "45",
+          "90",
+          "30",
+          "65"
+        ]
+      }
+    }
+  },
+  {
+    "question": "Calculate the cumulative observation time for all documented events",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [
+        2810,
+        "2810",
+        "2810 minutes"
+      ]
+    }
+  },
+  {
+    "question": "Which event inaugurates the astronomical calendar year?",
+    "query_type": "structured",
+    "expected": {
+      "answer_type": "string",
+      "valid_values": [
+        "Binary Star Eclipse",
+        "A011"
+      ],
+      "bonus": {
+        "answer_type": "string",
+        "valid_values": [
+          "2024-01-18",
+          "January 18"
+        ]
+      }
+    }
+  },
+  {
+    "question": "Show phenomena observable exclusively from Northern Hemisphere",
+    "query_type": "filter",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": [
+        "Venus Transit",
+        "Comet Flyby",
+        "Binary Star Eclipse"
+      ],
+      "invalid_values": [
+        "Lunar Eclipse",
+        "Meteor Shower",
+        "Jupiter Opposition",
+        "Mars Conjunction",
+        "Supermoon",
+        "Saturn Rings",
+        "Planetary Alignment"
+      ]
+    }
+  },
+  {
+    "question": "Identify events NOT occurring within fire element constellations",
+    "query_type": "semantic",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": [
+        "Venus Transit",
+        "Meteor Shower",
+        "Solar Eclipse",
+        "Comet Flyby",
+        "Mars Conjunction",
+        "Supermoon",
+        "Asteroid Pass",
+        "Saturn Rings",
+        "Binary Star Eclipse",
+        "Planetary Alignment"
+      ],
+      "invalid_values": [
+        "Lunar Eclipse",
+        "Jupiter Opposition"
+      ]
+    }
+  },
+  {
+    "question": "Arrange all events by ascending magnitude values",
+    "query_type": "sort_asc",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": [
+        "Supermoon",
+        "Lunar Eclipse",
+        "Solar Eclipse",
+        "Mars Conjunction",
+        "Venus Transit",
+        "Planetary Alignment",
+        "Comet Flyby",
+        "Meteor Shower",
+        "Saturn Rings",
+        "Jupiter Opposition",
+        "Binary Star Eclipse",
+        "Asteroid Pass"
+      ],
+      "invalid_values": []
+    }
+  },
+  {
+    "question": "What's the median magnitude across all celestial events?",
+    "query_type": "aggregation",
+    "expected": {
+      "answer_type": "number",
+      "valid_values": [
+        2.55,
+        "2.55",
+        "2.6"
+      ]
+    }
+  },
+  {
+    "question": "Which constellations host events with perfect visibility ratings?",
+    "query_type": "semantic",
+    "expected": {
+      "answer_type": "list_of_strings",
+      "valid_values": [
+        "Leo",
+        "Gemini",
+        "Ursa Major",
+        "Capricorn"
+      ],
+      "invalid_values": [
+        "Taurus",
+        "Perseus",
+        "Sagittarius",
+        "Virgo",
+        "Cancer",
+        "Orion",
+        "Cygnus",
+        "Aquarius"
+      ],
+      "bonus": {
+        "answer_type": "list_of_strings",
+        "valid_values": [
+          "Lunar Eclipse",
+          "Solar Eclipse",
+          "Comet Flyby",
+          "Saturn Rings"
+        ]
+      }
+    }
+  }
+]

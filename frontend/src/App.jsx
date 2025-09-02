@@ -1,0 +1,67 @@
+import React, { useState } from 'react';
+import FileUpload from './components/FileUpload';
+import ChatBox from './components/ChatBox';
+import DataTable from './components/DataTable';
+
+function App() {
+  const [fileData, setFileData] = useState(null);
+
+  const handleFileUploaded = (uploadedFileData) => {
+    setFileData(uploadedFileData);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center">
+            <h1 className="text-2xl font-bold text-gray-900">TaktMate</h1>
+            <span className="ml-2 text-sm text-gray-500">CSV Chat MVP</span>
+          </div>
+          <p className="mt-1 text-sm text-gray-600">
+            Upload a CSV file and chat with your data using AI
+          </p>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
+          {/* File Upload Section */}
+          <FileUpload onFileUploaded={handleFileUploaded} />
+          
+          {/* Data Table Section */}
+          {fileData && <DataTable fileData={fileData} />}
+          
+          {/* Chat Section */}
+          <ChatBox fileData={fileData} />
+          
+          {/* Info Section */}
+          {!fileData && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <h3 className="text-lg font-medium text-blue-900 mb-2">How it works</h3>
+              <ol className="list-decimal list-inside space-y-2 text-blue-800">
+                <li>Upload a CSV file (max 5MB)</li>
+                <li>The AI will analyze your data structure</li>
+                <li>Ask questions about your data in natural language</li>
+                <li>Get insights and answers based on your CSV content</li>
+              </ol>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="mt-16 bg-white border-t border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <p className="text-center text-sm text-gray-500">
+            TaktMate MVP - Powered by OpenAI GPT-4
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+export default App;
