@@ -5,7 +5,16 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "test:user-flows": "node scripts/test-user-flows.js",
+    "test:config": "node scripts/test-user-flows.js validate",
+    "generate:policies": "node scripts/generate-custom-policies.js",
+    "validate:app": "node scripts/validate-app-registration.js",
+    "test:jwt-claims": "node scripts/test-jwt-claims.js",
+    "test:e2e": "node scripts/test-e2e-flows.js",
+    "test:connectivity": "node scripts/test-e2e-flows.js connectivity",
+    "test:performance": "node scripts/test-e2e-flows.js performance",
+    "test:all": "npm run test:config && npm run test:jwt-claims && npm run test:e2e"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -13,7 +22,8 @@
     "csv-parser": "^3.0.0",
     "openai": "^4.20.1",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
