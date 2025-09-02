@@ -36,34 +36,35 @@ Transform the TaktMate CSV chat application from a localhost-only tool into a cl
 
 ### Authentication & User Management
 1. The system must provide a landing page with marketing content explaining TaktMate's capabilities and prominent signup/login options.
-2. The system must support three authentication methods with equal prominence: Google OAuth, Microsoft/Outlook OAuth, and email/password registration.
-3. The system must collect basic user information during signup: name, company, role, and email address.
-4. The system must implement standard password requirements: 8+ characters with mixed case, numbers, and special characters.
-5. The system must provide email verification for email/password registrations.
-6. The system must create and manage user profiles with basic view-only information (name, company, role, email).
-7. The system must implement session management with 7-day duration and "Remember me" functionality.
-8. The system must provide secure logout functionality that properly terminates sessions.
+2. The system must integrate with Azure AD B2C to provide three authentication methods with equal prominence: Google OAuth, Microsoft/Outlook OAuth, and email/password registration.
+3. The system must collect basic user information during signup via Azure AD B2C custom policies: name, company, role, and email address.
+4. The system must leverage Azure AD B2C's built-in password policies and security features for email/password registrations.
+5. The system must use Azure AD B2C's email verification system for email/password registrations.
+6. The system must create and manage user profiles with basic view-only information (name, company, role, email) sourced from Azure AD B2C claims.
+7. The system must implement session management using Azure AD B2C tokens with configurable duration and "Remember me" functionality.
+8. The system must provide secure logout functionality that properly terminates Azure AD B2C sessions.
 
 ### Hosting & Infrastructure
 9. The system must be deployed on Azure cloud services using Azure Static Web Apps for frontend and Azure App Service for backend.
-10. The system must use Azure SQL Database for user account and session management.
+10. The system must use Azure AD B2C for user authentication and profile management, eliminating the need for custom user database tables.
 11. The system must be configured to use the custom domain app.taktconnect.com for professional branding and user trust.
 12. The system must handle environment variables and API keys securely using Azure Key Vault or App Service configuration.
-13. The system must maintain all existing CSV upload functionality (5MB limit) within authenticated user sessions.
+13. The system must maintain all existing CSV upload functionality (5MB limit) within authenticated user sessions using in-memory storage.
 14. The system must preserve all existing AI chat capabilities using Azure OpenAI GPT-4.1 integration.
+15. The system must integrate Azure Application Insights for comprehensive monitoring, performance tracking, and error logging from launch.
 
 ### Data Management & Privacy
-15. The system must handle CSV files as session-only data (files deleted when user logs out or session expires).
-16. The system must keep all user data private with no sharing capabilities between users.
-17. The system must implement GDPR compliance including user data export and deletion capabilities.
-18. The system must provide secure data transmission (HTTPS) for all user interactions.
-19. The system must protect API endpoints and require authentication for access to CSV functionality.
+16. The system must handle CSV files as session-only data (files deleted when user logs out or session expires).
+17. The system must keep all user data private with no sharing capabilities between users.
+18. The system must leverage Azure AD B2C's built-in GDPR compliance features including user data export and deletion capabilities.
+19. The system must provide secure data transmission (HTTPS) for all user interactions.
+20. The system must protect API endpoints using Azure AD B2C token validation for access to CSV functionality.
 
 ### Performance & Usability
-20. The system must maintain performance matching the current localhost experience.
-21. The system must provide seamless transition from registration/login to CSV analysis functionality.
-22. The system must be responsive and accessible from desktop and mobile devices.
-23. The system must handle user sessions gracefully with appropriate error messages and recovery options.
+21. The system must maintain performance matching the current localhost experience.
+22. The system must provide seamless transition from Azure AD B2C authentication to CSV analysis functionality.
+23. The system must be responsive and accessible from desktop and mobile devices.
+24. The system must handle Azure AD B2C authentication flows gracefully with appropriate error messages and recovery options.
 
 ## Non-Goals (Out of Scope)
 
@@ -103,21 +104,23 @@ Transform the TaktMate CSV chat application from a localhost-only tool into a cl
 ### Azure Services Integration
 - **Frontend**: Deploy React application to Azure Static Web Apps
 - **Backend**: Host Node.js/Express API on Azure App Service
-- **Database**: Use Azure SQL Database for user management and session storage
-- **Authentication**: Integrate Azure AD B2C or implement custom OAuth integration
+- **Authentication**: Use Azure AD B2C for complete user authentication and profile management
+- **Monitoring**: Integrate Azure Application Insights for performance monitoring and error tracking
 - **Security**: Use Azure Key Vault for secure API key management
+- **Email**: Use SendGrid or external email provider for system notifications (if needed)
 
-### Database Schema
-- Users table: id, name, company, role, email, password_hash, created_at, updated_at
-- Sessions table: session_id, user_id, expires_at, created_at
-- OAuth integrations table for Google/Microsoft authentication tokens
+### Azure AD B2C Configuration
+- Custom user flows for sign-up and sign-in with Google, Microsoft, and email/password options
+- Custom policies to collect additional user attributes (company, role)
+- Token configuration for JWT claims including user profile information
+- Redirect URLs configured for app.taktconnect.com domain
 
 ### Security Implementation
 - HTTPS enforcement for all communications
-- Secure session token generation and validation
-- Password hashing using industry-standard algorithms (bcrypt)
+- Azure AD B2C token validation for API endpoint protection
 - CSRF protection for form submissions
 - Input validation and sanitization for all user data
+- Azure Application Insights for security monitoring and threat detection
 
 ### Migration Considerations
 - Preserve existing backend API structure for CSV processing
@@ -160,12 +163,13 @@ Transform the TaktMate CSV chat application from a localhost-only tool into a cl
 6. Do we need any admin interface for user management or system monitoring initially?
 
 ### Technical Implementation
-7. Should we use Azure AD B2C for authentication or implement custom OAuth integration?
+7. How should we configure Azure AD B2C custom policies to collect company and role information during sign-up?
 8. What's the preferred approach for handling Azure OpenAI API costs as usage scales with free unlimited access?
+9. Should we implement Azure Blob Storage migration path planning for future file persistence needs?
 
 ---
 
 **Target Audience**: Junior Developer  
 **Implementation Priority**: High  
-**Estimated Timeline**: 4-6 weeks for full implementation  
-**Dependencies**: Azure subscription, domain decision, Azure OpenAI API access
+**Estimated Timeline**: 2-3 weeks for full implementation (reduced due to Azure AD B2C eliminating custom auth development)  
+**Dependencies**: Azure subscription, Azure AD B2C tenant setup, domain decision, Azure OpenAI API access
