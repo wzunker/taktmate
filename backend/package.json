@@ -14,7 +14,13 @@
     "test:e2e": "node scripts/test-e2e-flows.js",
     "test:connectivity": "node scripts/test-e2e-flows.js connectivity",
     "test:performance": "node scripts/test-e2e-flows.js performance",
-    "test:all": "npm run test:config && npm run test:jwt-claims && npm run test:e2e"
+    "test:jwt-middleware": "node scripts/test-jwt-middleware.js",
+    "test:auth-routes": "node scripts/test-auth-routes.js",
+    "test:user-service": "node scripts/test-user-service.js",
+    "test:file-store": "node scripts/test-file-store.js",
+    "test:csv-endpoints": "node scripts/test-csv-endpoints.js",
+    "test:error-handling": "node scripts/test-error-handling.js",
+    "test:all": "npm run test:config && npm run test:jwt-claims && npm run test:jwt-middleware && npm run test:auth-routes && npm run test:user-service && npm run test:file-store && npm run test:csv-endpoints && npm run test:error-handling && npm run test:e2e"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -23,10 +29,17 @@
     "openai": "^4.20.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "jwks-client": "^3.0.1",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "express-validator": "^7.0.1",
+    "axios": "^1.6.2",
+    "applicationinsights": "^2.9.5"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "nodemon": "^3.0.2",
+    "supertest": "^6.3.3"
   },
   "keywords": ["csv", "chat", "gpt-5", "mvp"],
   "author": "TaktMate",

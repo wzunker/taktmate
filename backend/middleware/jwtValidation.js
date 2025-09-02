@@ -7,148 +7,213 @@
  */
 
 const jwt = require('jsonwebtoken');
-const https = require('https');
+const jwksClient = require('jwks-client');
 const { 
   config, 
   getJwksUri, 
   getIssuerUrl, 
-  extractUserProfile 
+  extractUserProfile,
+  isFeatureEnabled 
 } = require('../config/azureAdB2C');
+const { JWTErrorHandler, createAuthError, asyncHandler } = require('../utils/errorHandler');
 
-/**
- * JWKS key cache
- */
-let jwksCache = {
-  keys: null,
-  lastFetch: null,
-  ttl: 24 * 60 * 60 * 1000 // 24 hours
-};
-
-/**
- * Fetch JWKS keys from Azure AD B2C
- */
-async function fetchJwksKeys() {
-  return new Promise((resolve, reject) => {
-    const jwksUri = getJwksUri();
-    
-    https.get(jwksUri, (res) => {
-      let data = '';
-      res.on('data', (chunk) => data += chunk);
-      res.on('end', () => {
-        try {
-          const jwks = JSON.parse(data);
-          resolve(jwks.keys || []);
-        } catch (error) {
-          reject(new Error(`Failed to parse JWKS: ${error.message}`));
-        }
-      });
-    }).on('error', (error) => {
-      reject(new Error(`JWKS fetch failed: ${error.message}`));
-    });
-  });
+// Import Application Insights telemetry (optional)
+let telemetry = null;
+try {
+  const appInsights = require('../config/applicationInsights');
+  telemetry = appInsights.telemetry;
+} catch (error) {
+  // Application Insights not configured or available
+  if (config.debugAuth) {
+    console.log('ℹ️  Application Insights not available for JWT middleware telemetry');
+  }
 }
 
 /**
- * Get JWKS keys with caching
+ * JWKS Client Configuration with dynamic configuration
+ */
+const jwksClientInstance = jwksClient({
+  jwksUri: getJwksUri(),
+  requestHeaders: {
+    'User-Agent': 'TaktMate-JWT-Validator/1.0'
+  },
+  timeout: parseInt(process.env.REQUEST_TIMEOUT) || 30000,
+  cache: true,
+  cacheMaxEntries: 5,
+  cacheMaxAge: config.jwksCacheTtl,
+  jwksRequestsPerMinute: 10,
+  jwksRequestsPerMinuteRateLimitExceededError: new Error('Too many requests to JWKS endpoint'),
+  getKeysInterceptor: (keys) => {
+    if (config.debugJwt) {
+      console.log(`✅ JWKS keys retrieved: ${keys.length} keys`);
+    }
+    
+    // Track JWKS key retrieval in Application Insights
+    if (telemetry) {
+      telemetry.trackEvent('JWKSKeysRetrieved', {
+        keyCount: keys.length.toString(),
+        jwksUri: getJwksUri()
+      });
+    }
+    
+    return keys;
+  }
+});
+
+/**
+ * Get signing key for JWT verification using jwks-client with enhanced error handling
+ */
+async function getSigningKey(kid, context = {}) {
+  try {
+    const key = await jwksClientInstance.getSigningKey(kid);
+    return key.getPublicKey();
+  } catch (error) {
+    // Create specific error for JWKS key retrieval failure
+    const jwksError = createAuthError('JWKS_FETCH_ERROR', error, context);
+    throw jwksError;
+  }
+}
+
+/**
+ * Get JWKS keys (for compatibility with existing code)
  */
 async function getJwksKeys() {
-  const now = Date.now();
-  
-  // Check if cache is valid
-  if (jwksCache.keys && jwksCache.lastFetch && (now - jwksCache.lastFetch) < jwksCache.ttl) {
-    return jwksCache.keys;
-  }
-  
   try {
-    const keys = await fetchJwksKeys();
-    jwksCache.keys = keys;
-    jwksCache.lastFetch = now;
-    return keys;
+    const keys = await jwksClientInstance.getKeys();
+    return keys.map(key => key.rawKey || key);
   } catch (error) {
-    // If fetch fails and we have cached keys, use them
-    if (jwksCache.keys) {
-      console.warn('JWKS fetch failed, using cached keys:', error.message);
-      return jwksCache.keys;
-    }
-    throw error;
+    throw new Error(`Failed to get JWKS keys: ${error.message}`);
   }
 }
 
 /**
- * Convert JWK to PEM format for JWT verification
+ * Validate JWT token with comprehensive error handling and telemetry
  */
-function jwkToPem(jwk) {
-  // This is a simplified implementation
-  // In production, consider using a library like jwk-to-pem
-  if (jwk.kty === 'RSA' && jwk.n && jwk.e) {
-    // For now, we'll rely on the jsonwebtoken library's built-in JWK support
-    return jwk;
-  }
-  throw new Error('Unsupported JWK format');
-}
-
-/**
- * Get signing key for JWT verification
- */
-async function getSigningKey(kid) {
-  try {
-    const keys = await getJwksKeys();
-    const key = keys.find(k => k.kid === kid);
-    
-    if (!key) {
-      throw new Error(`Unable to find key with kid: ${kid}`);
-    }
-    
-    return jwkToPem(key);
-  } catch (error) {
-    throw new Error(`Failed to get signing key: ${error.message}`);
-  }
-}
-
-/**
- * Validate JWT token
- */
-async function validateJwtToken(token) {
+async function validateJwtToken(token, context = {}) {
+  const startTime = Date.now();
+  
   try {
     // Decode token header to get key ID
     const decoded = jwt.decode(token, { complete: true });
     if (!decoded || !decoded.header || !decoded.header.kid) {
-      throw new Error('Invalid token structure or missing key ID');
+      throw createAuthError('MALFORMED_TOKEN', 
+        new Error('Invalid token structure or missing key ID'), 
+        context);
     }
     
-    // Get signing key
-    const signingKey = await getSigningKey(decoded.header.kid);
+    // Debug logging
+    if (config.debugJwt) {
+      console.log('🔍 JWT Token validation started:', {
+        kid: decoded.header.kid,
+        algorithm: decoded.header.alg,
+        type: decoded.header.typ
+      });
+    }
     
-    // Verify token
+    // Get signing key with timing and context
+    const keyStartTime = Date.now();
+    const signingKey = await getSigningKey(decoded.header.kid, context);
+    const keyDuration = Date.now() - keyStartTime;
+    
+    if (config.debugJwt) {
+      console.log(`🔑 Signing key retrieved in ${keyDuration}ms`);
+    }
+    
+    // Verify token with dynamic configuration
     const verifyOptions = {
-      issuer: getIssuerUrl(),
-      audience: config.clientId,
       algorithms: ['RS256'],
-      clockTolerance: config.clockTolerance || 300
+      clockTolerance: config.clockTolerance
     };
     
-    if (!config.validateIssuer) {
-      delete verifyOptions.issuer;
+    // Add issuer validation if enabled
+    if (config.validateIssuer) {
+      verifyOptions.issuer = getIssuerUrl();
     }
     
-    if (!config.validateAudience) {
-      delete verifyOptions.audience;
+    // Add audience validation if enabled
+    if (config.validateAudience) {
+      verifyOptions.audience = config.clientId;
+    }
+    
+    // Add lifetime validation if enabled
+    if (config.validateLifetime) {
+      verifyOptions.ignoreExpiration = false;
+      verifyOptions.ignoreNotBefore = false;
+    } else {
+      verifyOptions.ignoreExpiration = true;
+      verifyOptions.ignoreNotBefore = true;
     }
     
     const payload = jwt.verify(token, signingKey, verifyOptions);
+    const duration = Date.now() - startTime;
+    
+    // Extract user profile
+    const userProfile = extractUserProfile(payload);
+    
+    // Debug logging for successful validation
+    if (config.debugJwt) {
+      console.log(`✅ JWT Token validated successfully in ${duration}ms:`, {
+        userId: userProfile.id,
+        email: userProfile.email,
+        issuer: payload.iss,
+        audience: payload.aud,
+        expiresAt: new Date(payload.exp * 1000).toISOString()
+      });
+    }
+    
+    // Track successful validation in Application Insights
+    if (telemetry) {
+      telemetry.trackEvent('JWTTokenValidated', {
+        success: 'true',
+        userId: userProfile.id,
+        email: userProfile.email,
+        identityProvider: userProfile.identityProvider,
+        ...context
+      }, {
+        validationDuration: duration,
+        keyRetrievalDuration: keyDuration
+      });
+    }
     
     return {
       valid: true,
       payload: payload,
-      userProfile: extractUserProfile(payload)
+      userProfile: userProfile,
+      validationDuration: duration
     };
     
   } catch (error) {
-    return {
-      valid: false,
-      error: error.message,
-      code: getErrorCode(error)
-    };
+    const duration = Date.now() - startTime;
+    
+    // Handle JWT errors with comprehensive error handler
+    const jwtError = JWTErrorHandler.handleJWTError(error, context);
+    
+    // Debug logging for validation errors
+    if (config.debugJwt) {
+      console.log(`❌ JWT Token validation failed in ${duration}ms:`, {
+        error: jwtError.message,
+        code: jwtError.errorCode,
+        type: jwtError.type,
+        originalError: error.message
+      });
+    }
+    
+    // Track validation failure in Application Insights
+    if (telemetry) {
+      telemetry.trackEvent('JWTTokenValidationFailed', {
+        success: 'false',
+        error: jwtError.message,
+        errorCode: jwtError.errorCode,
+        errorType: jwtError.type,
+        originalError: error.message,
+        ...context
+      }, {
+        validationDuration: duration
+      });
+    }
+    
+    // Throw the enhanced error for middleware to handle
+    throw jwtError;
   }
 }
 
@@ -197,60 +262,73 @@ function extractTokenFromRequest(req) {
 }
 
 /**
- * JWT Authentication Middleware
+ * JWT Authentication Middleware with comprehensive error handling
  */
 function jwtAuthMiddleware(options = {}) {
-  return async (req, res, next) => {
-    try {
-      // Extract token from request
-      const token = extractTokenFromRequest(req);
-      
-      if (!token) {
-        return res.status(401).json({
-          success: false,
-          error: 'No authentication token provided',
-          code: 'MISSING_TOKEN'
+  return asyncHandler(async (req, res, next) => {
+    const startTime = Date.now();
+    
+    // Extract token from request
+    const token = extractTokenFromRequest(req);
+    
+    if (!token) {
+      // Track missing token event
+      if (telemetry) {
+        telemetry.trackEvent('AuthenticationFailed', {
+          reason: 'missing_token',
+          endpoint: req.path,
+          method: req.method,
+          userAgent: req.headers['user-agent'],
+          ip: req.ip
         });
       }
       
-      // Validate token
-      const validation = await validateJwtToken(token);
-      
-      if (!validation.valid) {
-        return res.status(401).json({
-          success: false,
-          error: 'Invalid authentication token',
-          code: validation.code,
-          details: options.includeErrorDetails ? validation.error : undefined
-        });
-      }
-      
-      // Add user information to request
-      req.user = validation.userProfile;
-      req.token = validation.payload;
-      req.userId = validation.userProfile.id;
-      
-      // Log successful authentication (optional)
-      if (options.logAuthentication) {
-        console.log(`✅ User authenticated: ${validation.userProfile.email} (${validation.userProfile.id})`);
-      }
-      
-      next();
-      
-    } catch (error) {
-      console.error('JWT middleware error:', error);
-      
-      return res.status(500).json({
-        success: false,
-        error: 'Authentication service error',
-        code: 'AUTH_SERVICE_ERROR'
-      });
+      throw createAuthError('AUTHENTICATION_REQUIRED', null, req);
     }
-  };
+    
+    // Create context for validation
+    const context = {
+      requestId: req.id || req.headers['x-request-id'],
+      userId: req.user?.id,
+      userAgent: req.headers['user-agent'],
+      ip: req.ip || req.connection.remoteAddress,
+      endpoint: req.path,
+      method: req.method
+    };
+    
+    // Validate token with context - this will throw TaktMateError on failure
+    const validation = await validateJwtToken(token, context);
+    
+    // Add user information to request
+    req.user = validation.userProfile;
+    req.token = validation.payload;
+    req.userId = validation.userProfile.id;
+    req.authDuration = validation.validationDuration;
+    
+    // Track successful authentication
+    const duration = Date.now() - startTime;
+    
+    if (telemetry) {
+      telemetry.trackAuthentication(
+        validation.userProfile.id,
+        validation.userProfile.email,
+        validation.userProfile.identityProvider,
+        true,
+        duration
+      );
+    }
+    
+    // Log successful authentication (optional)
+    if (options.logAuthentication || config.debugAuth) {
+      console.log(`✅ User authenticated: ${validation.userProfile.email} (${validation.userProfile.id}) in ${duration}ms`);
+    }
+    
+    next();
+  });
 }
 
 /**
- * Optional JWT Authentication Middleware
+ * Optional JWT Authentication Middleware with enhanced error handling
  * Validates token if present, but doesn't require it
  */
 function optionalJwtAuthMiddleware(options = {}) {
@@ -266,23 +344,47 @@ function optionalJwtAuthMiddleware(options = {}) {
         return next();
       }
       
-      // Validate token
-      const validation = await validateJwtToken(token);
+      // Create context for validation
+      const context = {
+        requestId: req.id || req.headers['x-request-id'],
+        userAgent: req.headers['user-agent'],
+        ip: req.ip || req.connection.remoteAddress,
+        endpoint: req.path,
+        method: req.method,
+        optional: true
+      };
       
-      if (validation.valid) {
+      try {
+        // Validate token - this will throw TaktMateError on failure
+        const validation = await validateJwtToken(token, context);
+        
         // Valid token, add user information
         req.user = validation.userProfile;
         req.token = validation.payload;
         req.userId = validation.userProfile.id;
+        req.authDuration = validation.validationDuration;
         
-        if (options.logAuthentication) {
-          console.log(`✅ User authenticated: ${validation.userProfile.email} (${validation.userProfile.id})`);
+        if (options.logAuthentication || config.debugAuth) {
+          console.log(`✅ Optional auth - User authenticated: ${validation.userProfile.email} (${validation.userProfile.id})`);
         }
-      } else {
-        // Invalid token, log but continue
-        if (options.logInvalidTokens) {
-          console.warn(`❌ Invalid token: ${validation.error}`);
+        
+      } catch (jwtError) {
+        // Invalid token, log but continue without authentication
+        if (options.logInvalidTokens || config.debugAuth) {
+          console.warn(`❌ Optional auth - Invalid token: ${jwtError.userMessage}`);
         }
+        
+        // Track optional authentication failure
+        if (telemetry) {
+          telemetry.trackEvent('OptionalAuthenticationFailed', {
+            reason: jwtError.errorCode,
+            endpoint: req.path,
+            method: req.method,
+            userAgent: req.headers['user-agent'],
+            ip: req.ip
+          });
+        }
+        
         req.user = null;
         req.token = null;
         req.userId = null;
@@ -291,9 +393,18 @@ function optionalJwtAuthMiddleware(options = {}) {
       next();
       
     } catch (error) {
-      console.error('Optional JWT middleware error:', error);
+      // Unexpected error in optional middleware - log but continue
+      console.error('Optional JWT middleware unexpected error:', error);
       
-      // For optional auth, continue even on errors
+      if (telemetry) {
+        telemetry.trackError(error, null, {
+          component: 'optionalJwtAuthMiddleware',
+          endpoint: req.path,
+          method: req.method
+        });
+      }
+      
+      // For optional auth, continue even on unexpected errors
       req.user = null;
       req.token = null;
       req.userId = null;
@@ -303,26 +414,24 @@ function optionalJwtAuthMiddleware(options = {}) {
 }
 
 /**
- * Email Verification Required Middleware
+ * Email Verification Required Middleware with enhanced error handling
  * Requires user to have verified email
  */
 function requireEmailVerification() {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        error: 'Authentication required',
-        code: 'AUTHENTICATION_REQUIRED'
-      });
+      const error = createAuthError('AUTHENTICATION_REQUIRED', null, req);
+      return next(error);
     }
     
     if (!req.user.emailVerified) {
-      return res.status(403).json({
-        success: false,
-        error: 'Email verification required',
-        code: 'EMAIL_VERIFICATION_REQUIRED',
-        hint: 'Please verify your email address to access this feature'
-      });
+      const error = createAuthError('INSUFFICIENT_PERMISSIONS', 
+        new Error('Email verification required'), 
+        req);
+      error.userMessage = 'Email verification required to access this feature';
+      error.guidance = 'Please verify your email address to continue';
+      error.action = 'verify_email';
+      return next(error);
     }
     
     next();
@@ -330,30 +439,32 @@ function requireEmailVerification() {
 }
 
 /**
- * Role-based Authorization Middleware
+ * Role-based Authorization Middleware with enhanced error handling
  * Requires user to have specific role
  */
 function requireRole(allowedRoles) {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        error: 'Authentication required',
-        code: 'AUTHENTICATION_REQUIRED'
-      });
+      const error = createAuthError('AUTHENTICATION_REQUIRED', null, req);
+      return next(error);
     }
     
     const userRole = req.user.role;
     const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
     
     if (!userRole || !roles.includes(userRole)) {
-      return res.status(403).json({
-        success: false,
-        error: 'Insufficient permissions',
-        code: 'INSUFFICIENT_PERMISSIONS',
-        required: roles,
-        current: userRole
-      });
+      const error = createAuthError('INSUFFICIENT_PERMISSIONS', 
+        new Error(`Role '${userRole}' not in allowed roles: ${roles.join(', ')}`), 
+        req);
+      error.userMessage = 'You do not have the required permissions for this action';
+      error.guidance = `This feature requires one of the following roles: ${roles.join(', ')}. Your current role is: ${userRole || 'none'}`;
+      error.action = 'contact_support';
+      
+      // Add role information to error context
+      error.context.additionalContext.requiredRoles = roles;
+      error.context.additionalContext.userRole = userRole;
+      
+      return next(error);
     }
     
     next();
@@ -361,30 +472,32 @@ function requireRole(allowedRoles) {
 }
 
 /**
- * Company-based Authorization Middleware
+ * Company-based Authorization Middleware with enhanced error handling
  * Requires user to belong to specific company
  */
 function requireCompany(allowedCompanies) {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        error: 'Authentication required',
-        code: 'AUTHENTICATION_REQUIRED'
-      });
+      const error = createAuthError('AUTHENTICATION_REQUIRED', null, req);
+      return next(error);
     }
     
     const userCompany = req.user.company;
     const companies = Array.isArray(allowedCompanies) ? allowedCompanies : [allowedCompanies];
     
     if (!userCompany || !companies.includes(userCompany)) {
-      return res.status(403).json({
-        success: false,
-        error: 'Company access restricted',
-        code: 'COMPANY_ACCESS_RESTRICTED',
-        required: companies,
-        current: userCompany
-      });
+      const error = createAuthError('INSUFFICIENT_PERMISSIONS', 
+        new Error(`Company '${userCompany}' not in allowed companies: ${companies.join(', ')}`), 
+        req);
+      error.userMessage = 'Access restricted to specific companies';
+      error.guidance = `This feature is only available to users from: ${companies.join(', ')}. Your company is: ${userCompany || 'none'}`;
+      error.action = 'contact_support';
+      
+      // Add company information to error context
+      error.context.additionalContext.requiredCompanies = companies;
+      error.context.additionalContext.userCompany = userCompany;
+      
+      return next(error);
     }
     
     next();
@@ -395,20 +508,25 @@ function requireCompany(allowedCompanies) {
  * Clear JWKS cache (for testing or key rotation)
  */
 function clearJwksCache() {
-  jwksCache.keys = null;
-  jwksCache.lastFetch = null;
+  if (jwksClientInstance && typeof jwksClientInstance.clearCache === 'function') {
+    jwksClientInstance.clearCache();
+  }
 }
 
 /**
  * Get cache statistics
  */
 function getJwksCacheStats() {
+  // jwks-client doesn't expose cache stats directly
+  // Return basic information about the client configuration
   return {
-    hasKeys: !!jwksCache.keys,
-    keyCount: jwksCache.keys ? jwksCache.keys.length : 0,
-    lastFetch: jwksCache.lastFetch,
-    age: jwksCache.lastFetch ? Date.now() - jwksCache.lastFetch : null,
-    ttl: jwksCache.ttl
+    hasKeys: true, // Assume keys are available if client is configured
+    keyCount: 'unknown', // jwks-client doesn't expose this
+    lastFetch: 'managed by jwks-client',
+    age: 'managed by jwks-client',
+    ttl: 24 * 60 * 60 * 1000, // 24 hours as configured
+    cacheMaxEntries: 5,
+    requestsPerMinute: 10
   };
 }
 
