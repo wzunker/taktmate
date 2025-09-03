@@ -16,6 +16,17 @@ const {
   optionalJwtAuthMiddleware 
 } = require('./middleware/jwtValidation');
 const securityMiddleware = require('./middleware/security');
+const { 
+  InputValidationService, 
+  ValidationRules, 
+  SecurityMiddleware 
+} = require('./middleware/inputValidation');
+const { RateLimitSecurityService } = require('./middleware/rateLimitSecurity');
+const { CSRFProtectionService } = require('./middleware/csrfProtection');
+const { SessionManagementService } = require('./middleware/sessionManagement');
+const { ErrorLoggingService } = require('./middleware/errorLogging');
+const { TokenManagementService } = require('./middleware/tokenManagement');
+const cookieParser = require('cookie-parser');
 
 // Import error handling
 const { createErrorHandler, asyncHandler } = require('./utils/errorHandler');
@@ -65,14 +76,95 @@ if (appInsights && appInsights.createExpressMiddleware) {
 // Enhanced CORS configuration with dynamic environment-specific settings
 const corsConfig = require('./config/cors');
 
-// Log CORS configuration for debugging
-corsConfig.logCorsConfiguration();
+// For production, use enhanced security CORS configuration
+if (process.env.NODE_ENV === 'production') {
+  const { getProductionCORSMiddleware } = require('./config/corsProduction');
+  
+  try {
+    // Apply production CORS middleware stack (includes security middleware)
+    const corsMiddlewareStack = getProductionCORSMiddleware(appInsights);
+    corsMiddlewareStack.forEach(middleware => app.use(middleware));
+    
+    console.log('✅ Production CORS configuration applied with enhanced security');
+  } catch (error) {
+    console.error('❌ Failed to initialize production CORS:', error.message);
+    console.log('📋 Falling back to standard CORS configuration');
+    
+    // Fallback to standard CORS configuration
+    corsConfig.logCorsConfiguration();
+    app.use(cors(corsConfig.createCorsMiddlewareOptions()));
+  }
+} else {
+  // Use standard CORS configuration for non-production environments
+  corsConfig.logCorsConfiguration();
+  app.use(cors(corsConfig.createCorsMiddlewareOptions()));
+}
 
-// Apply CORS middleware with environment-specific configuration
-app.use(cors(corsConfig.createCorsMiddlewareOptions()));
+// Initialize Input Validation Service
+const inputValidator = new InputValidationService(appInsights);
+
+// Initialize Rate Limiting and Security Service
+const rateLimitSecurity = new RateLimitSecurityService(appInsights);
+
+// Initialize CSRF Protection Service
+const csrfProtection = new CSRFProtectionService(appInsights);
+
+// Initialize Session Management Service (requires fileStore to be available)
+let sessionManagement = null;
+
+// Initialize Enhanced Error Logging Service
+const errorLogging = new ErrorLoggingService(appInsights);
+
+// Initialize Token Management Service
+const tokenManagement = new TokenManagementService(appInsights);
+
+// Apply security headers (must be early in middleware stack)
+app.use(...rateLimitSecurity.createSecurityHeaders());
+
+// Apply abuse detection (before other rate limiting)
+app.use(rateLimitSecurity.createAbuseDetection());
+
+// Apply general rate limiting
+app.use(rateLimitSecurity.createRateLimiter('general'));
+
+// Apply general slow down
+app.use(rateLimitSecurity.createSlowDown('general'));
+
+// Apply input validation security middleware
+app.use(SecurityMiddleware.preventParameterPollution);
+app.use(SecurityMiddleware.validateContentType(['application/json', 'multipart/form-data', 'text/plain']));
+app.use(SecurityMiddleware.validateRequestSize(10 * 1024 * 1024)); // 10MB limit
+
+// Add cookie parser (required for CSRF protection)
+app.use(cookieParser());
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Initialize error logging system
+errorLogging.initialize().catch(error => {
+  console.error('❌ Failed to initialize error logging:', error.message);
+});
+
+// Apply HTTP request/response logging middleware (early in stack)
+app.use(errorLogging.createHTTPLoggingMiddleware());
+
+// Initialize Session Management Service (now that fileStore is available)
+sessionManagement = new SessionManagementService(fileStore, appInsights);
+
+// Apply session tracking middleware
+app.use(sessionManagement.createSessionMiddleware());
+
+// Apply token management middleware
+app.use(tokenManagement.createTokenMiddleware());
+
+// Apply automatic token refresh middleware (if enabled)
+if (azureConfig.config.enableAutomaticTokenRefresh) {
+  app.use(tokenManagement.createAutoRefreshMiddleware());
+}
+
+// Apply CSRF token generation (for form-based requests)
+app.use(csrfProtection.generateTokenMiddleware());
 
 // Configure multer for file uploads (memory storage)
 const upload = multer({
@@ -143,6 +235,408 @@ app.get('/test', optionalJwtAuthMiddleware(), (req, res) => {
   res.json(testResponse);
 });
 
+// CSRF token endpoint for client-side applications
+app.get('/csrf-token', 
+  rateLimitSecurity.createRateLimiter('public'),
+  (req, res) => {
+    try {
+      const tokenData = csrfProtection.createTokenForResponse(req, res);
+      
+      res.json({
+        success: true,
+        csrf: tokenData,
+        message: 'CSRF token generated successfully',
+    timestamp: new Date().toISOString()
+  });
+    } catch (error) {
+      console.error('❌ CSRF token generation failed:', error.message);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to generate CSRF token',
+        message: 'Unable to create CSRF protection token',
+        code: 'CSRF_TOKEN_GENERATION_FAILED'
+      });
+    }
+  }
+);
+
+// CSRF protection status endpoint
+app.get('/health/csrf', 
+  rateLimitSecurity.createRateLimiter('public'),
+  (req, res) => {
+    const csrfStatus = {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      csrf_protection: csrfProtection.getCSRFStatus()
+    };
+
+    res.json(csrfStatus);
+  }
+);
+
+// Session management status endpoint
+app.get('/health/sessions', 
+  rateLimitSecurity.createRateLimiter('public'),
+  (req, res) => {
+    const sessionStatus = {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      session_management: sessionManagement ? sessionManagement.getStatistics() : { error: 'Not initialized' }
+    };
+
+    res.json(sessionStatus);
+  }
+);
+
+// Error logging and monitoring status endpoint
+app.get('/health/error-logging', 
+  rateLimitSecurity.createRateLimiter('public'),
+  (req, res) => {
+    const errorStatus = {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      error_logging: errorLogging.getErrorStatistics()
+    };
+
+    res.json(errorStatus);
+  }
+);
+
+// Token management status endpoint
+app.get('/health/token-management', 
+  rateLimitSecurity.createRateLimiter('public'),
+  (req, res) => {
+    const tokenStatus = {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      token_management: tokenManagement.getStatistics()
+    };
+
+    res.json(tokenStatus);
+  }
+);
+
+// User session information endpoint (authenticated)
+app.get('/api/session', 
+  jwtAuthMiddleware(),
+  (req, res) => {
+    try {
+      if (!req.sessionData) {
+        return res.status(404).json({
+          success: false,
+          error: 'No active session found',
+          message: 'User session not found or expired',
+          code: 'SESSION_NOT_FOUND'
+        });
+      }
+
+      res.json({
+        success: true,
+        session: {
+          sessionId: req.sessionData.sessionId,
+          userId: req.sessionData.userId,
+          createdAt: new Date(req.sessionData.createdAt).toISOString(),
+          lastActivity: new Date(req.sessionData.lastActivity).toISOString(),
+          expiresAt: new Date(req.sessionData.expiresAt).toISOString(),
+          activityCount: req.sessionData.activityCount,
+          timeRemaining: Math.max(0, req.sessionData.timeRemaining),
+          extendedSession: req.sessionData.extendedSession
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('❌ Session info error:', error.message);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve session information',
+        code: 'SESSION_INFO_ERROR'
+      });
+    }
+  }
+);
+
+// Terminate current session endpoint (authenticated)
+app.post('/api/session/terminate', 
+  jwtAuthMiddleware(),
+  (req, res) => {
+    try {
+      if (!req.sessionId) {
+        return res.status(404).json({
+          success: false,
+          error: 'No active session to terminate',
+          code: 'NO_SESSION'
+        });
+      }
+
+      const result = sessionManagement.terminateSession(req.sessionId, 'user_logout');
+      
+      if (result.success) {
+        res.json({
+          success: true,
+          message: 'Session terminated successfully',
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          error: 'Failed to terminate session',
+          message: result.reason,
+          code: 'TERMINATION_FAILED'
+        });
+      }
+    } catch (error) {
+      console.error('❌ Session termination error:', error.message);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to terminate session',
+        code: 'TERMINATION_ERROR'
+      });
+    }
+  }
+);
+
+// Terminate all user sessions endpoint (authenticated)
+app.post('/api/session/terminate-all', 
+  jwtAuthMiddleware(),
+  (req, res) => {
+    try {
+      const excludeCurrent = req.body.excludeCurrent !== false; // Default to true
+      const excludeSessionId = excludeCurrent ? req.sessionId : null;
+      
+      const result = sessionManagement.terminateUserSessions(
+        req.user.id, 
+        'user_logout_all', 
+        excludeSessionId
+      );
+      
+      res.json({
+        success: true,
+        message: 'User sessions terminated successfully',
+        terminatedCount: result.terminatedCount,
+        excludedCurrent: excludeCurrent,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('❌ Session termination error:', error.message);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to terminate user sessions',
+        code: 'BULK_TERMINATION_ERROR'
+      });
+    }
+  }
+);
+
+// Token refresh endpoint (authenticated)
+app.post('/api/token/refresh', 
+  jwtAuthMiddleware(),
+  inputValidator.createValidationMiddleware({
+    body: ValidationRules.tokenRefresh()
+  }),
+  async (req, res) => {
+    try {
+      const { refreshToken } = req.body;
+      
+      if (!refreshToken) {
+        return res.status(400).json({
+          success: false,
+          error: 'Refresh token is required',
+          code: 'MISSING_REFRESH_TOKEN'
+        });
+      }
+      
+      // Refresh the token
+      const newTokenSet = await tokenManagement.refreshToken(refreshToken, {
+        scope: req.body.scope || azureConfig.config.scope
+      });
+      
+      res.json({
+        success: true,
+        tokens: {
+          accessToken: newTokenSet.accessToken,
+          idToken: newTokenSet.idToken,
+          refreshToken: newTokenSet.refreshToken,
+          tokenType: newTokenSet.tokenType,
+          expiresIn: newTokenSet.expiresIn,
+          expiresAt: new Date(newTokenSet.expiresAt).toISOString(),
+          scope: newTokenSet.scope
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('❌ Token refresh error:', error.message);
+      res.status(400).json({
+        success: false,
+        error: 'Token refresh failed',
+        message: error.message,
+        code: 'TOKEN_REFRESH_FAILED'
+      });
+    }
+  }
+);
+
+// Token validation endpoint (authenticated)
+app.post('/api/token/validate', 
+  jwtAuthMiddleware(),
+  inputValidator.createValidationMiddleware({
+    body: ValidationRules.tokenValidation()
+  }),
+  async (req, res) => {
+    try {
+      const { token, tokenType } = req.body;
+      
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          error: 'Token is required',
+          code: 'MISSING_TOKEN'
+        });
+      }
+      
+      // Validate the token
+      const validationResult = await tokenManagement.validateToken(token, {
+        expectedTokenType: tokenType
+      });
+      
+      res.json({
+        success: true,
+        validation: {
+          valid: validationResult.valid,
+          tokenType: validationResult.tokenType,
+          expiresAt: new Date(validationResult.expiresAt).toISOString(),
+          issuedAt: new Date(validationResult.issuedAt).toISOString(),
+          validatedAt: new Date(validationResult.validatedAt).toISOString(),
+          validationDuration: validationResult.validationDuration,
+          user: validationResult.user
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('❌ Token validation error:', error.message);
+      res.status(400).json({
+        success: false,
+        error: 'Token validation failed',
+        message: error.message,
+        code: 'TOKEN_VALIDATION_FAILED'
+      });
+    }
+  }
+);
+
+// Token expiration info endpoint (authenticated)
+app.get('/api/token/expiration', 
+  jwtAuthMiddleware(),
+  (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          error: 'Authorization token is required',
+          code: 'MISSING_AUTHORIZATION_TOKEN'
+        });
+      }
+      
+      const expirationInfo = tokenManagement.getTokenExpirationInfo(token);
+      
+      if (!expirationInfo) {
+        return res.status(400).json({
+          success: false,
+          error: 'Unable to parse token expiration information',
+          code: 'INVALID_TOKEN_FORMAT'
+        });
+      }
+      
+      res.json({
+        success: true,
+        expiration: expirationInfo,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('❌ Token expiration info error:', error.message);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve token expiration information',
+        code: 'EXPIRATION_INFO_ERROR'
+      });
+    }
+  }
+);
+
+// Rate limiting and security status endpoint
+app.get('/health/security', 
+  rateLimitSecurity.createRateLimiter('public'),
+  (req, res) => {
+    const securityStatus = {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      rate_limiting: rateLimitSecurity.getRateLimitStatus(),
+      security_headers: {
+        csp_enabled: true,
+        hsts_enabled: process.env.NODE_ENV === 'production',
+        helmet_enabled: true,
+        custom_headers: true
+      },
+      abuse_protection: {
+        enabled: true,
+        patterns_monitored: ['rapid_fire', 'auth_failures', 'large_payloads'],
+        cleanup_active: true
+      }
+    };
+
+    res.json(securityStatus);
+  }
+);
+
+// CORS health check endpoint
+app.get('/health/cors', (req, res) => {
+  const corsConfig = require('./config/cors');
+  
+  let corsStatus = {
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    cors_configuration: {
+      type: 'standard',
+      origins_configured: true
+    }
+  };
+  
+  // If production, get enhanced CORS status
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      const { createProductionCORS } = require('./config/corsProduction');
+      const productionConfig = createProductionCORS(appInsights);
+      
+      corsStatus.cors_configuration = {
+        type: 'production_enhanced',
+        ...productionConfig.getConfigSummary(),
+        security_metrics: productionConfig.getSecurityMetrics()
+      };
+    } catch (error) {
+      corsStatus.cors_configuration.error = error.message;
+      corsStatus.status = 'degraded';
+    }
+  } else {
+    // Standard CORS configuration status
+    try {
+      const validation = corsConfig.validateAllEnvironments();
+      corsStatus.cors_configuration.environments = validation;
+    } catch (error) {
+      corsStatus.cors_configuration.error = error.message;
+      corsStatus.status = 'degraded';
+    }
+  }
+  
+  res.json(corsStatus);
+});
+
 // API status endpoint
 app.get('/api/status', optionalJwtAuthMiddleware(), (req, res) => {
   const stats = fileStore.getStats();
@@ -179,8 +673,14 @@ app.get('/api/status', optionalJwtAuthMiddleware(), (req, res) => {
   res.json(statusResponse);
 });
 
-// Enhanced CSV upload endpoint with authentication
-app.post('/upload', jwtAuthMiddleware(), upload.single('csvFile'), async (req, res) => {
+// Enhanced CSV upload endpoint with authentication, rate limiting, CSRF protection, and validation
+app.post('/upload', 
+  rateLimitSecurity.createRateLimiter('upload'),
+  rateLimitSecurity.createSlowDown('upload'),
+  csrfProtection.createCSRFProtection(), // Add CSRF protection for form submissions
+  jwtAuthMiddleware(), 
+  upload.single('csvFile'), 
+  async (req, res) => {
   const startTime = Date.now();
   
   try {
@@ -196,7 +696,28 @@ app.post('/upload', jwtAuthMiddleware(), upload.single('csvFile'), async (req, r
       });
     }
 
-    const filename = req.file.originalname;
+    // Validate file upload using input validation service
+    const fileValidation = inputValidator.validateFileUpload(req.file);
+    if (!fileValidation.isValid) {
+      // Track validation failure
+      inputValidator.trackValidationEvent('file_upload', fileValidation, {
+        filename: req.file.originalname,
+        fileSize: req.file.size,
+        mimeType: req.file.mimetype,
+        userId: req.user.id
+      });
+
+      return res.status(400).json({ 
+        success: false,
+        error: 'File validation failed',
+        message: 'The uploaded file does not meet security requirements',
+        details: fileValidation.errors,
+        warnings: fileValidation.warnings,
+        code: 'FILE_VALIDATION_ERROR'
+      });
+    }
+
+    const filename = fileValidation.sanitizedFilename || inputValidator.sanitizeFilename(req.file.originalname);
     const buffer = req.file.buffer;
     
     if (azureConfig.debugAuth) {
@@ -216,22 +737,50 @@ app.post('/upload', jwtAuthMiddleware(), upload.single('csvFile'), async (req, r
       });
     }
 
+    // Validate and sanitize CSV content
+    const csvContent = buffer.toString('utf-8');
+    const contentValidation = inputValidator.validateCsvContent(csvContent, filename);
+    
+    if (!contentValidation.isValid) {
+      // Track content validation failure
+      inputValidator.trackValidationEvent('csv_content', contentValidation, {
+        filename: filename,
+        contentSize: csvContent.length,
+        userId: req.user.id
+      });
+
+      return res.status(400).json({ 
+        success: false,
+        error: 'CSV content validation failed',
+        message: 'The CSV file content contains invalid or potentially malicious data',
+        details: contentValidation.errors,
+        warnings: contentValidation.warnings,
+        code: 'CSV_CONTENT_VALIDATION_ERROR'
+      });
+    }
+
+    // Use sanitized content for parsing
+    const sanitizedContent = contentValidation.sanitizedContent;
+    const sanitizedBuffer = Buffer.from(sanitizedContent, 'utf-8');
+
     // Parse CSV with error handling and performance tracking
     let rows;
     try {
       if (appInsights?.performanceMonitoring) {
         rows = await appInsights.performanceMonitoring.trackOperation(
           'CSV_Parsing',
-          async () => await parseCsv(buffer),
+          async () => await parseCsv(sanitizedBuffer),
           {
             userId: req.user.id,
             filename: filename,
-            fileSize: buffer.length,
-            operation: 'csv_parsing'
+            fileSize: sanitizedBuffer.length,
+            originalSize: buffer.length,
+            operation: 'csv_parsing',
+            contentSanitized: contentValidation.originalSize !== contentValidation.sanitizedSize
           }
         );
       } else {
-        rows = await parseCsv(buffer);
+        rows = await parseCsv(sanitizedBuffer);
       }
     } catch (parseError) {
       // Track parsing error
@@ -445,23 +994,44 @@ app.post('/upload', jwtAuthMiddleware(), upload.single('csvFile'), async (req, r
   }
 });
 
-// Enhanced chat endpoint with authentication
-app.post('/chat', jwtAuthMiddleware(), async (req, res) => {
+// Enhanced chat endpoint with authentication, rate limiting, and input validation
+app.post('/chat', 
+  rateLimitSecurity.createRateLimiter('chat'),
+  rateLimitSecurity.createSlowDown('chat'),
+  jwtAuthMiddleware(), 
+  ...inputValidator.createValidationMiddleware(ValidationRules.chatMessage),
+  async (req, res) => {
   const startTime = Date.now();
   
   try {
     // Debug flag - set DEBUG_PROMPTS=true in environment to enable
     const DEBUG_PROMPTS = process.env.DEBUG_PROMPTS === 'true';
     
-    const { fileId, message } = req.body;
+    // Use validated and sanitized data from middleware
+    const { fileId, message } = req.validatedData;
 
-    if (!fileId || !message) {
+    // Additional message validation and sanitization
+    const messageValidation = inputValidator.validateChatMessage(message);
+    if (!messageValidation.isValid) {
+      // Track message validation failure
+      inputValidator.trackValidationEvent('chat_message', messageValidation, {
+        messageLength: message ? message.length : 0,
+        userId: req.user.id,
+        fileId: fileId
+      });
+
       return res.status(400).json({ 
         success: false,
-        error: 'fileId and message are required',
-        code: 'MISSING_PARAMETERS'
+        error: 'Message validation failed',
+        message: 'Your message contains invalid or potentially harmful content',
+        details: messageValidation.errors,
+        warnings: messageValidation.warnings,
+        code: 'MESSAGE_VALIDATION_ERROR'
       });
     }
+
+    // Use sanitized message for processing
+    const sanitizedMessage = messageValidation.sanitizedMessage;
 
     if (azureConfig.debugAuth) {
       console.log(`💬 Chat request from user: ${req.user.email} for file: ${fileId}`);
@@ -521,10 +1091,10 @@ ${csvString}`;
       'HTTP',
       async () => {
         return await openai.chat.completions.create({
-          model: 'gpt-4.1', // This matches your Azure deployment name
+      model: 'gpt-4.1', // This matches your Azure deployment name
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: message }
+            { role: 'user', content: sanitizedMessage }
           ],
           max_tokens: 500,
           temperature: 0.1
@@ -1079,6 +1649,67 @@ app.get('/api/files/stats/user', jwtAuthMiddleware(), (req, res) => {
 // Comprehensive error handling middleware
 app.use(createErrorHandler());
 
+// Set up periodic cleanup for rate limiting service
+setInterval(() => {
+  try {
+    rateLimitSecurity.cleanup();
+  } catch (error) {
+    console.error('❌ Rate limiting cleanup error:', error.message);
+  }
+}, 5 * 60 * 1000); // Cleanup every 5 minutes
+
+// Set up periodic cleanup for CSRF tokens
+setInterval(() => {
+  try {
+    csrfProtection.cleanup();
+  } catch (error) {
+    console.error('❌ CSRF token cleanup error:', error.message);
+  }
+}, 10 * 60 * 1000); // Cleanup every 10 minutes
+
+// Set up periodic cleanup for sessions and user files
+setInterval(() => {
+  try {
+    if (sessionManagement) {
+      sessionManagement.performPeriodicCleanup();
+    }
+  } catch (error) {
+    console.error('❌ Session cleanup error:', error.message);
+  }
+}, 30 * 60 * 1000); // Cleanup every 30 minutes
+
+// Enhanced error handler with comprehensive error tracking and logging
+app.use(async (error, req, res, next) => {
+  try {
+    // Log error with comprehensive context using new error logging service
+    await errorLogging.logError(error, {
+      component: 'express_error_handler',
+      endpoint: req.path,
+      method: req.method,
+      important: true
+    }, req);
+    
+    // Create error handler with Application Insights integration and enhanced logging
+    const errorHandler = createErrorHandler(errorLogging);
+    
+    // Log additional context for debugging
+    if (appInsights) {
+      console.log('🔍 Error occurred, tracking with Application Insights and comprehensive logging...');
+    }
+    
+    // Call the original error handler
+    errorHandler(error, req, res, next);
+    
+  } catch (loggingError) {
+    // Fallback if error logging fails
+    console.error('❌ Error logging failed:', loggingError.message);
+    
+    // Still call original error handler
+    const errorHandler = createErrorHandler(errorLogging);
+    errorHandler(error, req, res, next);
+  }
+});
+
 app.listen(PORT, () => {
   console.log('\n🚀 TaktMate Backend v2.0 - Azure AD B2C Enabled');
   console.log('=' .repeat(60));
@@ -1091,6 +1722,13 @@ app.listen(PORT, () => {
   console.log('\n🔧 Configuration:');
   console.log(`   Azure AD B2C: ${azureConfig.tenantName ? '✅ Configured' : '❌ Not configured'}`);
   console.log(`   Application Insights: ${telemetryClient ? '✅ Initialized' : '⚠️  Not configured'}`);
+  console.log(`   Rate Limiting: ✅ Enabled (5 endpoint types)`);
+  console.log(`   Security Headers: ✅ Enabled (CSP, HSTS, Helmet)`);
+  console.log(`   Abuse Detection: ✅ Enabled (IP blocking, pattern detection)`);
+  console.log(`   CSRF Protection: ✅ Enabled (double submit cookie, token encryption)`);
+  console.log(`   Session Management: ✅ Enabled (24h timeout, file cleanup, activity tracking)`);
+  console.log(`   Error Logging: ✅ Enabled (structured logging, categorization, alerting)`);
+  console.log(`   Token Management: ✅ Enabled (refresh, validation, session timeout, fingerprinting)`);
   console.log(`   Security Middleware: ✅ Enabled`);
   console.log(`   File Store: ✅ Enhanced with user association`);
   console.log(`   User Service: ✅ Available`);

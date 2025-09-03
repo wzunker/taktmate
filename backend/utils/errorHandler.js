@@ -440,10 +440,10 @@ class ErrorTracker {
 }
 
 /**
- * Main error handler middleware
+ * Main error handler middleware with enhanced logging integration
  */
-function createErrorHandler() {
-  return (error, req, res, next) => {
+function createErrorHandler(errorLoggingService = null) {
+  return async (error, req, res, next) => {
     let taktMateError;
 
     // If it's already a TaktMateError, use it as is
@@ -527,6 +527,22 @@ function createErrorHandler() {
             errorCategory: 'taktmate_error'
           });
           break;
+      }
+    }
+
+    // Enhanced logging with comprehensive error logging service
+    if (errorLoggingService) {
+      try {
+        await errorLoggingService.logError(taktMateError, {
+          component: 'error_handler',
+          endpoint: req.path,
+          method: req.method,
+          statusCode: taktMateError.statusCode,
+          errorType: taktMateError.type,
+          important: taktMateError.statusCode >= 500
+        }, req);
+      } catch (loggingError) {
+        console.error('❌ Enhanced error logging failed:', loggingError.message);
       }
     }
 

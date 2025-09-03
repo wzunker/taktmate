@@ -59,6 +59,22 @@ const azureAdB2CConfig = {
   jwksCacheTtl: parseInt(process.env.JWKS_CACHE_TTL) || 24 * 60 * 60 * 1000, // 24 hours
   jwtCacheTtl: parseInt(process.env.JWT_CACHE_TTL) || 60 * 60 * 1000, // 1 hour
   
+  // Session and Token Lifecycle Configuration
+  sessionTimeout: parseInt(process.env.SESSION_TIMEOUT) || 8 * 60 * 60 * 1000, // 8 hours
+  inactivityTimeout: parseInt(process.env.INACTIVITY_TIMEOUT) || 30 * 60 * 1000, // 30 minutes
+  extendedSessionTimeout: parseInt(process.env.EXTENDED_SESSION_TIMEOUT) || 30 * 24 * 60 * 60 * 1000, // 30 days
+  
+  // Token Refresh Configuration
+  tokenRefreshThreshold: parseInt(process.env.TOKEN_REFRESH_THRESHOLD) || 5 * 60 * 1000, // 5 minutes before expiry
+  enableAutomaticTokenRefresh: process.env.ENABLE_AUTOMATIC_TOKEN_REFRESH !== 'false',
+  enableTokenRotation: process.env.ENABLE_TOKEN_ROTATION !== 'false',
+  refreshTokenLifetime: parseInt(process.env.REFRESH_TOKEN_LIFETIME) || 7 * 24 * 60 * 60 * 1000, // 7 days
+  
+  // Advanced Session Security
+  enableSessionFingerprinting: process.env.ENABLE_SESSION_FINGERPRINTING !== 'false',
+  enableSecureTokenStorage: process.env.ENABLE_SECURE_TOKEN_STORAGE !== 'false',
+  sessionSecurityLevel: process.env.SESSION_SECURITY_LEVEL || 'standard', // standard, high, maximum
+  
   // Security Configuration
   enableRateLimit: process.env.ENABLE_RATE_LIMIT !== 'false',
   enableSecurityHeaders: process.env.ENABLE_HELMET !== 'false',
@@ -365,6 +381,79 @@ function generateLogoutUrl() {
 }
 
 /**
+ * Generate token refresh URL for Azure AD B2C
+ * 
+ * @returns {string} The token refresh URL
+ */
+function generateTokenRefreshUrl() {
+  const { domain, tenantName, signUpSignInPolicy } = azureAdB2CConfig;
+  return `https://${domain}/${tenantName}.onmicrosoft.com/${signUpSignInPolicy}/oauth2/v2.0/token`;
+}
+
+/**
+ * Get session timeout configuration based on security level
+ * 
+ * @param {string} securityLevel - Security level (standard, high, maximum)
+ * @returns {Object} Session timeout configuration
+ */
+function getSessionTimeoutConfig(securityLevel = null) {
+  const level = securityLevel || azureAdB2CConfig.sessionSecurityLevel;
+  
+  const configs = {
+    standard: {
+      sessionTimeout: 8 * 60 * 60 * 1000, // 8 hours
+      inactivityTimeout: 30 * 60 * 1000, // 30 minutes
+      extendedSessionTimeout: 30 * 24 * 60 * 60 * 1000, // 30 days
+      tokenRefreshThreshold: 5 * 60 * 1000 // 5 minutes
+    },
+    high: {
+      sessionTimeout: 4 * 60 * 60 * 1000, // 4 hours
+      inactivityTimeout: 15 * 60 * 1000, // 15 minutes
+      extendedSessionTimeout: 7 * 24 * 60 * 60 * 1000, // 7 days
+      tokenRefreshThreshold: 10 * 60 * 1000 // 10 minutes
+    },
+    maximum: {
+      sessionTimeout: 2 * 60 * 60 * 1000, // 2 hours
+      inactivityTimeout: 5 * 60 * 1000, // 5 minutes
+      extendedSessionTimeout: 24 * 60 * 60 * 1000, // 24 hours
+      tokenRefreshThreshold: 15 * 60 * 1000 // 15 minutes
+    }
+  };
+  
+  return configs[level] || configs.standard;
+}
+
+/**
+ * Check if token refresh is needed based on expiration
+ * 
+ * @param {number} expiresAt - Token expiration timestamp
+ * @param {number} threshold - Refresh threshold in milliseconds
+ * @returns {boolean} Whether token needs refresh
+ */
+function needsTokenRefresh(expiresAt, threshold = null) {
+  const refreshThreshold = threshold || azureAdB2CConfig.tokenRefreshThreshold;
+  const now = Date.now();
+  return (expiresAt - now) <= refreshThreshold;
+}
+
+/**
+ * Get token lifetime configuration
+ * 
+ * @returns {Object} Token lifetime configuration
+ */
+function getTokenLifetimeConfig() {
+  return {
+    accessTokenLifetime: 60 * 60 * 1000, // 1 hour (Azure AD B2C default)
+    idTokenLifetime: 60 * 60 * 1000, // 1 hour (Azure AD B2C default)
+    refreshTokenLifetime: azureAdB2CConfig.refreshTokenLifetime,
+    sessionTimeout: azureAdB2CConfig.sessionTimeout,
+    inactivityTimeout: azureAdB2CConfig.inactivityTimeout,
+    extendedSessionTimeout: azureAdB2CConfig.extendedSessionTimeout,
+    tokenRefreshThreshold: azureAdB2CConfig.tokenRefreshThreshold
+  };
+}
+
+/**
  * Get configuration object for passport-azure-ad strategy
  * 
  * @returns {Object} Passport strategy configuration
@@ -435,6 +524,22 @@ function getConfigurationStatus() {
       enableSecurityHeaders: azureAdB2CConfig.enableSecurityHeaders,
       enableCors: azureAdB2CConfig.enableCors
     },
+    
+    session: {
+      sessionTimeout: azureAdB2CConfig.sessionTimeout / 1000 / 60 / 60 + ' hours',
+      inactivityTimeout: azureAdB2CConfig.inactivityTimeout / 1000 / 60 + ' minutes',
+      extendedSessionTimeout: azureAdB2CConfig.extendedSessionTimeout / 1000 / 60 / 60 / 24 + ' days',
+      sessionSecurityLevel: azureAdB2CConfig.sessionSecurityLevel,
+      enableSessionFingerprinting: azureAdB2CConfig.enableSessionFingerprinting,
+      enableSecureTokenStorage: azureAdB2CConfig.enableSecureTokenStorage
+    },
+    
+    tokenManagement: {
+      tokenRefreshThreshold: azureAdB2CConfig.tokenRefreshThreshold / 1000 / 60 + ' minutes',
+      enableAutomaticTokenRefresh: azureAdB2CConfig.enableAutomaticTokenRefresh,
+      enableTokenRotation: azureAdB2CConfig.enableTokenRotation,
+      refreshTokenLifetime: azureAdB2CConfig.refreshTokenLifetime / 1000 / 60 / 60 / 24 + ' days'
+    },
     debug: {
       jwt: azureAdB2CConfig.debugJwt,
       auth: azureAdB2CConfig.debugAuth,
@@ -497,6 +602,14 @@ function isFeatureEnabled(feature) {
       return azureAdB2CConfig.enableCors;
     case 'debug':
       return azureAdB2CConfig.debugAuth || azureAdB2CConfig.debugJwt || azureAdB2CConfig.debugSecurity;
+    case 'automaticTokenRefresh':
+      return azureAdB2CConfig.enableAutomaticTokenRefresh;
+    case 'tokenRotation':
+      return azureAdB2CConfig.enableTokenRotation;
+    case 'sessionFingerprinting':
+      return azureAdB2CConfig.enableSessionFingerprinting;
+    case 'secureTokenStorage':
+      return azureAdB2CConfig.enableSecureTokenStorage;
     default:
       return false;
   }
@@ -522,6 +635,15 @@ function logConfigurationSummary() {
   console.log(`Rate Limiting: ${isFeatureEnabled('rateLimit') ? 'Enabled' : 'Disabled'}`);
   console.log(`Security Headers: ${isFeatureEnabled('securityHeaders') ? 'Enabled' : 'Disabled'}`);
   console.log(`CORS: ${isFeatureEnabled('cors') ? 'Enabled' : 'Disabled'}`);
+  
+  console.log('\n🕐 Session & Token Management:');
+  console.log(`Session Security Level: ${azureAdB2CConfig.sessionSecurityLevel}`);
+  console.log(`Session Timeout: ${azureAdB2CConfig.sessionTimeout / 1000 / 60 / 60} hours`);
+  console.log(`Inactivity Timeout: ${azureAdB2CConfig.inactivityTimeout / 1000 / 60} minutes`);
+  console.log(`Automatic Token Refresh: ${isFeatureEnabled('automaticTokenRefresh') ? 'Enabled' : 'Disabled'}`);
+  console.log(`Token Rotation: ${isFeatureEnabled('tokenRotation') ? 'Enabled' : 'Disabled'}`);
+  console.log(`Session Fingerprinting: ${isFeatureEnabled('sessionFingerprinting') ? 'Enabled' : 'Disabled'}`);
+  console.log(`Secure Token Storage: ${isFeatureEnabled('secureTokenStorage') ? 'Enabled' : 'Disabled'}`);
   console.log('=====================================\n');
 }
 
@@ -565,6 +687,7 @@ module.exports = {
   generatePasswordResetUrl,
   generateProfileEditUrl,
   generateLogoutUrl,
+  generateTokenRefreshUrl,
   
   // User profile and token utilities
   extractUserProfile,
@@ -575,6 +698,11 @@ module.exports = {
   getPolicyName,
   isFeatureEnabled,
   logConfigurationSummary,
+  
+  // Session and Token Management utilities
+  getSessionTimeoutConfig,
+  needsTokenRefresh,
+  getTokenLifetimeConfig,
   
   // Integration utilities
   getPassportConfig
