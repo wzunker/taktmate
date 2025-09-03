@@ -1,0 +1,90 @@
+# TaktMate Frontend Environment Configuration
+# Copy this file to frontend/.env.local and update with your actual values
+
+# =============================================================================
+# AZURE AD B2C CONFIGURATION
+# =============================================================================
+
+# Azure AD B2C Client ID (Application ID from Azure Portal)
+REACT_APP_AZURE_AD_B2C_CLIENT_ID=your-client-id-here
+
+# Azure AD B2C Tenant Name
+REACT_APP_AZURE_AD_B2C_TENANT_NAME=your-tenant-name
+
+# Azure AD B2C Authority URL (Sign-up/Sign-in policy)
+REACT_APP_AZURE_AD_B2C_AUTHORITY=https://your-tenant.b2clogin.com/your-tenant.onmicrosoft.com/B2C_1_signupsignin
+
+# Azure AD B2C Known Authority (Domain)
+REACT_APP_AZURE_AD_B2C_KNOWN_AUTHORITY=your-tenant.b2clogin.com
+
+# Azure AD B2C Scope for API access
+REACT_APP_AZURE_AD_B2C_SCOPE=https://your-tenant.onmicrosoft.com/taktmate-api/access_as_user
+
+# =============================================================================
+# AZURE AD B2C POLICY CONFIGURATION
+# =============================================================================
+
+# Sign-up/Sign-in Policy Name
+REACT_APP_AZURE_AD_B2C_SIGNUP_SIGNIN_POLICY=B2C_1_signupsignin
+
+# Profile Editing Policy Name
+REACT_APP_AZURE_AD_B2C_EDIT_PROFILE_POLICY=B2C_1_profileediting
+
+# Password Reset Policy Name
+REACT_APP_AZURE_AD_B2C_RESET_PASSWORD_POLICY=B2C_1_passwordreset
+
+# =============================================================================
+# APPLICATION CONFIGURATION
+# =============================================================================
+
+# API Base URL (Backend server)
+REACT_APP_API_BASE_URL=http://localhost:3001
+
+# Redirect URIs
+REACT_APP_REDIRECT_URI=http://localhost:3000
+REACT_APP_POST_LOGOUT_REDIRECT_URI=http://localhost:3000
+
+# =============================================================================
+# DEVELOPMENT CONFIGURATION
+# =============================================================================
+
+# Enable development mode logging
+REACT_APP_DEBUG_MODE=true
+
+# Enable detailed error reporting
+REACT_APP_DETAILED_ERRORS=true
+
+# =============================================================================
+# PRODUCTION CONFIGURATION EXAMPLE
+# =============================================================================
+
+# For production deployment, update these values:
+# REACT_APP_API_BASE_URL=https://your-api-domain.com
+# REACT_APP_REDIRECT_URI=https://your-frontend-domain.com
+# REACT_APP_POST_LOGOUT_REDIRECT_URI=https://your-frontend-domain.com
+# REACT_APP_DEBUG_MODE=false
+# REACT_APP_DETAILED_ERRORS=false
+
+# =============================================================================
+# SECURITY NOTES
+# =============================================================================
+
+# 1. Never commit actual credentials to version control
+# 2. Use different configurations for development, staging, and production
+# 3. Ensure redirect URIs are registered in Azure AD B2C
+# 4. Validate all environment variables in your application
+# 5. Use HTTPS in production environments
+
+# =============================================================================
+# AZURE AD B2C SETUP CHECKLIST
+# =============================================================================
+
+# Before using these configurations, ensure you have:
+# □ Created an Azure AD B2C tenant
+# □ Registered an application in Azure AD B2C
+# □ Configured redirect URIs in the application registration
+# □ Created user flows for sign-up/sign-in, profile editing, and password reset
+# □ configured API permissions and scopes
+# □ Set up custom attributes if needed
+# □ Configured branding and customization
+# □ Tested the authentication flows
