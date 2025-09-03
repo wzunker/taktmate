@@ -62,28 +62,14 @@ if (appInsights && appInsights.createExpressMiddleware) {
   app.use(appInsights.createExpressMiddleware());
 }
 
-// Enhanced CORS configuration
-const corsOrigins = [
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'https://app.taktconnect.com',
-  process.env.FRONTEND_URL
-].filter(Boolean);
+// Enhanced CORS configuration with dynamic environment-specific settings
+const corsConfig = require('./config/cors');
 
-app.use(cors({
-  origin: corsOrigins,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
-  allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'X-Requested-With',
-    'Accept',
-    'Origin',
-    'User-Agent'
-  ],
-  exposedHeaders: ['X-Total-Count', 'X-File-Count']
-}));
+// Log CORS configuration for debugging
+corsConfig.logCorsConfiguration();
+
+// Apply CORS middleware with environment-specific configuration
+app.use(cors(corsConfig.createCorsMiddlewareOptions()));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
