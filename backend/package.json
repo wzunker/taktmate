@@ -38,6 +38,13 @@
     "test:session-management": "node scripts/test-session-management.js",
     "test:error-logging": "node scripts/test-error-logging.js",
     "test:token-management": "node scripts/test-token-management.js",
+    "test:gdpr-compliance": "node scripts/test-gdpr-compliance.js",
+    "test:azure-b2c-api": "node scripts/test-azure-b2c-api.js",
+    "test:account-deletion": "node scripts/test-account-deletion.js",
+    "test:legal-documents": "node scripts/test-legal-documents.js",
+    "test:cookie-consent": "node scripts/test-cookie-consent.js",
+    "test:data-retention": "node scripts/test-data-retention.js",
+    "test:audit-logging": "node scripts/test-audit-logging.js",
     "test:all": "npm run test:config && npm run test:jwt-claims && npm run test:jwt-middleware && npm run test:auth-routes && npm run test:user-service && npm run test:file-store && npm run test:csv-endpoints && npm run test:error-handling && npm run test:app-insights && npm run test:sdk-integration && npm run test:csv-telemetry && npm run test:performance-monitoring && npm run test:error-tracking && npm run test:dashboards && npm run test:alerts && npm run test:key-vault && npm run test:key-vault-integration && npm run test:e2e"
   },
   "dependencies": {
@@ -60,7 +67,8 @@
     "axios": "^1.6.2",
     "applicationinsights": "^2.9.5",
     "@azure/keyvault-secrets": "^4.7.0",
-    "@azure/identity": "^4.0.1"
+    "@azure/identity": "^4.0.1",
+    "@azure/msal-node": "^2.6.6"
   },
   "devDependencies": {
     "nodemon": "^3.0.2",
