@@ -1,0 +1,415 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# TaktMate Production Business Metrics Dashboard\n\nComprehensive business intelligence and user behavior analysis for TaktMate production environment. This workbook tracks key business metrics, user journeys, conversion rates, and operational KPIs."
+      },
+      "name": "title"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "timeRange",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "type": 4,
+            "isRequired": true,
+            "value": {
+              "durationMs": 86400000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 2592000000
+                }
+              ],
+              "allowCustom": true
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components"
+      },
+      "name": "parameters"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let timeGrain = case(\n    {TimeRange:end} - {TimeRange:start} <= 1d, 1h,\n    {TimeRange:end} - {TimeRange:start} <= 7d, 6h,\n    1d\n);\ncustomEvents\n| where timestamp {TimeRange}\n| where name in ('CSV_FILE_UPLOADED', 'USER_REGISTRATION', 'USER_LOGIN', 'CHAT_INTERACTION', 'CSV_ANALYSIS_COMPLETED', 'EXPORT_GENERATED')\n| extend BusinessValue = case(\n    name == 'USER_REGISTRATION', 150,\n    name == 'CSV_FILE_UPLOADED', 100,\n    name == 'CSV_ANALYSIS_COMPLETED', 90,\n    name == 'EXPORT_GENERATED', 80,\n    name == 'CHAT_INTERACTION', 75,\n    name == 'USER_LOGIN', 50,\n    25\n)\n| summarize \n    EventCount = count(),\n    TotalBusinessValue = sum(BusinessValue),\n    UniqueUsers = dcount(tostring(customDimensions.userId))\n    by bin(timestamp, timeGrain), name\n| order by timestamp desc",
+        "size": 0,
+        "title": "Business Events Timeline",
+        "timeContext": {
+          "durationMs": 0
+        },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "areachart",
+        "chartSettings": {
+          "xAxis": "timestamp",
+          "yAxis": [
+            "EventCount",
+            "TotalBusinessValue"
+          ],
+          "group": "name",
+          "createOtherGroup": false,
+          "showLegend": true,
+          "showDataPoints": false
+        }
+      },
+      "name": "businessEventsTimeline"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents\n| where timestamp {TimeRange}\n| where name startswith 'USER_JOURNEY_'\n| extend JourneyName = extract(@'USER_JOURNEY_([^_]+)', 1, name)\n| extend Step = tostring(customDimensions.step)\n| extend Success = tobool(customDimensions.success)\n| extend ConversionScore = todouble(customMeasurements.conversionScore)\n| summarize \n    TotalSteps = count(),\n    SuccessfulSteps = countif(Success),\n    AverageConversionScore = avg(ConversionScore),\n    UniqueUsers = dcount(tostring(customDimensions.userId))\n    by JourneyName, Step\n| extend ConversionRate = (SuccessfulSteps * 100.0) / TotalSteps\n| order by JourneyName, AverageConversionScore desc",
+        "size": 0,
+        "title": "User Journey Conversion Funnel",
+        "timeContext": {
+          "durationMs": 0
+        },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "ConversionRate",
+              "formatter": 4,
+              "formatOptions": {
+                "palette": "greenRed",
+                "min": 0,
+                "max": 100
+              },
+              "numberFormat": {
+                "unit": 1,
+                "options": {
+                  "style": "decimal",
+                  "maximumFractionDigits": 1
+                }
+              }
+            },
+            {
+              "columnMatch": "AverageConversionScore",
+              "formatter": 4,
+              "formatOptions": {
+                "palette": "blue",
+                "min": 0,
+                "max": 100
+              },
+              "numberFormat": {
+                "unit": 0,
+                "options": {
+                  "style": "decimal",
+                  "maximumFractionDigits": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      "name": "userJourneyFunnel"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents\n| where timestamp {TimeRange}\n| where name == 'CSV_FILE_UPLOADED'\n| extend FileSize = todouble(customMeasurements.fileSizeBytes)\n| extend ProcessingTime = todouble(customMeasurements.processingTimeMs)\n| extend RowCount = todouble(customMeasurements.rowCount)\n| extend SizeCategory = case(\n    FileSize < 10240, 'Small (<10KB)',\n    FileSize < 102400, 'Medium (10KB-100KB)',\n    FileSize < 1048576, 'Large (100KB-1MB)',\n    'Extra Large (>1MB)'\n)\n| summarize \n    FileCount = count(),\n    AverageFileSize = avg(FileSize),\n    AverageProcessingTime = avg(ProcessingTime),\n    AverageRowCount = avg(RowCount),\n    TotalDataProcessed = sum(FileSize)\n    by bin(timestamp, 1h), SizeCategory\n| order by timestamp desc",
+        "size": 0,
+        "title": "CSV Processing Analytics",
+        "timeContext": {
+          "durationMs": 0
+        },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "barchart",
+        "chartSettings": {
+          "xAxis": "timestamp",
+          "yAxis": [
+            "FileCount",
+            "AverageProcessingTime"
+          ],
+          "group": "SizeCategory",
+          "createOtherGroup": false,
+          "showLegend": true
+        }
+      },
+      "name": "csvProcessingAnalytics"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents\n| where timestamp {TimeRange}\n| where name == 'CHAT_INTERACTION'\n| extend ResponseTime = todouble(customMeasurements.responseTime)\n| extend TokensUsed = todouble(customMeasurements.tokensUsed)\n| extend InteractionType = tostring(customDimensions.interactionType)\n| extend Success = tobool(customDimensions.success)\n| summarize \n    TotalInteractions = count(),\n    SuccessfulInteractions = countif(Success),\n    AverageResponseTime = avg(ResponseTime),\n    TotalTokensUsed = sum(TokensUsed),\n    UniqueUsers = dcount(tostring(customDimensions.userId))\n    by bin(timestamp, 1h), InteractionType\n| extend SuccessRate = (SuccessfulInteractions * 100.0) / TotalInteractions\n| order by timestamp desc",
+        "size": 0,
+        "title": "AI Chat Performance Metrics",
+        "timeContext": {
+          "durationMs": 0
+        },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "linechart",
+        "chartSettings": {
+          "xAxis": "timestamp",
+          "yAxis": [
+            "TotalInteractions",
+            "AverageResponseTime",
+            "SuccessRate"
+          ],
+          "group": "InteractionType",
+          "createOtherGroup": false,
+          "showLegend": true,
+          "showDataPoints": true
+        }
+      },
+      "name": "aiChatPerformance"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "dependencies\n| where timestamp {TimeRange}\n| where target contains 'openai.com'\n| extend TokensUsed = todouble(customMeasurements.tokensUsed)\n| extend Cost = todouble(customMeasurements.estimatedCost)\n| summarize \n    APIRequests = count(),\n    SuccessfulRequests = countif(success),\n    AverageResponseTime = avg(duration),\n    P95ResponseTime = percentile(duration, 95),\n    TotalTokensUsed = sum(TokensUsed),\n    EstimatedTotalCost = sum(Cost)\n    by bin(timestamp, 1h)\n| extend \n    SuccessRate = (SuccessfulRequests * 100.0) / APIRequests,\n    CostPerRequest = EstimatedTotalCost / APIRequests\n| order by timestamp desc",
+        "size": 0,
+        "title": "OpenAI API Usage & Cost Analysis",
+        "timeContext": {
+          "durationMs": 0
+        },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "EstimatedTotalCost",
+              "formatter": 0,
+              "numberFormat": {
+                "unit": 0,
+                "options": {
+                  "style": "currency",
+                  "currency": "USD",
+                  "maximumFractionDigits": 4
+                }
+              }
+            },
+            {
+              "columnMatch": "CostPerRequest",
+              "formatter": 0,
+              "numberFormat": {
+                "unit": 0,
+                "options": {
+                  "style": "currency",
+                  "currency": "USD",
+                  "maximumFractionDigits": 6
+                }
+              }
+            },
+            {
+              "columnMatch": "SuccessRate",
+              "formatter": 4,
+              "formatOptions": {
+                "palette": "greenRed",
+                "min": 0,
+                "max": 100
+              },
+              "numberFormat": {
+                "unit": 1,
+                "options": {
+                  "style": "decimal",
+                  "maximumFractionDigits": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      "name": "openaiCostAnalysis"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let errorEvents = exceptions\n| where timestamp {TimeRange}\n| extend ErrorCategory = case(\n    type contains 'Auth', 'Authentication',\n    type contains 'Validation', 'Validation',\n    type contains 'Network', 'Network',\n    type contains 'External', 'External Service',\n    'Application'\n)\n| extend Severity = case(\n    severityLevel >= 3, 'Critical',\n    severityLevel >= 2, 'Error',\n    severityLevel >= 1, 'Warning',\n    'Info'\n)\n| summarize ErrorCount = count() by bin(timestamp, 1h), ErrorCategory, Severity;\nlet totalRequests = requests\n| where timestamp {TimeRange}\n| summarize RequestCount = count() by bin(timestamp, 1h);\nerrorEvents\n| join kind=leftouter totalRequests on timestamp\n| extend ErrorRate = (ErrorCount * 100.0) / RequestCount\n| project timestamp, ErrorCategory, Severity, ErrorCount, ErrorRate\n| order by timestamp desc",
+        "size": 0,
+        "title": "Error Analysis & Impact",
+        "timeContext": {
+          "durationMs": 0
+        },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "categoricalbar",
+        "chartSettings": {
+          "xAxis": "ErrorCategory",
+          "yAxis": [
+            "ErrorCount"
+          ],
+          "group": "Severity",
+          "createOtherGroup": false,
+          "showLegend": true
+        }
+      },
+      "name": "errorAnalysis"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "customEvents\n| where timestamp {TimeRange}\n| where name startswith 'SECURITY_'\n| extend EventType = extract(@'SECURITY_([^_]+)', 1, name)\n| extend RiskLevel = tostring(customDimensions.riskLevel)\n| extend RiskScore = todouble(customMeasurements.riskScore)\n| summarize \n    SecurityEvents = count(),\n    AverageRiskScore = avg(RiskScore),\n    MaxRiskScore = max(RiskScore),\n    UniqueIPs = dcount(tostring(customDimensions.clientIP)),\n    UniqueUsers = dcount(tostring(customDimensions.userId))\n    by bin(timestamp, 1h), EventType, RiskLevel\n| order by timestamp desc, AverageRiskScore desc",
+        "size": 0,
+        "title": "Security Events & Risk Assessment",
+        "timeContext": {
+          "durationMs": 0
+        },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "RiskLevel",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "colors",
+                "thresholdsGrid": [
+                  {
+                    "operator": "==",
+                    "thresholdValue": "critical",
+                    "representation": "redBright",
+                    "text": "🔴 Critical"
+                  },
+                  {
+                    "operator": "==",
+                    "thresholdValue": "high",
+                    "representation": "orange",
+                    "text": "🟠 High"
+                  },
+                  {
+                    "operator": "==",
+                    "thresholdValue": "medium",
+                    "representation": "yellow",
+                    "text": "🟡 Medium"
+                  },
+                  {
+                    "operator": "==",
+                    "thresholdValue": "low",
+                    "representation": "green",
+                    "text": "🟢 Low"
+                  }
+                ]
+              }
+            },
+            {
+              "columnMatch": "AverageRiskScore",
+              "formatter": 4,
+              "formatOptions": {
+                "palette": "redGreen",
+                "min": 0,
+                "max": 100
+              }
+            }
+          ]
+        }
+      },
+      "name": "securityEvents"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let businessKPIs = customEvents\n| where timestamp {TimeRange}\n| where name in ('CSV_FILE_UPLOADED', 'USER_REGISTRATION', 'CHAT_INTERACTION', 'EXPORT_GENERATED')\n| extend BusinessValue = case(\n    name == 'USER_REGISTRATION', 150,\n    name == 'CSV_FILE_UPLOADED', 100,\n    name == 'EXPORT_GENERATED', 80,\n    name == 'CHAT_INTERACTION', 75,\n    25\n)\n| summarize \n    TotalEvents = count(),\n    TotalBusinessValue = sum(BusinessValue),\n    UniqueUsers = dcount(tostring(customDimensions.userId))\n    by name;\nlet performanceKPIs = requests\n| where timestamp {TimeRange}\n| summarize \n    TotalRequests = count(),\n    AverageResponseTime = avg(duration),\n    P95ResponseTime = percentile(duration, 95),\n    SuccessRate = (countif(success) * 100.0) / count();\nlet costKPIs = dependencies\n| where timestamp {TimeRange}\n| where target contains 'openai.com'\n| summarize \n    EstimatedCost = sum(todouble(customMeasurements.estimatedCost)),\n    TokensUsed = sum(todouble(customMeasurements.tokensUsed));\nbusinessKPIs\n| extend KPIType = 'Business'\n| project KPIType, Metric = name, Value = TotalEvents, SecondaryValue = TotalBusinessValue\n| union (\n    performanceKPIs\n    | extend KPIType = 'Performance'\n    | project KPIType, Metric = 'Total Requests', Value = TotalRequests, SecondaryValue = AverageResponseTime\n    | union (\n        performanceKPIs\n        | extend KPIType = 'Performance'\n        | project KPIType, Metric = 'Success Rate (%)', Value = SuccessRate, SecondaryValue = P95ResponseTime\n    )\n)\n| union (\n    costKPIs\n    | extend KPIType = 'Cost'\n    | project KPIType, Metric = 'OpenAI Cost ($)', Value = EstimatedCost, SecondaryValue = TokensUsed\n)\n| order by KPIType, Metric",
+        "size": 0,
+        "title": "Production KPI Summary",
+        "timeContext": {
+          "durationMs": 0
+        },
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "KPIType",
+              "formatter": 18,
+              "formatOptions": {
+                "thresholdsOptions": "colors",
+                "thresholdsGrid": [
+                  {
+                    "operator": "==",
+                    "thresholdValue": "Business",
+                    "representation": "blue",
+                    "text": "📊 Business"
+                  },
+                  {
+                    "operator": "==",
+                    "thresholdValue": "Performance",
+                    "representation": "green",
+                    "text": "⚡ Performance"
+                  },
+                  {
+                    "operator": "==",
+                    "thresholdValue": "Cost",
+                    "representation": "orange",
+                    "text": "💰 Cost"
+                  }
+                ]
+              }
+            },
+            {
+              "columnMatch": "Value",
+              "formatter": 0,
+              "numberFormat": {
+                "unit": 0,
+                "options": {
+                  "style": "decimal",
+                  "maximumFractionDigits": 2
+                }
+              }
+            }
+          ]
+        }
+      },
+      "name": "kpiSummary"
+    }
+  ],
+  "isLocked": false,
+  "fallbackResourceIds": [
+    "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/microsoft.insights/components/{app-insights-name}"
+  ],
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

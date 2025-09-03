@@ -1,0 +1,471 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Creates an Azure App Service for TaktMate backend API with production-ready configuration, Application Insights, and auto-scaling"
+  },
+  "parameters": {
+    "appServiceName": {
+      "type": "string",
+      "defaultValue": "taktmate-api",
+      "metadata": {
+        "description": "Name of the App Service"
+      }
+    },
+    "appServicePlanName": {
+      "type": "string",
+      "defaultValue": "taktmate-api-plan",
+      "metadata": {
+        "description": "Name of the App Service Plan"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    },
+    "environment": {
+      "type": "string",
+      "defaultValue": "Production",
+      "allowedValues": [
+        "Development",
+        "Staging",
+        "Production"
+      ],
+      "metadata": {
+        "description": "Environment type"
+      }
+    },
+    "skuName": {
+      "type": "string",
+      "defaultValue": "P1v3",
+      "allowedValues": [
+        "F1",
+        "D1",
+        "B1",
+        "B2",
+        "B3",
+        "S1",
+        "S2",
+        "S3",
+        "P1v2",
+        "P2v2",
+        "P3v2",
+        "P1v3",
+        "P2v3",
+        "P3v3"
+      ],
+      "metadata": {
+        "description": "SKU for the App Service Plan"
+      }
+    },
+    "skuCapacity": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 1,
+      "maxValue": 20,
+      "metadata": {
+        "description": "Number of instances for the App Service Plan"
+      }
+    },
+    "nodeVersion": {
+      "type": "string",
+      "defaultValue": "18-lts",
+      "allowedValues": [
+        "16-lts",
+        "18-lts",
+        "20-lts"
+      ],
+      "metadata": {
+        "description": "Node.js version"
+      }
+    },
+    "applicationInsightsName": {
+      "type": "string",
+      "defaultValue": "taktmate-insights",
+      "metadata": {
+        "description": "Name of the Application Insights resource"
+      }
+    },
+    "logAnalyticsWorkspaceName": {
+      "type": "string",
+      "defaultValue": "taktmate-logs",
+      "metadata": {
+        "description": "Name of the Log Analytics workspace"
+      }
+    },
+    "enableAutoScale": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable auto-scaling for the App Service"
+      }
+    },
+    "repositoryUrl": {
+      "type": "string",
+      "defaultValue": "https://github.com/your-org/taktmate",
+      "metadata": {
+        "description": "GitHub repository URL for deployment"
+      }
+    },
+    "branch": {
+      "type": "string",
+      "defaultValue": "main",
+      "metadata": {
+        "description": "GitHub branch to deploy from"
+      }
+    },
+    "customDomainName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Custom domain name (optional)"
+      }
+    }
+  },
+  "variables": {
+    "tags": {
+      "Environment": "[parameters('environment')]",
+      "Application": "TaktMate",
+      "Component": "Backend-API",
+      "ManagedBy": "ARM Template"
+    },
+    "autoScaleSettingsName": "[concat(parameters('appServicePlanName'), '-autoscale')]",
+    "appInsightsConnectionString": "[concat('InstrumentationKey=', reference(resourceId('Microsoft.Insights/components', parameters('applicationInsightsName'))).InstrumentationKey, ';IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2022-10-01",
+      "name": "[parameters('logAnalyticsWorkspaceName')]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 90,
+        "workspaceCapping": {
+          "dailyQuotaGb": 10
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[parameters('applicationInsightsName')]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "kind": "web",
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+      ],
+      "properties": {
+        "Application_Type": "web",
+        "Request_Source": "rest",
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]",
+        "publicNetworkAccessForIngestion": "Enabled",
+        "publicNetworkAccessForQuery": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2022-03-01",
+      "name": "[parameters('appServicePlanName')]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "sku": {
+        "name": "[parameters('skuName')]",
+        "capacity": "[parameters('skuCapacity')]"
+      },
+      "kind": "linux",
+      "properties": {
+        "reserved": true,
+        "targetWorkerCount": "[parameters('skuCapacity')]",
+        "targetWorkerSizeId": 0
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2022-03-01",
+      "name": "[parameters('appServiceName')]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "[resourceId('Microsoft.Insights/components', parameters('applicationInsightsName'))]"
+      ],
+      "kind": "app,linux",
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+        "httpsOnly": true,
+        "clientAffinityEnabled": false,
+        "siteConfig": {
+          "linuxFxVersion": "[concat('NODE|', parameters('nodeVersion'))]",
+          "alwaysOn": "[if(equals(parameters('skuName'), 'F1'), false(), true())]",
+          "http20Enabled": true,
+          "minTlsVersion": "1.2",
+          "ftpsState": "Disabled",
+          "healthCheckPath": "/api/health",
+          "appSettings": [
+            {
+              "name": "NODE_ENV",
+              "value": "[toLower(parameters('environment'))]"
+            },
+            {
+              "name": "PORT",
+              "value": "8080"
+            },
+            {
+              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+              "value": "[variables('appInsightsConnectionString')]"
+            },
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(resourceId('Microsoft.Insights/components', parameters('applicationInsightsName'))).InstrumentationKey]"
+            },
+            {
+              "name": "WEBSITE_NODE_DEFAULT_VERSION",
+              "value": "~18"
+            },
+            {
+              "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+              "value": "true"
+            },
+            {
+              "name": "ENABLE_ORYX_BUILD",
+              "value": "true"
+            },
+            {
+              "name": "PRE_BUILD_SCRIPT_PATH",
+              "value": "backend/package.json"
+            },
+            {
+              "name": "CUSTOM_BUILD_COMMAND",
+              "value": "cd backend && npm install && npm run build"
+            }
+          ],
+          "connectionStrings": [],
+          "defaultDocuments": [],
+          "requestTracingEnabled": true,
+          "requestTracingExpirationTime": "9999-12-31T23:59:00Z",
+          "remoteDebuggingEnabled": false,
+          "httpLoggingEnabled": true,
+          "detailedErrorLoggingEnabled": true,
+          "publishingUsername": "[concat('$', parameters('appServiceName'))]",
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "managedPipelineMode": "Integrated",
+          "virtualApplications": [
+            {
+              "virtualPath": "/",
+              "physicalPath": "site\\wwwroot\\backend",
+              "preloadEnabled": true
+            }
+          ],
+          "loadBalancing": "LeastRequests",
+          "experiments": {
+            "rampUpRules": []
+          },
+          "autoHealEnabled": true,
+          "autoHealRules": {
+            "triggers": {
+              "requests": {
+                "count": 100,
+                "timeInterval": "00:01:00"
+              },
+              "privateBytesInKB": 0,
+              "statusCodes": [
+                {
+                  "status": 500,
+                  "subStatus": 0,
+                  "win32Status": 0,
+                  "count": 10,
+                  "timeInterval": "00:01:00"
+                }
+              ],
+              "slowRequests": {
+                "timeTaken": "00:01:00",
+                "count": 10,
+                "timeInterval": "00:02:00"
+              }
+            },
+            "actions": {
+              "actionType": "Recycle",
+              "minProcessExecutionTime": "00:01:00"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2022-03-01",
+      "name": "[concat(parameters('appServiceName'), '/logs')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('appServiceName'))]"
+      ],
+      "properties": {
+        "applicationLogs": {
+          "fileSystem": {
+            "level": "Warning"
+          }
+        },
+        "httpLogs": {
+          "fileSystem": {
+            "retentionInMb": 40,
+            "enabled": true
+          }
+        },
+        "failedRequestsTracing": {
+          "enabled": true
+        },
+        "detailedErrorMessages": {
+          "enabled": true
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/sourcecontrols",
+      "apiVersion": "2022-03-01",
+      "name": "[concat(parameters('appServiceName'), '/web')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('appServiceName'))]"
+      ],
+      "properties": {
+        "repoUrl": "[parameters('repositoryUrl')]",
+        "branch": "[parameters('branch')]",
+        "isManualIntegration": false,
+        "deploymentRollbackEnabled": true,
+        "isMercurial": false
+      }
+    },
+    {
+      "type": "Microsoft.Insights/autoscalesettings",
+      "apiVersion": "2022-10-01",
+      "name": "[variables('autoScaleSettingsName')]",
+      "location": "[parameters('location')]",
+      "condition": "[parameters('enableAutoScale')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
+      ],
+      "properties": {
+        "profiles": [
+          {
+            "name": "DefaultAutoscaleProfile",
+            "capacity": {
+              "minimum": "1",
+              "maximum": "5",
+              "default": "1"
+            },
+            "rules": [
+              {
+                "metricTrigger": {
+                  "metricName": "CpuPercentage",
+                  "metricNamespace": "Microsoft.Web/serverfarms",
+                  "metricResourceUri": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+                  "timeGrain": "PT1M",
+                  "statistic": "Average",
+                  "timeWindow": "PT5M",
+                  "timeAggregation": "Average",
+                  "operator": "GreaterThan",
+                  "threshold": 70
+                },
+                "scaleAction": {
+                  "direction": "Increase",
+                  "type": "ChangeCount",
+                  "value": "1",
+                  "cooldown": "PT10M"
+                }
+              },
+              {
+                "metricTrigger": {
+                  "metricName": "CpuPercentage",
+                  "metricNamespace": "Microsoft.Web/serverfarms",
+                  "metricResourceUri": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+                  "timeGrain": "PT1M",
+                  "statistic": "Average",
+                  "timeWindow": "PT5M",
+                  "timeAggregation": "Average",
+                  "operator": "LessThan",
+                  "threshold": 30
+                },
+                "scaleAction": {
+                  "direction": "Decrease",
+                  "type": "ChangeCount",
+                  "value": "1",
+                  "cooldown": "PT10M"
+                }
+              },
+              {
+                "metricTrigger": {
+                  "metricName": "MemoryPercentage",
+                  "metricNamespace": "Microsoft.Web/serverfarms",
+                  "metricResourceUri": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]",
+                  "timeGrain": "PT1M",
+                  "statistic": "Average",
+                  "timeWindow": "PT5M",
+                  "timeAggregation": "Average",
+                  "operator": "GreaterThan",
+                  "threshold": 80
+                },
+                "scaleAction": {
+                  "direction": "Increase",
+                  "type": "ChangeCount",
+                  "value": "1",
+                  "cooldown": "PT10M"
+                }
+              }
+            ]
+          }
+        ],
+        "enabled": true,
+        "targetResourceUri": "[resourceId('Microsoft.Web/serverfarms', parameters('appServicePlanName'))]"
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/hostNameBindings",
+      "apiVersion": "2022-03-01",
+      "name": "[concat(parameters('appServiceName'), '/', parameters('customDomainName'))]",
+      "condition": "[not(empty(parameters('customDomainName')))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('appServiceName'))]"
+      ],
+      "properties": {
+        "siteName": "[parameters('appServiceName')]",
+        "hostNameType": "Verified",
+        "customHostNameDnsRecordType": "CName",
+        "sslState": "SniEnabled"
+      }
+    }
+  ],
+  "outputs": {
+    "appServiceUrl": {
+      "type": "string",
+      "value": "[concat('https://', reference(resourceId('Microsoft.Web/sites', parameters('appServiceName'))).defaultHostName)]"
+    },
+    "appServiceName": {
+      "type": "string",
+      "value": "[parameters('appServiceName')]"
+    },
+    "appServicePlanName": {
+      "type": "string",
+      "value": "[parameters('appServicePlanName')]"
+    },
+    "applicationInsightsInstrumentationKey": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Insights/components', parameters('applicationInsightsName'))).InstrumentationKey]"
+    },
+    "applicationInsightsConnectionString": {
+      "type": "string",
+      "value": "[variables('appInsightsConnectionString')]"
+    },
+    "customDomainUrl": {
+      "type": "string",
+      "condition": "[not(empty(parameters('customDomainName')))]",
+      "value": "[concat('https://', parameters('customDomainName'))]"
+    }
+  }
+}

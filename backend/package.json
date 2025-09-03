@@ -29,7 +29,9 @@
     "deploy:dashboards": "node scripts/deploy-dashboards.js",
     "test:alerts": "node scripts/test-alerts.js",
     "deploy:alerts": "node scripts/deploy-alerts.js",
-    "test:all": "npm run test:config && npm run test:jwt-claims && npm run test:jwt-middleware && npm run test:auth-routes && npm run test:user-service && npm run test:file-store && npm run test:csv-endpoints && npm run test:error-handling && npm run test:app-insights && npm run test:sdk-integration && npm run test:csv-telemetry && npm run test:performance-monitoring && npm run test:error-tracking && npm run test:dashboards && npm run test:alerts && npm run test:e2e"
+    "test:key-vault": "node scripts/test-key-vault.js",
+    "test:key-vault-integration": "node scripts/test-key-vault-integration.js",
+    "test:all": "npm run test:config && npm run test:jwt-claims && npm run test:jwt-middleware && npm run test:auth-routes && npm run test:user-service && npm run test:file-store && npm run test:csv-endpoints && npm run test:error-handling && npm run test:app-insights && npm run test:sdk-integration && npm run test:csv-telemetry && npm run test:performance-monitoring && npm run test:error-tracking && npm run test:dashboards && npm run test:alerts && npm run test:key-vault && npm run test:key-vault-integration && npm run test:e2e"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -44,7 +46,9 @@
     "helmet": "^7.1.0",
     "express-validator": "^7.0.1",
     "axios": "^1.6.2",
-    "applicationinsights": "^2.9.5"
+    "applicationinsights": "^2.9.5",
+    "@azure/keyvault-secrets": "^4.7.0",
+    "@azure/identity": "^4.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2",

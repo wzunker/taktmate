@@ -1,0 +1,534 @@
+# Azure DevOps Pipeline for TaktMate Full-Stack Deployment
+# This pipeline provides an alternative to GitHub Actions for organizations using Azure DevOps
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    exclude:
+      - '**/*.md'
+      - 'docs/**'
+      - '.gitignore'
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - '**/*.md'
+      - 'docs/**'
+      - '.gitignore'
+
+variables:
+  # Global variables
+  nodeVersion: '18.x'
+  azureSubscription: 'TaktMate-ServiceConnection'
+  
+  # Environment-specific variables
+  ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
+    environment: 'production'
+    resourceGroup: 'taktmate-prod-rg'
+    keyVaultName: 'taktmate-kv-prod'
+    appServiceName: 'taktmate-api-prod'
+    staticWebAppName: 'taktmate-frontend-prod'
+    frontendUrl: 'https://app.taktmate.com'
+    backendUrl: 'https://api.taktmate.com'
+    tenantName: 'taktmate'
+  ${{ elseif eq(variables['Build.SourceBranchName'], 'develop') }}:
+    environment: 'staging'
+    resourceGroup: 'taktmate-staging-rg'
+    keyVaultName: 'taktmate-kv-staging'
+    appServiceName: 'taktmate-api-staging'
+    staticWebAppName: 'taktmate-frontend-staging'
+    frontendUrl: 'https://staging.taktmate.com'
+    backendUrl: 'https://api-staging.taktmate.com'
+    tenantName: 'taktmate-staging'
+  ${{ else }}:
+    environment: 'preview'
+    resourceGroup: 'taktmate-preview-rg'
+    keyVaultName: 'taktmate-kv-dev'
+    appServiceName: 'taktmate-api-dev'
+    staticWebAppName: 'taktmate-frontend-dev'
+    frontendUrl: 'https://preview.taktmate.com'
+    backendUrl: 'https://api-preview.taktmate.com'
+    tenantName: 'taktmate-dev'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+  # Build and Test Stage
+  - stage: BuildAndTest
+    displayName: 'Build and Test'
+    jobs:
+      # Frontend Build and Test
+      - job: FrontendTest
+        displayName: 'Frontend Build and Test'
+        steps:
+          - task: NodeTool@0
+            displayName: 'Setup Node.js'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          - task: Cache@2
+            displayName: 'Cache npm packages'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | frontend/package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+              path: ~/.npm
+
+          - script: |
+              cd frontend
+              npm ci
+            displayName: 'Install dependencies'
+
+          - script: |
+              cd frontend
+              npm run test -- --coverage --watchAll=false
+            displayName: 'Run tests'
+
+          - script: |
+              cd frontend
+              npm run build
+            displayName: 'Build application'
+
+          - task: PublishTestResults@2
+            displayName: 'Publish test results'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFiles: 'frontend/test-results.xml'
+              testRunTitle: 'Frontend Tests'
+
+          - task: PublishCodeCoverageResults@1
+            displayName: 'Publish coverage results'
+            condition: succeededOrFailed()
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: 'frontend/coverage/cobertura-coverage.xml'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish frontend build'
+            inputs:
+              pathToPublish: 'frontend/build'
+              artifactName: 'frontend-build'
+
+      # Backend Build and Test
+      - job: BackendTest
+        displayName: 'Backend Build and Test'
+        steps:
+          - task: NodeTool@0
+            displayName: 'Setup Node.js'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          - task: Cache@2
+            displayName: 'Cache npm packages'
+            inputs:
+              key: 'npm | "$(Agent.OS)" | backend/package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+              path: ~/.npm
+
+          - script: |
+              cd backend
+              npm ci
+            displayName: 'Install dependencies'
+
+          - script: |
+              cd backend
+              npm test
+              npm run test:config
+              npm run test:jwt-middleware
+              npm run test:auth-routes
+              npm run test:user-service
+              npm run test:file-store
+              npm run test:csv-endpoints
+              npm run test:error-handling
+            displayName: 'Run unit tests'
+
+          - script: |
+              cd backend
+              npm run test:app-insights
+              npm run test:sdk-integration
+              npm run test:csv-telemetry
+              npm run test:performance-monitoring
+              npm run test:error-tracking
+              npm run test:key-vault
+              npm run test:key-vault-integration
+            displayName: 'Run integration tests'
+
+          - script: |
+              cd backend
+              npm run build || echo "No build script found"
+            displayName: 'Build application'
+
+          - task: PublishTestResults@2
+            displayName: 'Publish test results'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFiles: 'backend/test-results.xml'
+              testRunTitle: 'Backend Tests'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish backend build'
+            inputs:
+              pathToPublish: 'backend'
+              artifactName: 'backend-build'
+
+      # Security Scanning
+      - job: SecurityScan
+        displayName: 'Security Scanning'
+        steps:
+          - task: NodeTool@0
+            displayName: 'Setup Node.js'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          - script: |
+              cd frontend && npm ci
+              cd ../backend && npm ci
+            displayName: 'Install dependencies'
+
+          - script: |
+              cd frontend && npm audit --audit-level=high
+              cd ../backend && npm audit --audit-level=high
+            displayName: 'Run security audit'
+            continueOnError: true
+
+          - task: CredScan@3
+            displayName: 'Run credential scan'
+            inputs:
+              toolMajorVersion: 'V2'
+
+          - task: SdtReport@2
+            displayName: 'Create security analysis report'
+            inputs:
+              GdnExportAllTools: false
+              GdnExportGdnToolCredScan: true
+
+  # Infrastructure Deployment Stage
+  - stage: DeployInfrastructure
+    displayName: 'Deploy Infrastructure'
+    dependsOn: BuildAndTest
+    condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/develop')))
+    jobs:
+      - deployment: DeployInfrastructure
+        displayName: 'Deploy Azure Infrastructure'
+        environment: $(environment)
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: AzureCLI@2
+                  displayName: 'Deploy Key Vault'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'scriptPath'
+                    scriptPath: 'azure/deploy-key-vault.sh'
+                    arguments: '$(environment) $(resourceGroup) $(Build.SourceVersion) $(keyVaultName)'
+
+                - task: AzureCLI@2
+                  displayName: 'Deploy App Service'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'scriptPath'
+                    scriptPath: 'azure/deploy-app-service.sh'
+                    arguments: '$(environment) $(resourceGroup) $(Build.SourceVersion)'
+
+                - task: AzureCLI@2
+                  displayName: 'Deploy Static Web App'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'scriptPath'
+                    scriptPath: 'azure/deploy-static-web-app.sh'
+                    arguments: '$(environment) $(resourceGroup) $(Build.SourceVersion)'
+
+                - task: AzureCLI@2
+                  displayName: 'Configure B2C URLs'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'scriptPath'
+                    scriptPath: 'azure/configure-b2c-urls.sh'
+                    arguments: '$(environment) $(tenantName) $(B2C_APP_ID) $(frontendUrl) $(backendUrl)'
+
+                - task: AzureCLI@2
+                  displayName: 'Update Key Vault secrets'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      cd azure
+                      chmod +x manage-secrets.sh
+                      ./manage-secrets.sh set $(environment) OpenAI-API-Key "$(OPENAI_API_KEY)"
+                      ./manage-secrets.sh set $(environment) Azure-AD-B2C-Client-ID "$(B2C_CLIENT_ID)"
+                      ./manage-secrets.sh set $(environment) Azure-AD-B2C-Client-Secret "$(B2C_CLIENT_SECRET)"
+
+  # Application Deployment Stage
+  - stage: DeployApplications
+    displayName: 'Deploy Applications'
+    dependsOn: DeployInfrastructure
+    condition: succeeded()
+    jobs:
+      # Deploy Backend
+      - deployment: DeployBackend
+        displayName: 'Deploy Backend API'
+        environment: $(environment)
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: backend-build
+
+                - task: AzureWebApp@1
+                  displayName: 'Deploy to Azure App Service'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    appType: 'webAppLinux'
+                    appName: $(appServiceName)
+                    package: '$(Pipeline.Workspace)/backend-build'
+                    runtimeStack: 'NODE|18-lts'
+                    startUpCommand: 'npm start'
+
+                - task: AzureCLI@2
+                  displayName: 'Test backend deployment'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      sleep 30
+                      APP_URL="https://$(appServiceName).azurewebsites.net"
+                      curl -f "$APP_URL/api/health" || exit 1
+                      echo "✅ Backend deployment successful: $APP_URL"
+
+      # Deploy Frontend
+      - deployment: DeployFrontend
+        displayName: 'Deploy Frontend'
+        environment: $(environment)
+        dependsOn: DeployBackend
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: frontend-build
+
+                - task: AzureStaticWebApp@0
+                  displayName: 'Deploy to Azure Static Web Apps'
+                  inputs:
+                    app_location: '$(Pipeline.Workspace)/frontend-build'
+                    azure_static_web_apps_api_token: $(AZURE_STATIC_WEB_APPS_API_TOKEN)
+                    action: 'upload'
+                    skip_app_build: true
+
+                - task: PowerShell@2
+                  displayName: 'Test frontend deployment'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      Start-Sleep -Seconds 30
+                      $response = Invoke-WebRequest -Uri "$(frontendUrl)" -UseBasicParsing
+                      if ($response.StatusCode -eq 200) {
+                        Write-Host "✅ Frontend deployment successful: $(frontendUrl)"
+                      } else {
+                        Write-Error "❌ Frontend deployment failed"
+                        exit 1
+                      }
+
+  # Testing and Validation Stage
+  - stage: TestAndValidate
+    displayName: 'Test and Validate'
+    dependsOn: DeployApplications
+    condition: succeeded()
+    jobs:
+      - job: IntegrationTests
+        displayName: 'Integration Tests'
+        steps:
+          - checkout: self
+
+          - task: NodeTool@0
+            displayName: 'Setup Node.js'
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          - script: |
+              cd backend
+              npm ci
+            displayName: 'Install dependencies'
+
+          - task: AzureCLI@2
+            displayName: 'Test B2C configuration'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'scriptPath'
+              scriptPath: 'azure/test-b2c-urls.sh'
+              arguments: '$(environment) $(tenantName) $(B2C_APP_ID) $(frontendUrl)'
+
+          - task: AzureCLI@2
+            displayName: 'Test Key Vault integration'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'scriptPath'
+              scriptPath: 'azure/test-key-vault.sh'
+              arguments: '$(environment)'
+
+          - task: AzureCLI@2
+            displayName: 'Test App Service'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'scriptPath'
+              scriptPath: 'azure/test-app-service.sh'
+              arguments: '$(environment) https://$(appServiceName).azurewebsites.net'
+
+          - script: |
+              cd backend
+              export API_BASE_URL=https://$(appServiceName).azurewebsites.net
+              export FRONTEND_BASE_URL=$(frontendUrl)
+              npm run test:e2e
+            displayName: 'Run end-to-end tests'
+
+      # Performance Testing (Production only)
+      - job: PerformanceTests
+        displayName: 'Performance Tests'
+        condition: eq(variables['environment'], 'production')
+        steps:
+          - script: |
+              # Install k6
+              sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+              echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+              sudo apt-get update
+              sudo apt-get install k6
+            displayName: 'Install k6'
+
+          - script: |
+              cat > loadtest.js << 'EOF'
+              import http from 'k6/http';
+              import { check, sleep } from 'k6';
+              
+              export let options = {
+                stages: [
+                  { duration: '30s', target: 10 },
+                  { duration: '1m', target: 20 },
+                  { duration: '30s', target: 0 },
+                ],
+                thresholds: {
+                  http_req_duration: ['p(95)<2000'],
+                  http_req_failed: ['rate<0.1'],
+                },
+              };
+              
+              export default function () {
+                const response = http.get('https://$(appServiceName).azurewebsites.net/api/health');
+                check(response, {
+                  'status is 200': (r) => r.status === 200,
+                  'response time < 2000ms': (r) => r.timings.duration < 2000,
+                });
+                sleep(1);
+              }
+              EOF
+              
+              k6 run loadtest.js
+            displayName: 'Run load tests'
+
+  # Monitoring Setup Stage
+  - stage: SetupMonitoring
+    displayName: 'Setup Monitoring'
+    dependsOn: TestAndValidate
+    condition: succeeded()
+    jobs:
+      - deployment: SetupMonitoring
+        displayName: 'Deploy Monitoring and Alerts'
+        environment: $(environment)
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: NodeTool@0
+                  displayName: 'Setup Node.js'
+                  inputs:
+                    versionSpec: $(nodeVersion)
+
+                - script: |
+                    cd backend
+                    npm ci
+                  displayName: 'Install dependencies'
+
+                - task: AzureCLI@2
+                  displayName: 'Deploy dashboards'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      cd backend
+                      npm run deploy:dashboards -- --environment $(environment)
+
+                - task: AzureCLI@2
+                  displayName: 'Deploy alerts'
+                  inputs:
+                    azureSubscription: $(azureSubscription)
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      cd backend
+                      npm run deploy:alerts -- --environment $(environment)
+
+                - script: |
+                    cd backend
+                    npm run test:dashboards
+                    npm run test:alerts
+                  displayName: 'Test monitoring setup'
+
+  # Deployment Summary Stage
+  - stage: DeploymentSummary
+    displayName: 'Deployment Summary'
+    dependsOn: 
+      - DeployApplications
+      - TestAndValidate
+      - SetupMonitoring
+    condition: always()
+    jobs:
+      - job: Summary
+        displayName: 'Create Deployment Summary'
+        steps:
+          - script: |
+              echo "## 🚀 TaktMate Deployment Summary" 
+              echo ""
+              echo "**Environment:** $(environment)"
+              echo "**Build:** $(Build.BuildNumber)"
+              echo "**Commit:** $(Build.SourceVersion)"
+              echo ""
+              echo "### 📊 Component Status:"
+              echo "- **Infrastructure:** ${{ stageDependencies.DeployInfrastructure.DeployInfrastructure.result }}"
+              echo "- **Backend:** ${{ stageDependencies.DeployApplications.DeployBackend.result }}"
+              echo "- **Frontend:** ${{ stageDependencies.DeployApplications.DeployFrontend.result }}"
+              echo "- **Integration Tests:** ${{ stageDependencies.TestAndValidate.IntegrationTests.result }}"
+              echo "- **Monitoring:** ${{ stageDependencies.SetupMonitoring.SetupMonitoring.result }}"
+              echo ""
+              if [ "$(environment)" == "production" ]; then
+                echo "### 🌐 Production URLs:"
+                echo "- **Frontend:** https://app.taktmate.com"
+                echo "- **Backend API:** https://taktmate-api-prod.azurewebsites.net"
+              else
+                echo "### 🌐 Staging URLs:"
+                echo "- **Frontend:** https://staging.taktmate.com"
+                echo "- **Backend API:** https://taktmate-api-staging.azurewebsites.net"
+              fi
+            displayName: 'Create deployment summary'

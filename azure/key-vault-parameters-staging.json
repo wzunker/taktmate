@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "keyVaultName": {
+      "value": "taktmate-kv-staging"
+    },
+    "environment": {
+      "value": "Staging"
+    },
+    "skuName": {
+      "value": "Standard"
+    },
+    "appServicePrincipalId": {
+      "value": "placeholder-app-service-principal-id"
+    },
+    "administratorObjectId": {
+      "value": "placeholder-admin-object-id"
+    },
+    "enabledForDeployment": {
+      "value": false
+    },
+    "enabledForDiskEncryption": {
+      "value": false
+    },
+    "enabledForTemplateDeployment": {
+      "value": true
+    },
+    "enableSoftDelete": {
+      "value": true
+    },
+    "enablePurgeProtection": {
+      "value": false
+    },
+    "softDeleteRetentionInDays": {
+      "value": 30
+    },
+    "networkAcls": {
+      "value": {
+        "defaultAction": "Allow",
+        "bypass": "AzureServices",
+        "ipRules": [],
+        "virtualNetworkRules": []
+      }
+    }
+  }
+}
