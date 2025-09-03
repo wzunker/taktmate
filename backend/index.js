@@ -23,12 +23,22 @@ const { createErrorHandler, asyncHandler } = require('./utils/errorHandler');
 // Import routes
 const authRoutes = require('./routes/auth');
 
-// Import Application Insights (optional)
+// Initialize Application Insights FIRST (before any other imports)
 let appInsights = null;
+let telemetryClient = null;
+let performanceMonitor = null;
 try {
   appInsights = require('./config/applicationInsights');
+  telemetryClient = appInsights.initializeApplicationInsights();
+  
+  if (telemetryClient) {
+    console.log('✅ Application Insights SDK initialized successfully');
+    
+    // Start performance monitoring
+    performanceMonitor = appInsights.performanceMonitoring.startMonitoring(60000); // Every minute
+  }
 } catch (error) {
-  console.log('ℹ️  Application Insights not configured');
+  console.log('⚠️  Application Insights initialization failed:', error.message);
 }
 
 const app = express();
@@ -46,6 +56,11 @@ const openai = new OpenAI({
 
 // Apply security middleware first
 app.use(securityMiddleware);
+
+// Add Application Insights middleware early in the pipeline
+if (appInsights && appInsights.createExpressMiddleware) {
+  app.use(appInsights.createExpressMiddleware());
+}
 
 // Enhanced CORS configuration
 const corsOrigins = [
@@ -215,11 +230,39 @@ app.post('/upload', jwtAuthMiddleware(), upload.single('csvFile'), async (req, r
       });
     }
 
-    // Parse CSV with error handling
+    // Parse CSV with error handling and performance tracking
     let rows;
     try {
-      rows = await parseCsv(buffer);
+      if (appInsights?.performanceMonitoring) {
+        rows = await appInsights.performanceMonitoring.trackOperation(
+          'CSV_Parsing',
+          async () => await parseCsv(buffer),
+          {
+            userId: req.user.id,
+            filename: filename,
+            fileSize: buffer.length,
+            operation: 'csv_parsing'
+          }
+        );
+      } else {
+        rows = await parseCsv(buffer);
+      }
     } catch (parseError) {
+      // Track parsing error
+      if (appInsights && appInsights.telemetry) {
+        appInsights.telemetry.trackCSVError(
+          parseError,
+          req.user.id,
+          null,
+          filename,
+          'parsing',
+          {
+            fileSize: buffer.length,
+            errorStage: 'csv_parsing'
+          }
+        );
+      }
+      
       return res.status(400).json({
         success: false,
         error: 'Invalid CSV format: ' + parseError.message,
@@ -266,18 +309,68 @@ app.post('/upload', jwtAuthMiddleware(), upload.single('csvFile'), async (req, r
 
     const duration = Date.now() - startTime;
 
-    // Track file upload in Application Insights
+    // Track comprehensive file upload metrics in Application Insights
     if (appInsights && appInsights.telemetry) {
-      appInsights.telemetry.trackEvent('CSVFileUploaded', {
-        userId: req.user.id,
-        userEmail: req.user.email,
-        filename: filename,
-        rowCount: rows.length.toString(),
-        fileSize: buffer.length.toString()
-      }, {
-        uploadDuration: duration,
-        fileSize: buffer.length
-      });
+      // Get column count from first row
+      const columnCount = rows.length > 0 ? Object.keys(rows[0]).length : 0;
+      
+      // Track main file upload with comprehensive metrics
+      appInsights.telemetry.trackFileUpload(
+        req.user.id,
+        filename,
+        buffer.length,
+        rows.length,
+        duration,
+        true, // success
+        {
+          userEmail: req.user.email,
+          userDisplayName: req.user.displayName,
+          description: req.body.description || '',
+          tags: req.body.tags || '',
+          isPublic: req.body.isPublic === 'true',
+          allowSharing: req.body.allowSharing !== 'false',
+          retentionDays: parseInt(req.body.retentionDays) || 7,
+          userAgent: req.headers['user-agent'],
+          ip: req.ip,
+          columnCount: columnCount
+        }
+      );
+      
+      // Track CSV parsing operation specifically
+      appInsights.telemetry.trackCSVParsing(
+        req.user.id,
+        filename,
+        buffer.length,
+        rows.length,
+        columnCount,
+        duration,
+        true, // success
+        {
+          encoding: 'utf-8', // Assume UTF-8 for now
+          delimiter: 'comma',
+          hasEmptyRows: false, // We filter empty rows
+          hasSpecialCharacters: filename.includes(' ') || /[^a-zA-Z0-9.-]/.test(filename)
+        }
+      );
+      
+      // Track business metrics
+      const businessMetrics = {
+        totalFilesUploaded: 1,
+        totalDataPointsProcessed: rows.length * columnCount,
+        averageFileSize: buffer.length,
+        processingEfficiency: rows.length > 0 ? Math.round((rows.length / duration) * 1000) : 0
+      };
+      
+      appInsights.telemetry.trackCSVBusinessMetrics(
+        req.user.id,
+        fileId,
+        filename,
+        businessMetrics,
+        {
+          uploadMethod: 'api',
+          clientType: 'web'
+        }
+      );
     }
 
     if (azureConfig.debugAuth) {
@@ -319,12 +412,33 @@ app.post('/upload', jwtAuthMiddleware(), upload.single('csvFile'), async (req, r
     
     console.error('Upload error:', error);
     
-    // Track upload error in Application Insights
+    // Track comprehensive upload error in Application Insights
     if (appInsights && appInsights.telemetry) {
+      const filename = req.file?.originalname || 'unknown';
+      const fileSize = req.file?.buffer?.length || 0;
+      
+      // Track CSV-specific error
+      appInsights.telemetry.trackCSVError(
+        error,
+        req.user?.id,
+        null, // fileId not available on error
+        filename,
+        'upload',
+        {
+          fileSize: fileSize,
+          duration: duration,
+          userAgent: req.headers['user-agent'],
+          ip: req.ip,
+          errorStage: 'upload_processing'
+        }
+      );
+      
+      // Also track general error for backwards compatibility
       appInsights.telemetry.trackError(error, req.user?.id, {
         component: 'csvUpload',
-        filename: req.file?.originalname,
-        duration: duration
+        filename: filename,
+        duration: duration,
+        operation: 'file_upload'
       });
     }
 
@@ -415,9 +529,30 @@ ${csvString}`;
       console.log('='.repeat(80) + '\n');
     }
 
-    // Call Azure OpenAI GPT-4.1
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4.1', // This matches your Azure deployment name
+    // Call Azure OpenAI GPT-4.1 with dependency tracking
+    const completion = await appInsights?.performanceMonitoring?.trackDependencyCall(
+      'OpenAI API',
+      'HTTP',
+      async () => {
+        return await openai.chat.completions.create({
+          model: 'gpt-4.1', // This matches your Azure deployment name
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: message }
+          ],
+          max_tokens: 500,
+          temperature: 0.1
+        });
+      },
+      {
+        command: 'chat.completions.create',
+        model: 'gpt-4.1',
+        messageLength: message.length,
+        maxTokens: 500,
+        temperature: 0.1
+      }
+    ) || await openai.chat.completions.create({
+      model: 'gpt-4.1',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: message }
@@ -437,20 +572,81 @@ ${csvString}`;
       console.log('='.repeat(80) + '\n');
     }
 
-    // Track chat interaction in Application Insights
+    // Track comprehensive chat interaction in Application Insights
     if (appInsights && appInsights.telemetry) {
-      appInsights.telemetry.trackEvent('ChatInteraction', {
-        userId: req.user.id,
-        userEmail: req.user.email,
-        fileId: fileId,
-        filename: fileData.filename,
-        messageLength: message.length.toString(),
-        replyLength: reply.length.toString()
-      }, {
-        processingDuration: duration,
-        fileSize: fileData.size,
-        fileAccessCount: fileData.accessCount
-      });
+      // Extract token usage from completion if available
+      const tokenUsage = completion.usage?.total_tokens || 0;
+      const promptTokens = completion.usage?.prompt_tokens || 0;
+      const completionTokens = completion.usage?.completion_tokens || 0;
+      
+      // Track main chat interaction with comprehensive metrics
+      appInsights.telemetry.trackChatInteraction(
+        req.user.id,
+        fileId,
+        fileData.filename,
+        message.length,
+        duration,
+        true, // success
+        {
+          userEmail: req.user.email,
+          userDisplayName: req.user.displayName,
+          replyLength: reply.length,
+          model: 'gpt-4.1',
+          temperature: 0.1,
+          maxTokens: 500,
+          tokenUsage: tokenUsage,
+          promptTokens: promptTokens,
+          completionTokens: completionTokens,
+          fileSize: fileData.size,
+          fileRowCount: fileData.rowCount,
+          fileAccessCount: fileData.accessCount,
+          hasContext: true
+        }
+      );
+      
+      // Track CSV data analysis operation
+      appInsights.telemetry.trackCSVAnalysis(
+        req.user.id,
+        fileId,
+        fileData.filename,
+        'chat_query',
+        duration,
+        true, // success
+        {
+          queryComplexity: message.length > 100 ? 'complex' : 'simple',
+          responseLength: reply.length,
+          dataPointsAnalyzed: fileData.rowCount,
+          columnsAnalyzed: fileData.columnCount || 0
+        }
+      );
+      
+      // Track OpenAI dependency
+      appInsights.telemetry.trackDependency(
+        'OpenAI API',
+        'chat.completions.create',
+        duration,
+        true,
+        'HTTP'
+      );
+      
+      // Track business metrics for chat usage
+      const chatBusinessMetrics = {
+        totalChatInteractions: 1,
+        totalTokensUsed: tokenUsage,
+        averageResponseTime: duration,
+        dataEfficiency: fileData.rowCount > 0 ? Math.round(tokenUsage / fileData.rowCount) : 0
+      };
+      
+      appInsights.telemetry.trackCSVBusinessMetrics(
+        req.user.id,
+        fileId,
+        fileData.filename,
+        chatBusinessMetrics,
+        {
+          interactionType: 'chat',
+          aiModel: 'gpt-4.1'
+        }
+      );
     }
 
     if (azureConfig.debugAuth) {
@@ -484,13 +680,88 @@ ${csvString}`;
     
     console.error('Chat error:', error);
     
-    // Track chat error in Application Insights
+    // Track comprehensive chat error in Application Insights with enhanced error tracking
     if (appInsights && appInsights.telemetry) {
+      const fileId = req.body?.fileId;
+      const message = req.body?.message || '';
+      const fileData = fileStore.get(fileId);
+      
+      // Use specialized error tracking based on error type
+      if (error.name && (error.name.includes('OpenAI') || error.name.includes('API') || error.code)) {
+        // Track as external service error for OpenAI API issues
+        appInsights.telemetry.trackExternalServiceError(error, 'OpenAI API', 'chat.completions.create', {
+          endpoint: '/chat',
+          duration: duration,
+          userId: req.user?.id,
+          fileId: fileId,
+          messageLength: message.length,
+          model: 'gpt-4.1',
+          statusCode: error.status || error.statusCode || 500,
+          timeout: error.code === 'ETIMEDOUT' || error.message?.includes('timeout'),
+          retryCount: 0, // Could be enhanced with actual retry logic
+          quotaExceeded: error.code === 'insufficient_quota'
+        });
+      } else {
+        // Track as general HTTP error
+        appInsights.telemetry.trackHTTPError(error, req, null, {
+          component: 'chatEndpoint',
+          operation: 'chat_processing',
+          duration: duration,
+          fileId: fileId,
+          messageLength: message.length,
+          hasFile: !!fileData,
+          errorCategory: 'chat_error'
+        });
+      }
+      
+      // Track CSV-specific chat error
+      appInsights.telemetry.trackCSVError(
+        error,
+        req.user?.id,
+        fileId,
+        fileData?.filename || 'unknown',
+        'chat',
+        {
+          messageLength: message.length,
+          duration: duration,
+          fileSize: fileData?.size || 0,
+          fileRowCount: fileData?.rowCount || 0,
+          userAgent: req.headers['user-agent'],
+          ip: req.ip,
+          errorStage: 'chat_processing'
+        }
+      );
+      
+      // Track failed chat interaction
+      appInsights.telemetry.trackChatInteraction(
+        req.user?.id,
+        fileId,
+        fileData?.filename || 'unknown',
+        message.length,
+        duration,
+        false, // success = false
+        {
+          userEmail: req.user?.email,
+          errorType: error.name || 'Unknown',
+          errorMessage: error.message || 'Unknown error',
+          fileSize: fileData?.size || 0,
+          fileRowCount: fileData?.rowCount || 0
+        }
+      );
+      
+      // Also track general error for backwards compatibility
       appInsights.telemetry.trackError(error, req.user?.id, {
         component: 'chatEndpoint',
-        fileId: req.body?.fileId,
-        messageLength: req.body?.message?.length,
-        duration: duration
+        fileId: fileId,
+        messageLength: message.length,
+        duration: duration,
+        operation: 'chat_interaction',
+        endpoint: '/chat',
+        method: 'POST',
+        userAgent: req.headers['user-agent'],
+        ip: req.ip,
+        correlationId: req.headers['x-correlation-id'],
+        sessionId: req.sessionID
       });
     }
 
@@ -538,8 +809,28 @@ app.get('/api/files', jwtAuthMiddleware(), (req, res) => {
     const totalFiles = fileStore.getAllIds(req.user.id).length;
     const duration = Date.now() - startTime;
 
-    // Track files query
+    // Track comprehensive file listing operation
     if (appInsights && appInsights.telemetry) {
+      // Track CSV file operation
+      appInsights.telemetry.trackCSVFileOperation(
+        req.user.id,
+        null, // no specific fileId for list operation
+        'file_list',
+        'list',
+        duration,
+        true, // success
+        {
+          fileCount: userFiles.length,
+          totalFiles: totalFiles,
+          sortBy: options.sortBy,
+          sortOrder: options.sortOrder,
+          limit: options.limit,
+          offset: options.offset,
+          userAgent: req.headers['user-agent']
+        }
+      );
+      
+      // Also track legacy event for backwards compatibility
       appInsights.telemetry.trackEvent('FilesQueried', {
         userId: req.user.id,
         userEmail: req.user.email,
@@ -600,6 +891,24 @@ app.get('/api/files/:fileId', jwtAuthMiddleware(), (req, res) => {
 
     const duration = Date.now() - startTime;
 
+    // Track file metadata retrieval
+    if (appInsights && appInsights.telemetry) {
+      appInsights.telemetry.trackCSVFileOperation(
+        req.user.id,
+        fileId,
+        metadata.filename,
+        'view',
+        duration,
+        true, // success
+        {
+          fileSize: metadata.size,
+          rowCount: metadata.rowCount,
+          accessCount: metadata.accessCount,
+          userAgent: req.headers['user-agent']
+        }
+      );
+    }
+
     res.json({
       success: true,
       metadata: metadata,
@@ -610,9 +919,27 @@ app.get('/api/files/:fileId', jwtAuthMiddleware(), (req, res) => {
     console.error('File metadata error:', error);
     
     if (appInsights && appInsights.telemetry) {
+      const duration = Date.now() - startTime;
+      
+      // Track CSV-specific error
+      appInsights.telemetry.trackCSVError(
+        error,
+        req.user.id,
+        req.params.fileId,
+        'unknown',
+        'view',
+        {
+          duration: duration,
+          userAgent: req.headers['user-agent'],
+          errorStage: 'metadata_retrieval'
+        }
+      );
+      
+      // Also track general error
       appInsights.telemetry.trackError(error, req.user.id, {
         component: 'fileMetadata',
-        fileId: req.params.fileId
+        fileId: req.params.fileId,
+        operation: 'metadata_retrieval'
       });
     }
 
@@ -639,8 +966,26 @@ app.delete('/api/files/:fileId', jwtAuthMiddleware(), (req, res) => {
     const duration = Date.now() - startTime;
 
     if (deleted) {
-      // Track file deletion
+      // Track comprehensive file deletion
       if (appInsights && appInsights.telemetry) {
+        // Track CSV file operation
+        appInsights.telemetry.trackCSVFileOperation(
+          req.user.id,
+          fileId,
+          deleted.filename || 'unknown',
+          'delete',
+          duration,
+          true, // success
+          {
+            fileSize: deleted.size || 0,
+            rowCount: deleted.rowCount || 0,
+            reason: 'user_request',
+            userAgent: req.headers['user-agent'],
+            ip: req.ip
+          }
+        );
+        
+        // Also track legacy event for backwards compatibility
         appInsights.telemetry.trackEvent('FileDeleted', {
           userId: req.user.id,
           userEmail: req.user.email,
@@ -759,7 +1104,7 @@ app.listen(PORT, () => {
   // Show configuration status
   console.log('\n🔧 Configuration:');
   console.log(`   Azure AD B2C: ${azureConfig.tenantName ? '✅ Configured' : '❌ Not configured'}`);
-  console.log(`   Application Insights: ${appInsights ? '✅ Available' : '⚠️  Not configured'}`);
+  console.log(`   Application Insights: ${telemetryClient ? '✅ Initialized' : '⚠️  Not configured'}`);
   console.log(`   Security Middleware: ✅ Enabled`);
   console.log(`   File Store: ✅ Enhanced with user association`);
   console.log(`   User Service: ✅ Available`);
@@ -770,6 +1115,16 @@ app.listen(PORT, () => {
   console.log(`   Debug Prompts: ${DEBUG_PROMPTS ? '✅ ENABLED' : '❌ DISABLED'} (set DEBUG_PROMPTS=true to enable)`);
   console.log(`   Debug Auth: ${azureConfig.debugAuth ? '✅ ENABLED' : '❌ DISABLED'}`);
   console.log(`   Debug JWT: ${azureConfig.debugJwt ? '✅ ENABLED' : '❌ DISABLED'}`);
+  
+  // Show Application Insights status if configured
+  if (appInsights) {
+    const configStatus = appInsights.getConfigurationStatus();
+    console.log('\n📊 Application Insights:');
+    console.log(`   Status: ${configStatus.configured ? '✅ Configured' : '❌ Not configured'}`);
+    console.log(`   Environment: ${configStatus.environment}`);
+    console.log(`   Sampling: ${configStatus.samplingPercentage}%`);
+    console.log(`   Live Metrics: ${configStatus.liveMetricsEnabled ? '✅ Enabled' : '❌ Disabled'}`);
+  }
   
   // Show available endpoints
   console.log('\n📡 Available Endpoints:');
@@ -802,4 +1157,77 @@ app.listen(PORT, () => {
   console.log('\n✨ TaktMate Backend is ready for Azure AD B2C authentication!');
   console.log('=' .repeat(60));
   console.log(`📝 Note: Using port ${PORT} (port 5000 is used by macOS AirPlay)\n`);
+  
+  // Track comprehensive application startup performance
+  if (appInsights && appInsights.telemetry) {
+    const startupMetrics = {
+      properties: {
+        version: '2.0.0',
+        azureAdB2CConfigured: azureConfig.tenantName ? 'true' : 'false',
+        applicationInsightsConfigured: telemetryClient ? 'true' : 'false',
+        performanceMonitoringEnabled: performanceMonitor ? 'true' : 'false',
+        fileStoreEnabled: 'true',
+        errorHandlingEnabled: 'true'
+      },
+      measurements: {
+        startupDuration: Date.now() - (process.env.START_TIME || Date.now()),
+        fileCount: stats.totalFiles,
+        userCount: stats.totalUsers,
+        moduleLoadTime: 0, // Could be enhanced with actual module load timing
+        configurationTime: 0 // Could be enhanced with actual config timing
+      }
+    };
+    
+    appInsights.telemetry.trackStartupPerformance(startupMetrics);
+    
+    // Also track legacy startup event for backwards compatibility
+    appInsights.telemetry.trackEvent('ApplicationStartup', {
+      version: '2.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      port: PORT.toString(),
+      azureAdB2CConfigured: azureConfig.tenantName ? 'true' : 'false',
+      applicationInsightsConfigured: telemetryClient ? 'true' : 'false',
+      nodeVersion: process.version,
+      platform: require('os').platform(),
+      architecture: require('os').arch()
+    }, {
+      startupDuration: Date.now() - (process.env.START_TIME || Date.now()),
+      memoryUsage: process.memoryUsage().heapUsed,
+      fileCount: stats.totalFiles,
+      userCount: stats.totalUsers
+    });
+  }
+});
+
+// Graceful shutdown handling
+process.on('SIGTERM', () => {
+  console.log('📊 SIGTERM received, shutting down gracefully');
+  
+  // Stop performance monitoring
+  if (performanceMonitor && appInsights?.performanceMonitoring) {
+    appInsights.performanceMonitoring.stopMonitoring(performanceMonitor);
+  }
+  
+  // Flush telemetry data
+  if (appInsights) {
+    appInsights.flush();
+  }
+  
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('📊 SIGINT received, shutting down gracefully');
+  
+  // Stop performance monitoring
+  if (performanceMonitor && appInsights?.performanceMonitoring) {
+    appInsights.performanceMonitoring.stopMonitoring(performanceMonitor);
+  }
+  
+  // Flush telemetry data
+  if (appInsights) {
+    appInsights.flush();
+  }
+  
+  process.exit(0);
 });

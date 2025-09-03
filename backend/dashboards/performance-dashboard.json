@@ -1,0 +1,312 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "dashboardName": {
+      "type": "string",
+      "defaultValue": "TaktMate - Performance Monitoring",
+      "metadata": {
+        "description": "Name of the performance monitoring dashboard"
+      }
+    },
+    "applicationInsightsResourceId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the Application Insights instance"
+      }
+    }
+  },
+  "variables": {
+    "dashboardId": "[guid(resourceGroup().id, parameters('dashboardName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Portal/dashboards",
+      "apiVersion": "2015-08-01-preview",
+      "name": "[variables('dashboardId')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "hidden-title": "[parameters('dashboardName')]"
+      },
+      "properties": {
+        "lenses": {
+          "0": {
+            "order": 0,
+            "parts": {
+              "0": {
+                "position": {
+                  "x": 0,
+                  "y": 0,
+                  "colSpan": 6,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Response Time Trends\nrequests\n| where timestamp > ago(24h)\n| summarize \n    AvgDuration = avg(duration),\n    P50Duration = percentile(duration, 50),\n    P95Duration = percentile(duration, 95),\n    P99Duration = percentile(duration, 99)\n    by bin(timestamp, 15m)\n| order by timestamp asc\n| render timechart with (title='Response Time Trends', xtitle='Time', ytitle='Duration (ms)')",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Response Time Trends",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "1": {
+                "position": {
+                  "x": 6,
+                  "y": 0,
+                  "colSpan": 6,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Throughput Analysis\nrequests\n| where timestamp > ago(24h)\n| summarize RequestCount = count() by bin(timestamp, 15m)\n| order by timestamp asc\n| render timechart with (title='Request Throughput', xtitle='Time', ytitle='Requests per 15min')",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Request Throughput",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "2": {
+                "position": {
+                  "x": 0,
+                  "y": 3,
+                  "colSpan": 4,
+                  "rowSpan": 4
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Endpoint Performance Analysis\nrequests\n| where timestamp > ago(24h)\n| summarize \n    RequestCount = count(),\n    AvgDuration = avg(duration),\n    P95Duration = percentile(duration, 95),\n    ErrorRate = round((todouble(countif(success == false)) / todouble(count())) * 100, 2)\n    by name\n| order by RequestCount desc\n| take 15\n| project \n    Endpoint = name,\n    Requests = RequestCount,\n    AvgDuration = round(AvgDuration, 0),\n    P95Duration = round(P95Duration, 0),\n    ErrorRate",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Endpoint Performance Analysis",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "3": {
+                "position": {
+                  "x": 4,
+                  "y": 3,
+                  "colSpan": 4,
+                  "rowSpan": 4
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// System Resource Utilization\ncustomEvents\n| where timestamp > ago(24h) and name == 'ResourceUtilization'\n| extend \n    memoryUsagePercent = todouble(customMeasurements.memoryUsagePercent),\n    loadAverage1m = todouble(customMeasurements.loadAverage1m),\n    processHeapUsed = todouble(customMeasurements.processHeapUsed),\n    cpuCount = todouble(customMeasurements.cpuCount)\n| summarize \n    AvgMemoryUsage = avg(memoryUsagePercent),\n    MaxMemoryUsage = max(memoryUsagePercent),\n    AvgLoadAverage = avg(loadAverage1m),\n    AvgHeapUsed = avg(processHeapUsed)\n    by bin(timestamp, 30m)\n| order by timestamp asc\n| render timechart with (title='System Resource Utilization')",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "System Resource Utilization",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "4": {
+                "position": {
+                  "x": 8,
+                  "y": 3,
+                  "colSpan": 4,
+                  "rowSpan": 4
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Dependency Performance Analysis\ndependencies\n| where timestamp > ago(24h)\n| summarize \n    CallCount = count(),\n    AvgDuration = avg(duration),\n    P95Duration = percentile(duration, 95),\n    SuccessRate = round((todouble(countif(success == true)) / todouble(count())) * 100, 2)\n    by target, name\n| order by CallCount desc\n| take 15\n| project \n    Service = target,\n    Operation = name,\n    Calls = CallCount,\n    AvgDuration = round(AvgDuration, 0),\n    P95Duration = round(P95Duration, 0),\n    SuccessRate",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Dependency Performance",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "5": {
+                "position": {
+                  "x": 0,
+                  "y": 7,
+                  "colSpan": 6,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// CSV Processing Performance\ncustomEvents\n| where timestamp > ago(24h) and name in ('CSVFileUpload', 'CSV_UploadBySize')\n| extend \n    fileSize = todouble(customMeasurements.fileSize),\n    rowCount = todouble(customMeasurements.rowCount),\n    duration = todouble(customMeasurements.duration),\n    sizeCategory = tostring(customDimensions.sizeCategory)\n| summarize \n    FilesProcessed = count(),\n    AvgFileSize = avg(fileSize),\n    AvgRowCount = avg(rowCount),\n    AvgProcessingTime = avg(duration),\n    P95ProcessingTime = percentile(duration, 95)\n    by sizeCategory\n| order by AvgFileSize asc\n| project \n    SizeCategory = sizeCategory,\n    Files = FilesProcessed,\n    AvgSizeMB = round(AvgFileSize / 1024 / 1024, 2),\n    AvgRows = round(AvgRowCount, 0),\n    AvgTimeMs = round(AvgProcessingTime, 0),\n    P95TimeMs = round(P95ProcessingTime, 0)",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "CSV Processing Performance by Size",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "6": {
+                "position": {
+                  "x": 6,
+                  "y": 7,
+                  "colSpan": 6,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Chat Performance Analysis\ncustomEvents\n| where timestamp > ago(24h) and name == 'CSVChatInteraction'\n| extend \n    messageLength = todouble(customMeasurements.messageLength),\n    responseTime = todouble(customMeasurements.responseTime),\n    speedCategory = tostring(customDimensions.speedCategory),\n    complexityCategory = tostring(customDimensions.complexityCategory)\n| summarize \n    ChatCount = count(),\n    AvgMessageLength = avg(messageLength),\n    AvgResponseTime = avg(responseTime),\n    P95ResponseTime = percentile(responseTime, 95)\n    by speedCategory, complexityCategory\n| order by AvgResponseTime asc\n| project \n    SpeedCategory = speedCategory,\n    ComplexityCategory = complexityCategory,\n    Chats = ChatCount,\n    AvgMsgLength = round(AvgMessageLength, 0),\n    AvgResponseMs = round(AvgResponseTime, 0),\n    P95ResponseMs = round(P95ResponseTime, 0)",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Chat Performance by Complexity",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "7": {
+                "position": {
+                  "x": 0,
+                  "y": 10,
+                  "colSpan": 4,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Memory Pressure Analysis\ncustomEvents\n| where timestamp > ago(24h) and name in ('SystemPerformance', 'ResourceUtilization')\n| extend \n    heapUsagePercent = todouble(customMeasurements.heapUsagePercent),\n    memoryUsagePercent = todouble(customMeasurements.memoryUsagePercent),\n    heapUsed = todouble(customMeasurements.heapUsed)\n| where isnotnull(heapUsagePercent) or isnotnull(memoryUsagePercent)\n| summarize \n    AvgHeapUsage = avg(heapUsagePercent),\n    MaxHeapUsage = max(heapUsagePercent),\n    AvgSystemMemory = avg(memoryUsagePercent),\n    MaxSystemMemory = max(memoryUsagePercent)\n    by bin(timestamp, 30m)\n| order by timestamp asc\n| render timechart with (title='Memory Pressure Trends')",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Memory Pressure Trends",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "8": {
+                "position": {
+                  "x": 4,
+                  "y": 10,
+                  "colSpan": 4,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Performance Alerts and Thresholds\nlet slowRequests = requests | where timestamp > ago(24h) and duration > 2000;\nlet highMemoryUsage = customEvents | where timestamp > ago(24h) and name == 'ResourceUtilization' and todouble(customMeasurements.memoryUsagePercent) > 80;\nlet highErrorRate = requests | where timestamp > ago(1h) | summarize ErrorRate = (todouble(countif(success == false)) / todouble(count())) * 100 | where ErrorRate > 5;\nunion\n    (slowRequests | summarize Count = count() | extend AlertType = 'Slow Requests (>2s)', Severity = 'Warning'),\n    (highMemoryUsage | summarize Count = count() | extend AlertType = 'High Memory Usage (>80%)', Severity = 'Critical'),\n    (highErrorRate | extend Count = 1, AlertType = 'High Error Rate (>5%)', Severity = 'Critical')\n| project AlertType, Severity, Count\n| order by Severity desc, Count desc",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Performance Alerts",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "9": {
+                "position": {
+                  "x": 8,
+                  "y": 10,
+                  "colSpan": 4,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Top Slow Operations\ncustomEvents\n| where timestamp > ago(24h) and name == 'OperationPerformance'\n| extend \n    operationName = tostring(customDimensions.operationName),\n    duration = todouble(customMeasurements.duration),\n    success = tostring(customDimensions.success)\n| summarize \n    OperationCount = count(),\n    AvgDuration = avg(duration),\n    P95Duration = percentile(duration, 95),\n    SuccessRate = round((todouble(countif(success == 'true')) / todouble(count())) * 100, 2)\n    by operationName\n| order by P95Duration desc\n| take 15\n| project \n    Operation = operationName,\n    Count = OperationCount,\n    AvgMs = round(AvgDuration, 0),\n    P95Ms = round(P95Duration, 0),\n    SuccessRate",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Top Slow Operations",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

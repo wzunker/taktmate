@@ -20,7 +20,16 @@
     "test:file-store": "node scripts/test-file-store.js",
     "test:csv-endpoints": "node scripts/test-csv-endpoints.js",
     "test:error-handling": "node scripts/test-error-handling.js",
-    "test:all": "npm run test:config && npm run test:jwt-claims && npm run test:jwt-middleware && npm run test:auth-routes && npm run test:user-service && npm run test:file-store && npm run test:csv-endpoints && npm run test:error-handling && npm run test:e2e"
+    "test:app-insights": "node scripts/test-application-insights.js",
+    "test:sdk-integration": "node scripts/test-sdk-integration.js",
+    "test:csv-telemetry": "node scripts/test-csv-telemetry.js",
+    "test:performance-monitoring": "node scripts/test-performance-monitoring.js",
+    "test:error-tracking": "node scripts/test-error-tracking.js",
+    "test:dashboards": "node scripts/test-dashboards.js",
+    "deploy:dashboards": "node scripts/deploy-dashboards.js",
+    "test:alerts": "node scripts/test-alerts.js",
+    "deploy:alerts": "node scripts/deploy-alerts.js",
+    "test:all": "npm run test:config && npm run test:jwt-claims && npm run test:jwt-middleware && npm run test:auth-routes && npm run test:user-service && npm run test:file-store && npm run test:csv-endpoints && npm run test:error-handling && npm run test:app-insights && npm run test:sdk-integration && npm run test:csv-telemetry && npm run test:performance-monitoring && npm run test:error-tracking && npm run test:dashboards && npm run test:alerts && npm run test:e2e"
   },
   "dependencies": {
     "express": "^4.18.2",

@@ -1,0 +1,485 @@
+// TaktMate Application Insights - Custom KQL Queries
+// Collection of useful queries for monitoring and analysis
+
+// ================================
+// APPLICATION HEALTH QUERIES
+// ================================
+
+// Overall Application Health Summary
+requests
+| where timestamp > ago(24h)
+| summarize 
+    TotalRequests = count(),
+    SuccessfulRequests = countif(success == true),
+    FailedRequests = countif(success == false),
+    AvgDuration = avg(duration),
+    P95Duration = percentile(duration, 95),
+    P99Duration = percentile(duration, 99)
+| extend 
+    SuccessRate = round((todouble(SuccessfulRequests) / todouble(TotalRequests)) * 100, 2),
+    ErrorRate = round((todouble(FailedRequests) / todouble(TotalRequests)) * 100, 2)
+| project 
+    TotalRequests,
+    SuccessfulRequests,
+    FailedRequests,
+    SuccessRate,
+    ErrorRate,
+    AvgDuration = round(AvgDuration, 0),
+    P95Duration = round(P95Duration, 0),
+    P99Duration = round(P99Duration, 0);
+
+// Application Availability Over Time
+requests
+| where timestamp > ago(7d)
+| summarize 
+    TotalRequests = count(),
+    SuccessfulRequests = countif(success == true)
+    by bin(timestamp, 1h)
+| extend Availability = round((todouble(SuccessfulRequests) / todouble(TotalRequests)) * 100, 2)
+| order by timestamp asc
+| render timechart with (title='Application Availability %', xtitle='Time', ytitle='Availability %');
+
+// ================================
+// ERROR ANALYSIS QUERIES
+// ================================
+
+// Top Errors by Frequency and Impact
+exceptions
+| where timestamp > ago(24h)
+| summarize 
+    ErrorCount = count(),
+    UniqueUsers = dcount(tostring(customDimensions.userId)),
+    FirstOccurrence = min(timestamp),
+    LastOccurrence = max(timestamp)
+    by type, outerMessage
+| extend 
+    ErrorDuration = LastOccurrence - FirstOccurrence,
+    UserImpact = case(UniqueUsers > 10, 'High', UniqueUsers > 3, 'Medium', 'Low')
+| order by ErrorCount desc
+| take 20
+| project 
+    ErrorType = type,
+    Message = outerMessage,
+    Count = ErrorCount,
+    UniqueUsers,
+    UserImpact,
+    FirstSeen = FirstOccurrence,
+    LastSeen = LastOccurrence,
+    Duration = ErrorDuration;
+
+// Error Rate by Endpoint
+requests
+| where timestamp > ago(24h)
+| summarize 
+    TotalRequests = count(),
+    ErrorRequests = countif(success == false),
+    AvgDuration = avg(duration)
+    by name
+| extend ErrorRate = round((todouble(ErrorRequests) / todouble(TotalRequests)) * 100, 2)
+| where TotalRequests > 10  // Filter out low-traffic endpoints
+| order by ErrorRate desc, TotalRequests desc
+| take 20
+| project 
+    Endpoint = name,
+    TotalRequests,
+    ErrorRequests,
+    ErrorRate,
+    AvgDuration = round(AvgDuration, 0);
+
+// Authentication Error Analysis
+customEvents
+| where timestamp > ago(24h) and name == 'AuthenticationError'
+| extend 
+    errorType = tostring(customDimensions.errorType),
+    authProvider = tostring(customDimensions.authProvider),
+    userId = tostring(customDimensions.userId),
+    userEmail = tostring(customDimensions.userEmail)
+| summarize 
+    ErrorCount = count(),
+    UniqueUsers = dcount(userId),
+    UniqueEmails = make_set(userEmail, 10),
+    LastOccurrence = max(timestamp)
+    by errorType, authProvider
+| order by ErrorCount desc
+| project 
+    ErrorType = errorType,
+    Provider = authProvider,
+    Count = ErrorCount,
+    Users = UniqueUsers,
+    SampleEmails = UniqueEmails,
+    LastSeen = LastOccurrence;
+
+// ================================
+// PERFORMANCE ANALYSIS QUERIES
+// ================================
+
+// Response Time Percentiles by Endpoint
+requests
+| where timestamp > ago(24h)
+| summarize 
+    RequestCount = count(),
+    P50 = percentile(duration, 50),
+    P75 = percentile(duration, 75),
+    P95 = percentile(duration, 95),
+    P99 = percentile(duration, 99),
+    MaxDuration = max(duration)
+    by name
+| where RequestCount > 10  // Filter out low-traffic endpoints
+| order by P95 desc
+| take 20
+| project 
+    Endpoint = name,
+    Requests = RequestCount,
+    P50 = round(P50, 0),
+    P75 = round(P75, 0),
+    P95 = round(P95, 0),
+    P99 = round(P99, 0),
+    Max = round(MaxDuration, 0);
+
+// Slow Requests Analysis
+requests
+| where timestamp > ago(24h) and duration > 2000  // Requests slower than 2 seconds
+| extend 
+    userId = tostring(customDimensions.userId),
+    userAgent = tostring(customDimensions.userAgent)
+| summarize 
+    SlowRequestCount = count(),
+    AvgDuration = avg(duration),
+    MaxDuration = max(duration),
+    UniqueUsers = dcount(userId),
+    UserAgents = make_set(userAgent, 5)
+    by name
+| order by SlowRequestCount desc
+| project 
+    Endpoint = name,
+    SlowRequests = SlowRequestCount,
+    AvgDuration = round(AvgDuration, 0),
+    MaxDuration = round(MaxDuration, 0),
+    Users = UniqueUsers,
+    UserAgents;
+
+// System Performance Trends
+customEvents
+| where timestamp > ago(24h) and name == 'SystemPerformance'
+| extend 
+    heapUsed = todouble(customMeasurements.heapUsed),
+    cpuUser = todouble(customMeasurements.cpuUser),
+    uptime = todouble(customMeasurements.uptime)
+| summarize 
+    AvgHeapUsed = avg(heapUsed),
+    MaxHeapUsed = max(heapUsed),
+    AvgCpuUser = avg(cpuUser),
+    MaxCpuUser = max(cpuUser)
+    by bin(timestamp, 30m)
+| order by timestamp asc
+| render timechart with (title='System Performance Trends');
+
+// ================================
+// USER BEHAVIOR ANALYSIS QUERIES
+// ================================
+
+// User Activity Summary
+customEvents
+| where timestamp > ago(7d)
+| where name in ('FileUpload', 'ChatInteraction', 'FileAccess')
+| extend userId = tostring(customDimensions.userId)
+| where isnotempty(userId) and userId != 'anonymous'
+| summarize 
+    FileUploads = countif(name == 'FileUpload'),
+    ChatInteractions = countif(name == 'ChatInteraction'),
+    FileAccesses = countif(name == 'FileAccess'),
+    FirstActivity = min(timestamp),
+    LastActivity = max(timestamp),
+    SessionCount = dcount(tostring(customDimensions.sessionId)),
+    DaysActive = dcount(bin(timestamp, 1d))
+    by userId
+| extend 
+    TotalActivities = FileUploads + ChatInteractions + FileAccesses,
+    ActivitySpan = LastActivity - FirstActivity,
+    UserSegment = case(
+        TotalActivities >= 50, 'Power User',
+        TotalActivities >= 20, 'Active User',
+        TotalActivities >= 5, 'Regular User',
+        'Light User'
+    )
+| order by TotalActivities desc
+| take 50;
+
+// Daily Active Users Trend
+customEvents
+| where timestamp > ago(30d)
+| where name in ('FileUpload', 'ChatInteraction', 'FileAccess')
+| extend userId = tostring(customDimensions.userId)
+| where isnotempty(userId) and userId != 'anonymous'
+| summarize DAU = dcount(userId) by bin(timestamp, 1d)
+| order by timestamp asc
+| render timechart with (title='Daily Active Users', xtitle='Date', ytitle='Active Users');
+
+// User Engagement Funnel
+let totalUsers = customEvents | where timestamp > ago(7d) | extend userId = tostring(customDimensions.userId) | where isnotempty(userId) and userId != 'anonymous' | distinct userId | count();
+let uploadUsers = customEvents | where timestamp > ago(7d) and name == 'FileUpload' | extend userId = tostring(customDimensions.userId) | distinct userId | count();
+let chatUsers = customEvents | where timestamp > ago(7d) and name == 'ChatInteraction' | extend userId = tostring(customDimensions.userId) | distinct userId | count();
+let accessUsers = customEvents | where timestamp > ago(7d) and name == 'FileAccess' | extend userId = tostring(customDimensions.userId) | distinct userId | count();
+union
+    (print Stage = 'Total Users', Users = toscalar(totalUsers)),
+    (print Stage = 'File Upload Users', Users = toscalar(uploadUsers)),
+    (print Stage = 'Chat Users', Users = toscalar(chatUsers)),
+    (print Stage = 'File Access Users', Users = toscalar(accessUsers))
+| extend ConversionRate = round((todouble(Users) / todouble(toscalar(totalUsers))) * 100, 1)
+| order by Users desc;
+
+// ================================
+// CSV PROCESSING ANALYSIS QUERIES
+// ================================
+
+// CSV Processing Performance by File Size
+customEvents
+| where timestamp > ago(7d) and name == 'CSVFileUpload'
+| extend 
+    fileSize = todouble(customMeasurements.fileSize),
+    rowCount = todouble(customMeasurements.rowCount),
+    duration = todouble(customMeasurements.duration),
+    sizeCategory = tostring(customDimensions.sizeCategory)
+| summarize 
+    FilesProcessed = count(),
+    AvgFileSize = avg(fileSize),
+    AvgRowCount = avg(rowCount),
+    AvgProcessingTime = avg(duration),
+    P95ProcessingTime = percentile(duration, 95),
+    ProcessingRate = sum(rowCount) / sum(duration) * 1000  // rows per second
+    by sizeCategory
+| extend 
+    AvgFileSizeMB = round(AvgFileSize / 1024 / 1024, 2),
+    AvgProcessingTimeMs = round(AvgProcessingTime, 0),
+    P95ProcessingTimeMs = round(P95ProcessingTime, 0),
+    ProcessingRateRowsPerSec = round(ProcessingRate, 0)
+| order by AvgFileSize asc
+| project 
+    SizeCategory = sizeCategory,
+    Files = FilesProcessed,
+    AvgSizeMB = AvgFileSizeMB,
+    AvgRows = round(AvgRowCount, 0),
+    AvgTimeMs = AvgProcessingTimeMs,
+    P95TimeMs = P95ProcessingTimeMs,
+    RowsPerSec = ProcessingRateRowsPerSec;
+
+// Chat Interaction Quality Analysis
+customEvents
+| where timestamp > ago(7d) and name == 'CSVChatInteraction'
+| extend 
+    messageLength = todouble(customMeasurements.messageLength),
+    responseTime = todouble(customMeasurements.responseTime),
+    complexityCategory = tostring(customDimensions.complexityCategory),
+    success = tostring(customDimensions.success) == 'true'
+| summarize 
+    ChatCount = count(),
+    SuccessfulChats = countif(success),
+    AvgMessageLength = avg(messageLength),
+    AvgResponseTime = avg(responseTime),
+    P95ResponseTime = percentile(responseTime, 95),
+    UniqueUsers = dcount(tostring(customDimensions.userId))
+    by complexityCategory
+| extend 
+    SuccessRate = round((todouble(SuccessfulChats) / todouble(ChatCount)) * 100, 2),
+    AvgMsgLength = round(AvgMessageLength, 0),
+    AvgResponseMs = round(AvgResponseTime, 0),
+    P95ResponseMs = round(P95ResponseTime, 0)
+| order by AvgResponseTime asc
+| project 
+    Complexity = complexityCategory,
+    Chats = ChatCount,
+    Users = UniqueUsers,
+    SuccessRate,
+    AvgMsgLength,
+    AvgResponseMs,
+    P95ResponseMs;
+
+// ================================
+// DEPENDENCY ANALYSIS QUERIES
+// ================================
+
+// External Service Performance
+dependencies
+| where timestamp > ago(24h)
+| summarize 
+    CallCount = count(),
+    SuccessfulCalls = countif(success == true),
+    AvgDuration = avg(duration),
+    P95Duration = percentile(duration, 95),
+    MaxDuration = max(duration)
+    by target, name
+| extend 
+    SuccessRate = round((todouble(SuccessfulCalls) / todouble(CallCount)) * 100, 2),
+    AvailabilityStatus = case(
+        SuccessRate >= 99, 'Excellent',
+        SuccessRate >= 95, 'Good',
+        SuccessRate >= 90, 'Warning',
+        'Critical'
+    )
+| order by CallCount desc
+| project 
+    Service = target,
+    Operation = name,
+    Calls = CallCount,
+    SuccessRate,
+    Status = AvailabilityStatus,
+    AvgDuration = round(AvgDuration, 0),
+    P95Duration = round(P95Duration, 0),
+    MaxDuration = round(MaxDuration, 0);
+
+// OpenAI API Usage Analysis
+customEvents
+| where timestamp > ago(7d) and name == 'ExternalServiceError'
+| where tostring(customDimensions.serviceName) == 'OpenAI API'
+| extend 
+    operation = tostring(customDimensions.operation),
+    statusCode = tostring(customDimensions.statusCode),
+    duration = todouble(customMeasurements.duration)
+| summarize 
+    ErrorCount = count(),
+    AvgDuration = avg(duration),
+    StatusCodes = make_set(statusCode),
+    LastError = max(timestamp)
+    by operation
+| order by ErrorCount desc
+| project 
+    Operation = operation,
+    Errors = ErrorCount,
+    AvgDuration = round(AvgDuration, 0),
+    StatusCodes,
+    LastError;
+
+// ================================
+// BUSINESS INTELLIGENCE QUERIES
+// ================================
+
+// Monthly Business Metrics
+let monthlyData = customEvents
+| where timestamp > ago(30d)
+| where name in ('CSVFileUpload', 'CSVChatInteraction');
+let fileUploads = monthlyData | where name == 'CSVFileUpload' | extend fileSize = todouble(customMeasurements.fileSize), rowCount = todouble(customMeasurements.rowCount);
+let chatInteractions = monthlyData | where name == 'CSVChatInteraction';
+union
+    (fileUploads | summarize Value = count() | extend Metric = 'Files Processed', Unit = 'files'),
+    (fileUploads | summarize Value = round(sum(fileSize) / 1024 / 1024 / 1024, 2) | extend Metric = 'Data Processed', Unit = 'GB'),
+    (fileUploads | summarize Value = round(sum(rowCount) / 1000000, 2) | extend Metric = 'Rows Processed', Unit = 'millions'),
+    (chatInteractions | summarize Value = count() | extend Metric = 'Chat Interactions', Unit = 'interactions'),
+    (monthlyData | extend userId = tostring(customDimensions.userId) | where isnotempty(userId) and userId != 'anonymous' | summarize Value = dcount(userId) | extend Metric = 'Active Users', Unit = 'users')
+| project Metric, Value, Unit;
+
+// User Retention Cohort Analysis
+let cohortUsers = customEvents
+| where timestamp between (ago(14d) .. ago(7d))
+| where name in ('FileUpload', 'ChatInteraction')
+| extend userId = tostring(customDimensions.userId)
+| where isnotempty(userId) and userId != 'anonymous'
+| distinct userId;
+let currentUsers = customEvents
+| where timestamp > ago(7d)
+| where name in ('FileUpload', 'ChatInteraction')
+| extend userId = tostring(customDimensions.userId)
+| where isnotempty(userId) and userId != 'anonymous'
+| distinct userId;
+let retainedUsers = currentUsers | join kind=inner cohortUsers on userId;
+let newUsers = currentUsers | join kind=leftanti cohortUsers on userId;
+let churnedUsers = cohortUsers | join kind=leftanti currentUsers on userId;
+union
+    (cohortUsers | summarize Count = count() | extend Category = 'Previous Week Users'),
+    (currentUsers | summarize Count = count() | extend Category = 'Current Week Users'),
+    (retainedUsers | summarize Count = count() | extend Category = 'Retained Users'),
+    (newUsers | summarize Count = count() | extend Category = 'New Users'),
+    (churnedUsers | summarize Count = count() | extend Category = 'Churned Users')
+| extend RetentionRate = case(
+    Category == 'Retained Users', round((Count / toscalar(cohortUsers | count())) * 100, 1),
+    0.0
+)
+| project Category, Count, RetentionRate;
+
+// ================================
+// OPERATIONAL QUERIES
+// ================================
+
+// Application Health Check
+let healthCheck = requests
+| where timestamp > ago(5m)
+| summarize 
+    RecentRequests = count(),
+    RecentErrors = countif(success == false),
+    AvgResponseTime = avg(duration)
+| extend 
+    ErrorRate = round((todouble(RecentErrors) / todouble(RecentRequests)) * 100, 2),
+    Status = case(
+        RecentRequests == 0, 'No Traffic',
+        ErrorRate > 10, 'Critical',
+        ErrorRate > 5, 'Warning',
+        AvgResponseTime > 2000, 'Slow',
+        'Healthy'
+    );
+healthCheck;
+
+// Resource Pressure Alerts
+customEvents
+| where timestamp > ago(15m) and name == 'ResourceUtilization'
+| extend 
+    memoryUsagePercent = todouble(customMeasurements.memoryUsagePercent),
+    loadAverage1m = todouble(customMeasurements.loadAverage1m),
+    cpuCount = todouble(customMeasurements.cpuCount)
+| summarize 
+    AvgMemoryUsage = avg(memoryUsagePercent),
+    MaxMemoryUsage = max(memoryUsagePercent),
+    AvgLoadAverage = avg(loadAverage1m),
+    MaxLoadAverage = max(loadAverage1m),
+    CpuCount = max(cpuCount)
+| extend 
+    MemoryPressure = case(MaxMemoryUsage > 90, 'Critical', MaxMemoryUsage > 80, 'High', MaxMemoryUsage > 70, 'Medium', 'Normal'),
+    CpuPressure = case(MaxLoadAverage > (CpuCount * 0.8), 'High', MaxLoadAverage > (CpuCount * 0.6), 'Medium', 'Normal')
+| project 
+    MemoryUsage = round(AvgMemoryUsage, 1),
+    MaxMemory = round(MaxMemoryUsage, 1),
+    MemoryPressure,
+    LoadAverage = round(AvgLoadAverage, 2),
+    MaxLoad = round(MaxLoadAverage, 2),
+    CpuPressure;
+
+// ================================
+// CUSTOM ANALYSIS TEMPLATES
+// ================================
+
+// Template: Error Spike Detection
+// Detects sudden increases in error rates
+let baseline = requests
+| where timestamp between (ago(7d) .. ago(1d))
+| summarize BaselineErrorRate = (todouble(countif(success == false)) / todouble(count())) * 100;
+let current = requests
+| where timestamp > ago(1h)
+| summarize CurrentErrorRate = (todouble(countif(success == false)) / todouble(count())) * 100;
+union baseline, current
+| summarize 
+    BaselineRate = max(BaselineErrorRate),
+    CurrentRate = max(CurrentErrorRate)
+| extend 
+    Difference = CurrentRate - BaselineRate,
+    Alert = case(Difference > 5, 'Critical Spike', Difference > 2, 'Warning Spike', 'Normal')
+| project BaselineRate, CurrentRate, Difference, Alert;
+
+// Template: Performance Regression Detection
+// Detects performance degradation compared to baseline
+let baseline = requests
+| where timestamp between (ago(7d) .. ago(1d))
+| summarize BaselineP95 = percentile(duration, 95) by name;
+let current = requests
+| where timestamp > ago(1h)
+| summarize CurrentP95 = percentile(duration, 95) by name;
+baseline
+| join current on name
+| extend 
+    Degradation = ((CurrentP95 - BaselineP95) / BaselineP95) * 100,
+    Alert = case(Degradation > 50, 'Critical', Degradation > 25, 'Warning', 'Normal')
+| where Degradation > 10  // Only show endpoints with >10% degradation
+| order by Degradation desc
+| project 
+    Endpoint = name,
+    BaselineP95 = round(BaselineP95, 0),
+    CurrentP95 = round(CurrentP95, 0),
+    DegradationPercent = round(Degradation, 1),
+    Alert;

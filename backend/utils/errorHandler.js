@@ -484,12 +484,54 @@ function createErrorHandler() {
       console.warn('⚠️  TaktMate Warning:', logData);
     }
 
-    // Track error in Application Insights
-    ErrorTracker.trackError(taktMateError, req.user?.id, {
+    // Track error in Application Insights with enhanced error tracking
+    const duration = req.startTime ? Date.now() - req.startTime : 0;
+    const errorContext = {
       component: 'errorHandler',
       endpoint: req.path,
-      method: req.method
-    });
+      method: req.method,
+      userAgent: req.headers['user-agent'],
+      ip: req.ip || req.connection.remoteAddress,
+      correlationId: req.headers['x-correlation-id'],
+      sessionId: req.sessionID,
+      userId: req.user?.id,
+      userEmail: req.user?.email,
+      duration: duration
+    };
+
+    // Use specialized error tracking based on error type
+    if (global.appInsights && global.appInsights.telemetry) {
+      switch (taktMateError.type) {
+        case 'AUTHENTICATION_REQUIRED':
+        case 'TOKEN_EXPIRED':
+        case 'TOKEN_INVALID':
+        case 'INSUFFICIENT_PERMISSIONS':
+          global.appInsights.telemetry.trackAuthError(taktMateError, {
+            ...errorContext,
+            tokenExpired: taktMateError.type === 'TOKEN_EXPIRED',
+            tokenInvalid: taktMateError.type === 'TOKEN_INVALID',
+            authProvider: 'azure-ad-b2c'
+          });
+          break;
+        case 'VALIDATION_FAILED':
+        case 'INVALID_CSV':
+          global.appInsights.telemetry.trackValidationError(taktMateError, req.body || {}, {
+            ...errorContext,
+            validationType: 'request',
+            fieldName: taktMateError.context?.fieldName || 'unknown'
+          });
+          break;
+        default:
+          global.appInsights.telemetry.trackHTTPError(taktMateError, req, res, {
+            ...errorContext,
+            errorCategory: 'taktmate_error'
+          });
+          break;
+      }
+    }
+
+    // Also track with general error tracking for backwards compatibility
+    ErrorTracker.trackError(taktMateError, req.user?.id, errorContext);
 
     // Set retry-after header for rate limiting
     if (taktMateError.retryAfter) {

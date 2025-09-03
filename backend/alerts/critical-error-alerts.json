@@ -1,0 +1,227 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "applicationInsightsName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Application Insights instance"
+      }
+    },
+    "actionGroupResourceId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the action group for notifications"
+      }
+    },
+    "alertNamePrefix": {
+      "type": "string",
+      "defaultValue": "TaktMate",
+      "metadata": {
+        "description": "Prefix for alert names"
+      }
+    }
+  },
+  "variables": {
+    "applicationInsightsResourceId": "[resourceId('Microsoft.Insights/components', parameters('applicationInsightsName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('alertNamePrefix'), ' - High Error Rate')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[concat(parameters('alertNamePrefix'), ' - High Error Rate')]",
+        "description": "Alert when error rate exceeds 5% over 5 minutes",
+        "severity": 2,
+        "enabled": true,
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "requests\n| where timestamp > ago(5m)\n| summarize \n    TotalRequests = count(),\n    ErrorRequests = countif(success == false)\n| extend ErrorRate = (todouble(ErrorRequests) / todouble(TotalRequests)) * 100\n| where ErrorRate > 5",
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            "[parameters('actionGroupResourceId')]"
+          ]
+        },
+        "scopes": [
+          "[variables('applicationInsightsResourceId')]"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('alertNamePrefix'), ' - Unhandled Exceptions')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[concat(parameters('alertNamePrefix'), ' - Unhandled Exceptions')]",
+        "description": "Alert on any unhandled exceptions",
+        "severity": 1,
+        "enabled": true,
+        "evaluationFrequency": "PT1M",
+        "windowSize": "PT5M",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "customEvents\n| where timestamp > ago(5m)\n| where name == 'UnhandledException'\n| count",
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            "[parameters('actionGroupResourceId')]"
+          ]
+        },
+        "scopes": [
+          "[variables('applicationInsightsResourceId')]"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('alertNamePrefix'), ' - Critical Errors Spike')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[concat(parameters('alertNamePrefix'), ' - Critical Errors Spike')]",
+        "description": "Alert when critical errors spike compared to baseline",
+        "severity": 1,
+        "enabled": true,
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT15M",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "let baseline = customEvents\n| where timestamp between (ago(7d) .. ago(1d))\n| where name == 'ErrorOccurred' and tostring(customDimensions.severity) == 'critical'\n| summarize BaselineCount = count() / 6 / 24; // Average per 15min over 6 days\nlet current = customEvents\n| where timestamp > ago(15m)\n| where name == 'ErrorOccurred' and tostring(customDimensions.severity) == 'critical'\n| summarize CurrentCount = count();\nunion baseline, current\n| summarize \n    BaselineAvg = max(BaselineCount),\n    CurrentCount = max(CurrentCount)\n| extend Spike = CurrentCount > (BaselineAvg * 3) and CurrentCount > 2\n| where Spike == true",
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            "[parameters('actionGroupResourceId')]"
+          ]
+        },
+        "scopes": [
+          "[variables('applicationInsightsResourceId')]"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('alertNamePrefix'), ' - Authentication Failures')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[concat(parameters('alertNamePrefix'), ' - Authentication Failures')]",
+        "description": "Alert on high authentication failure rate indicating potential security issues",
+        "severity": 2,
+        "enabled": true,
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT10M",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "customEvents\n| where timestamp > ago(10m)\n| where name == 'AuthenticationError'\n| summarize \n    FailureCount = count(),\n    UniqueUsers = dcount(tostring(customDimensions.userId))\n| where FailureCount > 10 or UniqueUsers > 5",
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            "[parameters('actionGroupResourceId')]"
+          ]
+        },
+        "scopes": [
+          "[variables('applicationInsightsResourceId')]"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('alertNamePrefix'), ' - External Service Failures')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[concat(parameters('alertNamePrefix'), ' - External Service Failures')]",
+        "description": "Alert on external service failures that could impact functionality",
+        "severity": 2,
+        "enabled": true,
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT10M",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "union\n    (dependencies | where timestamp > ago(10m) and success == false),\n    (customEvents | where timestamp > ago(10m) and name == 'ExternalServiceError')\n| summarize \n    FailureCount = count(),\n    Services = make_set(iff(isnotempty(target), target, tostring(customDimensions.serviceName)))\n| where FailureCount > 5",
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            "[parameters('actionGroupResourceId')]"
+          ]
+        },
+        "scopes": [
+          "[variables('applicationInsightsResourceId')]"
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "alertRuleIds": {
+      "type": "array",
+      "value": [
+        "[resourceId('Microsoft.Insights/scheduledQueryRules', concat(parameters('alertNamePrefix'), ' - High Error Rate'))]",
+        "[resourceId('Microsoft.Insights/scheduledQueryRules', concat(parameters('alertNamePrefix'), ' - Unhandled Exceptions'))]",
+        "[resourceId('Microsoft.Insights/scheduledQueryRules', concat(parameters('alertNamePrefix'), ' - Critical Errors Spike'))]",
+        "[resourceId('Microsoft.Insights/scheduledQueryRules', concat(parameters('alertNamePrefix'), ' - Authentication Failures'))]",
+        "[resourceId('Microsoft.Insights/scheduledQueryRules', concat(parameters('alertNamePrefix'), ' - External Service Failures'))]"
+      ]
+    }
+  }
+}
