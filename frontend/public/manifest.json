@@ -1,0 +1,87 @@
+{
+  "short_name": "TaktMate",
+  "name": "TaktMate - AI-Powered CSV Data Analysis",
+  "description": "Transform your CSV files into intelligent conversations. Upload data, ask questions in plain English, get instant insights powered by GPT-4.",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "favicon-16x16.png",
+      "type": "image/png",
+      "sizes": "16x16"
+    },
+    {
+      "src": "favicon-32x32.png",
+      "type": "image/png",
+      "sizes": "32x32"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "type": "image/png",
+      "sizes": "180x180"
+    },
+    {
+      "src": "android-chrome-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "android-chrome-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff",
+  "scope": "/",
+  "lang": "en-US",
+  "categories": ["business", "productivity", "utilities"],
+  "screenshots": [
+    {
+      "src": "screenshot-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "TaktMate Desktop Interface"
+    },
+    {
+      "src": "screenshot-mobile.png",
+      "sizes": "375x667",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "TaktMate Mobile Interface"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Upload CSV",
+      "short_name": "Upload",
+      "description": "Upload a new CSV file for analysis",
+      "url": "/?action=upload",
+      "icons": [
+        {
+          "src": "icon-upload.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Sign In",
+      "short_name": "Sign In",
+      "description": "Sign in to your TaktMate account",
+      "url": "/login",
+      "icons": [
+        {
+          "src": "icon-login.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}
