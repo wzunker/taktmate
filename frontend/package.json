@@ -21,6 +21,11 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "test:auth": "node scripts/test-frontend-auth.js",
+    "test:auth:watch": "npm test -- --watch --testPathPattern=auth",
+    "test:auth:coverage": "npm test -- --coverage --testPathPattern=auth --watchAll=false",
+    "test:components": "npm test -- --testPathPattern=components --watchAll=false",
+    "test:hooks": "npm test -- --testPathPattern=hooks --watchAll=false",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
