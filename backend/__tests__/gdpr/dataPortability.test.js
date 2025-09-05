@@ -1,12 +1,12 @@
 // GDPR Data Portability (Right to Data Portability) Tests
-// Tests comprehensive data export functionality through Azure AD B2C
+// Tests comprehensive data export functionality through Microsoft Entra External ID
 
 const request = require('supertest');
 const app = require('../../index');
 const { GDPRComplianceService } = require('../../services/gdprComplianceService');
 const { EntraExternalIdApiService } = require('../../services/entraExternalIdApiService');
 
-// Mock Azure AD B2C API service
+// Mock Microsoft Entra External ID API service
 jest.mock('../../services/entraExternalIdApiService');
 jest.mock('@azure/msal-node');
 

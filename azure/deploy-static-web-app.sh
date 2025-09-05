@@ -132,7 +132,7 @@ if [ $? -eq 0 ]; then
     echo "1. Add the deployment token to your GitHub repository secrets as 'AZURE_STATIC_WEB_APPS_API_TOKEN'"
     echo "2. Configure your GitHub repository in the Azure portal if needed"
     echo "3. Set up custom domain DNS records if using a custom domain"
-    echo "4. Configure Azure AD B2C redirect URLs to include the new domain"
+    echo "4. Configure Microsoft Entra External ID redirect URLs to include the new domain"
     
     # Check if custom domain is configured
     CUSTOM_DOMAIN=$(jq -r '.parameters.customDomainName.value' "$PARAMETERS_FILE")

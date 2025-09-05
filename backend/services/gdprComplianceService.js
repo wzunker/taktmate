@@ -1,5 +1,5 @@
 // TaktMate GDPR Compliance Service
-// Leverages Azure AD B2C's built-in GDPR compliance features and extends them for application-specific needs
+// Leverages Microsoft Entra External ID's built-in GDPR compliance features and extends them for application-specific needs
 
 const axios = require('axios');
 const { config: azureConfig } = require('../config/entraExternalId');
@@ -7,7 +7,7 @@ const { EntraExternalIdApiService } = require('./entraExternalIdApiService');
 
 /**
  * GDPR Compliance Service
- * Leverages Azure AD B2C's built-in GDPR features and provides additional compliance capabilities
+ * Leverages Microsoft Entra External ID's built-in GDPR features and provides additional compliance capabilities
  */
 class GDPRComplianceService {
     constructor(appInsights = null) {

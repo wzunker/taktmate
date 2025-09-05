@@ -716,7 +716,7 @@ app.get('/api/gdpr/export',
   }
 );
 
-// GDPR account deletion request endpoint (authenticated) - Enhanced with Azure AD B2C workflow
+// GDPR account deletion request endpoint (authenticated) - Enhanced with Microsoft Entra External ID workflow
 app.post('/api/gdpr/delete-account', 
   jwtAuthMiddleware(),
   rateLimitSecurity.createRateLimiter('authenticated'),
@@ -745,7 +745,7 @@ app.post('/api/gdpr/delete-account',
         userAgent: req.headers['user-agent']
       };
       
-      // Request account deletion through comprehensive Azure AD B2C workflow
+      // Request account deletion through comprehensive Microsoft Entra External ID workflow
       const deletionResult = await accountDeletion.requestAccountDeletion(userId, requestData);
       
       if (deletionResult.success) {

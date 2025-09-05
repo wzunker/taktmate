@@ -166,7 +166,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
-   * Edit profile (redirect to B2C profile editing flow)
+   * Edit profile (redirect to Microsoft Entra External ID profile editing flow)
    */
   const editProfile = async () => {
     try {
@@ -186,7 +186,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
-   * Reset password (redirect to B2C password reset flow)
+   * Reset password (redirect to Microsoft Entra External ID password reset flow)
    */
   const resetPassword = async () => {
     try {
