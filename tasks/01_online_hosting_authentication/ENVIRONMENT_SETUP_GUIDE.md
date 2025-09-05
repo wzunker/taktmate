@@ -28,15 +28,15 @@ Based on your completed Azure resources, you're now at the **configuration stage
 
 You need to collect these URLs from your Azure resources:
 
-- [ ] **App Service URL**: Go to App Service → Overview → Copy the URL
+- [X] **App Service URL**: Go to App Service → Overview → Copy the URL
   - Should be: `https://taktmate-backend-api-[random].azurewebsites.net`
   
-- [ ] **Static Web App URL**: Go to Static Web Apps → Overview → Copy the URL  
+- [X] **Static Web App URL**: Go to Static Web Apps → Overview → Copy the URL  
   - Should be: `https://[random]-[random].azurestaticapps.net`
 
 ### **Step 2: Configure Backend Environment Variables**
 
-Go to **App Service** → **Configuration** → **Application settings** and add:
+[X] Go to **App Service** → **Configuration** → **Application settings** and add:
 
 ```bash
 # Essential Azure settings (CRITICAL)
@@ -49,20 +49,12 @@ PORT=80
 ENTRA_EXTERNAL_ID_TENANT_ID=taktmate.onmicrosoft.com
 ENTRA_EXTERNAL_ID_CLIENT_ID=[your-client-id-from-app-registration]
 ENTRA_EXTERNAL_ID_CLIENT_SECRET=[your-client-secret-value]
-ENTRA_EXTERNAL_ID_DOMAIN=taktmate.ciamlogin.com
-ENTRA_EXTERNAL_ID_POLICY_NAME=B2C_1_signupsignin1
 
 # Application Insights
 APPLICATION_INSIGHTS_CONNECTION_STRING=[your-connection-string]
 
 # CORS Configuration (Use your Static Web App URL)
 FRONTEND_URL=[your-static-web-app-url]
-CORS_ORIGINS=[your-static-web-app-url],http://localhost:3000
-
-# Security (Generate these)
-JWT_SECRET=[generate-32-character-random-string]
-SESSION_SECRET=[generate-32-character-random-string]
-ENCRYPTION_KEY=[generate-exactly-32-characters]
 
 # Optional
 AZURE_KEY_VAULT_URL=https://taktmate-keyvault.vault.azure.net/
@@ -70,7 +62,7 @@ AZURE_KEY_VAULT_URL=https://taktmate-keyvault.vault.azure.net/
 
 ### **Step 3: Configure Frontend Environment Variables**
 
-Go to **Static Web Apps** → **Configuration** → **Application settings** and add:
+[X] Go to **Static Web Apps** → **Configuration** → **Application settings** and add:
 
 ```bash
 # API Connection (Use your App Service URL)
@@ -79,8 +71,6 @@ REACT_APP_API_URL=[your-app-service-url]/api
 # Microsoft Entra External ID (Same as backend)
 REACT_APP_ENTRA_EXTERNAL_ID_TENANT_ID=taktmate.onmicrosoft.com
 REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID=[your-client-id-from-app-registration]
-REACT_APP_ENTRA_EXTERNAL_ID_DOMAIN=taktmate.ciamlogin.com
-REACT_APP_ENTRA_EXTERNAL_ID_POLICY_NAME=B2C_1_signupsignin1
 
 # App Configuration
 REACT_APP_ENVIRONMENT=production
@@ -89,9 +79,9 @@ REACT_APP_APP_NAME=TaktMate
 
 ### **Step 4: Enable Managed Identity for Key Vault**
 
-- [ ] **App Service** → **Identity** → **System assigned** → **On** → **Save**
-- [ ] **Copy the Object (principal) ID**
-- [ ] **Key Vault** → **Access control (IAM)** → **Add role assignment**
+- [X] **App Service** → **Identity** → **System assigned** → **On** → **Save**
+- [X] **Copy the Object (principal) ID**
+- [X] **Key Vault** → **Access control (IAM)** → **Add role assignment**
   - **Role**: `Key Vault Secrets User`
   - **Members**: Paste the Object ID → **Review + assign**
 
