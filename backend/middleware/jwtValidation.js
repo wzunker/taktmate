@@ -40,7 +40,7 @@ const jwksClientInstance = jwksClient({
   timeout: parseInt(process.env.REQUEST_TIMEOUT) || 30000,
   cache: true,
   cacheMaxEntries: 5,
-  cacheMaxAge: config.jwksCacheTtl,
+  cacheMaxAge: parseInt(config.jwksCacheTtl) || 300000, // 5 minutes default
   jwksRequestsPerMinute: 10,
   jwksRequestsPerMinuteRateLimitExceededError: new Error('Too many requests to JWKS endpoint'),
   getKeysInterceptor: (keys) => {
