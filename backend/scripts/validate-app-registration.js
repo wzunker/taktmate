@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * Azure AD B2C Application Registration Validator for TaktMate
+ * Microsoft Entra External ID Application Registration Validator for TaktMate
  * 
- * This script validates the Azure AD B2C application registration
+ * This script validates the Microsoft Entra External ID application registration
  * configuration and tests connectivity with the registered application.
  */
 
@@ -155,10 +155,10 @@ function validateAppRegistration() {
 }
 
 /**
- * Test Azure AD B2C endpoints with application
+ * Test Microsoft Entra External ID endpoints with application
  */
 async function testApplicationEndpoints() {
-  log('\n🌐 Testing Azure AD B2C Endpoints', colors.cyan);
+  log('\n🌐 Testing Microsoft Entra External ID Endpoints', colors.cyan);
   log('=' .repeat(60), colors.cyan);
 
   const endpoints = [
@@ -266,7 +266,7 @@ function displayRegistrationChecklist() {
 
   const checklist = [
     {
-      item: 'Application registered in Azure AD B2C',
+      item: 'Application registered in Microsoft Entra External ID',
       description: 'Create "TaktMate CSV Chat Application" in App registrations'
     },
     {
@@ -359,7 +359,7 @@ function displayNextSteps() {
   log('=' .repeat(60), colors.cyan);
 
   const steps = [
-    'Complete application registration in Azure AD B2C portal',
+    'Complete application registration in Microsoft Entra External ID portal',
     'Update environment variables with client ID and secret',
     'Test authentication flow using generated URLs',
     'Verify JWT tokens contain expected claims',
@@ -377,7 +377,7 @@ function displayNextSteps() {
 async function main() {
   const command = process.argv[2] || 'all';
 
-  log('🚀 TaktMate Azure AD B2C Application Registration Validator', colors.bright);
+  log('🚀 TaktMate Microsoft Entra External ID Application Registration Validator', colors.bright);
   log(`Environment: ${process.env.NODE_ENV || 'development'}`, colors.blue);
 
   switch (command) {
@@ -400,7 +400,7 @@ async function main() {
       log('\nUsage: node validate-app-registration.js [command]', colors.yellow);
       log('\nCommands:', colors.yellow);
       log('  config       - Validate application configuration', colors.blue);
-      log('  endpoints    - Test Azure AD B2C endpoints', colors.blue);
+      log('  endpoints    - Test Microsoft Entra External ID endpoints', colors.blue);
       log('  urls         - Generate authentication URLs', colors.blue);
       log('  checklist    - Display registration checklist', colors.blue);
       log('  troubleshoot - Display troubleshooting guide', colors.blue);
@@ -424,7 +424,7 @@ async function main() {
 
       if (overallSuccess) {
         log('\n✅ Application registration validation passed!', colors.green);
-        log('Your Azure AD B2C application is properly configured.', colors.green);
+        log('Your Microsoft Entra External ID application is properly configured.', colors.green);
       } else {
         log('\n❌ Application registration validation failed!', colors.red);
         log('Please review the issues above and update your configuration.', colors.red);

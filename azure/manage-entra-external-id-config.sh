@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Manage Azure AD B2C Configuration across environments
-# Usage: ./manage-b2c-config.sh [command] [environment] [options...]
+# Manage Microsoft Entra External ID Configuration across environments
+# Usage: ./manage-entra-external-id-config.sh [command] [environment] [options...]
 # Commands: generate-env, update-secrets, validate, export, import
 # Examples:
-#   ./manage-b2c-config.sh generate-env production
-#   ./manage-b2c-config.sh update-secrets staging
-#   ./manage-b2c-config.sh validate production
+#   ./manage-entra-external-id-config.sh generate-env production
+#   ./manage-entra-external-id-config.sh update-secrets staging
+#   ./manage-entra-external-id-config.sh validate production
 
 set -e
 
@@ -102,35 +102,35 @@ generate_env() {
     local env_file="b2c-env-${ENVIRONMENT}.env"
     
     cat > "$env_file" << EOF
-# Azure AD B2C Configuration for $ENVIRONMENT Environment
+# Microsoft Entra External ID Configuration for $ENVIRONMENT Environment
 # Generated on $(date)
 
 # Tenant Configuration
-AZURE_AD_B2C_TENANT_NAME=$TENANT_NAME.onmicrosoft.com
-AZURE_AD_B2C_TENANT_ID=your-tenant-id-here
+ENTRA_EXTERNAL_ID_TENANT_NAME=$TENANT_NAME.onmicrosoft.com
+ENTRA_EXTERNAL_ID_TENANT_ID=your-tenant-id-here
 
 # Application Configuration
-AZURE_AD_B2C_CLIENT_ID=your-client-id-here
-AZURE_AD_B2C_CLIENT_SECRET=your-client-secret-here
+ENTRA_EXTERNAL_ID_CLIENT_ID=your-client-id-here
+ENTRA_EXTERNAL_ID_CLIENT_SECRET=your-client-secret-here
 
 # Policy Configuration
-AZURE_AD_B2C_SIGNUP_SIGNIN_POLICY=B2C_1_signupsignin
-AZURE_AD_B2C_EDIT_PROFILE_POLICY=B2C_1_profileediting
-AZURE_AD_B2C_RESET_PASSWORD_POLICY=B2C_1_passwordreset
+ENTRA_EXTERNAL_ID_SIGNUP_SIGNIN_POLICY=B2C_1_signupsignin
+ENTRA_EXTERNAL_ID_EDIT_PROFILE_POLICY=B2C_1_profileediting
+ENTRA_EXTERNAL_ID_RESET_PASSWORD_POLICY=B2C_1_passwordreset
 
 # URL Configuration
-AZURE_AD_B2C_AUTHORITY=https://$TENANT_NAME.b2clogin.com/$TENANT_NAME.onmicrosoft.com/B2C_1_signupsignin
-AZURE_AD_B2C_KNOWN_AUTHORITY=$TENANT_NAME.b2clogin.com
+ENTRA_EXTERNAL_ID_AUTHORITY=https://$TENANT_NAME.ciamlogin.com/$TENANT_NAME.onmicrosoft.com/B2C_1_signupsignin
+ENTRA_EXTERNAL_ID_KNOWN_AUTHORITY=$TENANT_NAME.ciamlogin.com
 
 # Frontend Configuration
-REACT_APP_AZURE_AD_B2C_CLIENT_ID=your-client-id-here
-REACT_APP_AZURE_AD_B2C_AUTHORITY=https://$TENANT_NAME.b2clogin.com/$TENANT_NAME.onmicrosoft.com/B2C_1_signupsignin
-REACT_APP_AZURE_AD_B2C_KNOWN_AUTHORITY=$TENANT_NAME.b2clogin.com
-REACT_APP_AZURE_AD_B2C_TENANT_NAME=$TENANT_NAME.onmicrosoft.com
-REACT_APP_AZURE_AD_B2C_SCOPE=openid profile
-REACT_APP_AZURE_AD_B2C_SIGNUP_SIGNIN_POLICY=B2C_1_signupsignin
-REACT_APP_AZURE_AD_B2C_EDIT_PROFILE_POLICY=B2C_1_profileediting
-REACT_APP_AZURE_AD_B2C_RESET_PASSWORD_POLICY=B2C_1_passwordreset
+REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID=your-client-id-here
+REACT_APP_ENTRA_EXTERNAL_ID_AUTHORITY=https://$TENANT_NAME.ciamlogin.com/$TENANT_NAME.onmicrosoft.com/B2C_1_signupsignin
+REACT_APP_ENTRA_EXTERNAL_ID_KNOWN_AUTHORITY=$TENANT_NAME.ciamlogin.com
+REACT_APP_ENTRA_EXTERNAL_ID_TENANT_NAME=$TENANT_NAME.onmicrosoft.com
+REACT_APP_ENTRA_EXTERNAL_ID_SCOPE=openid profile
+REACT_APP_ENTRA_EXTERNAL_ID_SIGNUP_SIGNIN_POLICY=B2C_1_signupsignin
+REACT_APP_ENTRA_EXTERNAL_ID_EDIT_PROFILE_POLICY=B2C_1_profileediting
+REACT_APP_ENTRA_EXTERNAL_ID_RESET_PASSWORD_POLICY=B2C_1_passwordreset
 
 # Redirect URLs
 REACT_APP_REDIRECT_URI=$FRONTEND_URL/auth/callback
@@ -155,14 +155,14 @@ EOF
 # Frontend Environment Variables for $ENVIRONMENT
 # Place this content in frontend/.env.$ENVIRONMENT
 
-REACT_APP_AZURE_AD_B2C_CLIENT_ID=your-client-id-here
-REACT_APP_AZURE_AD_B2C_AUTHORITY=https://$TENANT_NAME.b2clogin.com/$TENANT_NAME.onmicrosoft.com/B2C_1_signupsignin
-REACT_APP_AZURE_AD_B2C_KNOWN_AUTHORITY=$TENANT_NAME.b2clogin.com
-REACT_APP_AZURE_AD_B2C_TENANT_NAME=$TENANT_NAME.onmicrosoft.com
-REACT_APP_AZURE_AD_B2C_SCOPE=openid profile
-REACT_APP_AZURE_AD_B2C_SIGNUP_SIGNIN_POLICY=B2C_1_signupsignin
-REACT_APP_AZURE_AD_B2C_EDIT_PROFILE_POLICY=B2C_1_profileediting
-REACT_APP_AZURE_AD_B2C_RESET_PASSWORD_POLICY=B2C_1_passwordreset
+REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID=your-client-id-here
+REACT_APP_ENTRA_EXTERNAL_ID_AUTHORITY=https://$TENANT_NAME.ciamlogin.com/$TENANT_NAME.onmicrosoft.com/B2C_1_signupsignin
+REACT_APP_ENTRA_EXTERNAL_ID_KNOWN_AUTHORITY=$TENANT_NAME.ciamlogin.com
+REACT_APP_ENTRA_EXTERNAL_ID_TENANT_NAME=$TENANT_NAME.onmicrosoft.com
+REACT_APP_ENTRA_EXTERNAL_ID_SCOPE=openid profile
+REACT_APP_ENTRA_EXTERNAL_ID_SIGNUP_SIGNIN_POLICY=B2C_1_signupsignin
+REACT_APP_ENTRA_EXTERNAL_ID_EDIT_PROFILE_POLICY=B2C_1_profileediting
+REACT_APP_ENTRA_EXTERNAL_ID_RESET_PASSWORD_POLICY=B2C_1_passwordreset
 REACT_APP_REDIRECT_URI=$FRONTEND_URL/auth/callback
 REACT_APP_POST_LOGOUT_REDIRECT_URI=$FRONTEND_URL
 REACT_APP_API_BASE_URL=$BACKEND_URL
@@ -211,7 +211,7 @@ update_secrets() {
     fi
     
     # Update authority URL
-    local authority_url="https://$TENANT_NAME.b2clogin.com/$TENANT_NAME.onmicrosoft.com/B2C_1_signupsignin"
+    local authority_url="https://$TENANT_NAME.ciamlogin.com/$TENANT_NAME.onmicrosoft.com/B2C_1_signupsignin"
     if az keyvault secret set \
         --vault-name "$KEY_VAULT_NAME" \
         --name "Azure-AD-B2C-Authority" \
@@ -312,7 +312,7 @@ validate_config() {
     
     # Test 4: Check B2C discovery endpoint
     if command -v curl &> /dev/null; then
-        local discovery_url="https://$TENANT_NAME.b2clogin.com/$TENANT_NAME.onmicrosoft.com/B2C_1_signupsignin/v2.0/.well-known/openid_configuration"
+        local discovery_url="https://$TENANT_NAME.ciamlogin.com/$TENANT_NAME.onmicrosoft.com/B2C_1_signupsignin/v2.0/.well-known/openid_configuration"
         if curl -s -f "$discovery_url" > /dev/null; then
             print_success "B2C discovery endpoint accessible"
             ((validation_passed++))
@@ -355,8 +355,8 @@ export_config() {
     "resetPassword": "B2C_1_passwordreset"
   },
   "urls": {
-    "authority": "https://$TENANT_NAME.b2clogin.com/$TENANT_NAME.onmicrosoft.com/B2C_1_signupsignin",
-    "knownAuthority": "$TENANT_NAME.b2clogin.com",
+    "authority": "https://$TENANT_NAME.ciamlogin.com/$TENANT_NAME.onmicrosoft.com/B2C_1_signupsignin",
+    "knownAuthority": "$TENANT_NAME.ciamlogin.com",
     "redirectUri": "$FRONTEND_URL/auth/callback",
     "postLogoutRedirectUri": "$FRONTEND_URL"
   },

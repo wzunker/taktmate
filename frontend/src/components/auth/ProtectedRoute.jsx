@@ -106,7 +106,7 @@ const ProtectedRoute = ({
               Please verify your email address to access this page
             </p>
             <p className="mt-1 text-sm text-gray-500">
-              Check your inbox for a verification email from Azure AD B2C
+              Check your inbox for a verification email from Microsoft Entra External ID
             </p>
           </div>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

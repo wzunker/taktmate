@@ -8,14 +8,14 @@ process.env.ENABLE_REAL_TIME_AUDIT = 'false';
 process.env.ENABLE_DATA_RETENTION = 'false';
 process.env.ENABLE_AUTOMATIC_CLEANUP = 'false';
 
-// Azure AD B2C test configuration
-process.env.AZURE_AD_B2C_CLIENT_ID = 'test-client-id';
-process.env.AZURE_AD_B2C_CLIENT_SECRET = 'test-client-secret';
-process.env.AZURE_AD_B2C_TENANT_NAME = 'test-tenant';
-process.env.AZURE_AD_B2C_TENANT_ID = 'test-tenant-id';
-process.env.AZURE_AD_B2C_SIGNUP_SIGNIN_POLICY = 'B2C_1_signupsignin1';
-process.env.AZURE_AD_B2C_PASSWORD_RESET_POLICY = 'B2C_1_passwordreset1';
-process.env.AZURE_AD_B2C_PROFILE_EDIT_POLICY = 'B2C_1_profileedit1';
+// Microsoft Entra External ID test configuration
+process.env.ENTRA_EXTERNAL_ID_CLIENT_ID = 'test-client-id';
+process.env.ENTRA_EXTERNAL_ID_CLIENT_SECRET = 'test-client-secret';
+process.env.ENTRA_EXTERNAL_ID_TENANT_NAME = 'test-tenant';
+process.env.ENTRA_EXTERNAL_ID_TENANT_ID = 'test-tenant-id';
+process.env.ENTRA_EXTERNAL_ID_SIGNUP_SIGNIN_POLICY = 'B2C_1_signupsignin1';
+process.env.ENTRA_EXTERNAL_ID_PASSWORD_RESET_POLICY = 'B2C_1_passwordreset1';
+process.env.ENTRA_EXTERNAL_ID_PROFILE_EDIT_POLICY = 'B2C_1_profileedit1';
 
 // JWT test configuration
 process.env.JWT_SECRET = 'test-jwt-secret-key-for-unit-tests-only';
@@ -48,11 +48,11 @@ global.testUtils = {
     return jwt.sign({ ...defaultPayload, ...payload }, process.env.JWT_SECRET);
   },
   
-  // Generate test Azure AD B2C token
+  // Generate test Microsoft Entra External ID token
   generateTestAzureToken: (payload = {}) => {
     const jwt = require('jsonwebtoken');
     const defaultPayload = {
-      iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+      iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
       aud: process.env.AZURE_CLIENT_ID,
       sub: 'test-azure-user-id',
       name: 'Test Azure User',

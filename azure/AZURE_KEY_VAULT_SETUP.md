@@ -30,7 +30,7 @@ This guide provides comprehensive instructions for deploying and managing Azure 
 │  ┌─────────────────┐  ┌──────────────────┐  ┌─────────────┐ │
 │  │   API Keys      │  │   Certificates   │  │  Encryption │ │
 │  │  - OpenAI       │  │  - SSL Certs     │  │    Keys     │ │
-│  │  - Azure AD B2C │  │  - Auth Certs    │  │  - JWT      │ │
+│  │  - Microsoft Entra External ID │  │  - Auth Certs    │  │  - JWT      │ │
 │  └─────────────────┘  └──────────────────┘  └─────────────┘ │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────────┐  ┌──────────────────┐  ┌─────────────┐ │
@@ -201,7 +201,7 @@ az deployment group create \
 OpenAI-API-Key                    # OpenAI API key
 OpenAI-API-Endpoint              # Azure OpenAI endpoint URL
 
-# Azure AD B2C Configuration
+# Microsoft Entra External ID Configuration
 Azure-AD-B2C-Client-ID           # B2C application client ID
 Azure-AD-B2C-Client-Secret       # B2C application client secret
 Azure-AD-B2C-Tenant-Name         # B2C tenant name
@@ -233,7 +233,7 @@ JWT_SECRET=@Microsoft.KeyVault(VaultName=taktmate-kv-prod;SecretName=JWT-Secret)
 # Set OpenAI API key
 ./manage-secrets.sh set production OpenAI-API-Key "your-openai-api-key"
 
-# Set Azure AD B2C configuration
+# Set Microsoft Entra External ID configuration
 ./manage-secrets.sh set production Azure-AD-B2C-Client-ID "your-client-id"
 ./manage-secrets.sh set production Azure-AD-B2C-Client-Secret "your-client-secret"
 ./manage-secrets.sh set production Azure-AD-B2C-Tenant-Name "your-tenant.onmicrosoft.com"

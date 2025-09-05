@@ -1,4 +1,4 @@
-// Integration tests for Microsoft OAuth through Azure AD B2C
+// Integration tests for Microsoft OAuth through Microsoft Entra External ID
 // Tests complete OAuth flow with Microsoft as identity provider
 
 const request = require('supertest');
@@ -67,7 +67,7 @@ describe('Microsoft OAuth Integration Tests', () => {
 
       expect(response.body).toHaveProperty('loginUrl');
       expect(response.body.loginUrl).toContain('https://');
-      expect(response.body.loginUrl).toContain('.b2clogin.com');
+      expect(response.body.loginUrl).toContain('.ciamlogin.com');
       expect(response.body.loginUrl).toContain('oauth2/v2.0/authorize');
       expect(response.body.loginUrl).toContain('state=microsoft-state-123');
       expect(response.body.loginUrl).toContain('nonce=microsoft-nonce-456');
@@ -84,15 +84,15 @@ describe('Microsoft OAuth Integration Tests', () => {
       expect(response.body).toHaveProperty('tokenEndpoint');
       expect(response.body).toHaveProperty('userInfoEndpoint');
       expect(response.body).toHaveProperty('jwksUri');
-      expect(response.body.issuer).toContain('.b2clogin.com');
+      expect(response.body.issuer).toContain('.ciamlogin.com');
     });
   });
 
   describe('Microsoft OAuth Token Processing', () => {
     test('should process Microsoft OAuth callback with valid token', async () => {
-      // Create a Microsoft-specific Azure AD B2C token
+      // Create a Microsoft-specific Microsoft Entra External ID token
       const microsoftToken = global.testUtils.generateTestAzureToken({
-        iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+        iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         aud: process.env.AZURE_AD_B2C_CLIENT_ID,
         idp: 'live.com',
         emails: ['user@outlook.com'],
@@ -131,7 +131,7 @@ describe('Microsoft OAuth Integration Tests', () => {
     test('should handle Microsoft Work/School account token', async () => {
       // Test with Microsoft Work/School account (Azure AD)
       const workToken = global.testUtils.generateTestAzureToken({
-        iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+        iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         aud: process.env.AZURE_AD_B2C_CLIENT_ID,
         idp: 'https://sts.windows.net/work-tenant-id/',
         emails: ['user@company.com'],
@@ -162,7 +162,7 @@ describe('Microsoft OAuth Integration Tests', () => {
     test('should handle Microsoft Personal account token', async () => {
       // Test with Microsoft Personal account (MSA)
       const personalToken = global.testUtils.generateTestAzureToken({
-        iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+        iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         aud: process.env.AZURE_AD_B2C_CLIENT_ID,
         idp: 'live.com',
         emails: ['user@hotmail.com'],
@@ -189,7 +189,7 @@ describe('Microsoft OAuth Integration Tests', () => {
     test('should validate Microsoft OAuth token signature', async () => {
       // Create an invalid token (wrong signature)
       const invalidToken = jwt.sign({
-        iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+        iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         aud: process.env.AZURE_AD_B2C_CLIENT_ID,
         idp: 'live.com',
         emails: ['invalid@outlook.com']
@@ -211,7 +211,7 @@ describe('Microsoft OAuth Integration Tests', () => {
     test('should validate Microsoft OAuth token expiration', async () => {
       // Create an expired Microsoft token
       const expiredToken = global.testUtils.generateTestAzureToken({
-        iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+        iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         aud: process.env.AZURE_AD_B2C_CLIENT_ID,
         idp: 'live.com',
         emails: ['expired@outlook.com'],
@@ -431,7 +431,7 @@ describe('Microsoft OAuth Integration Tests', () => {
   describe('Microsoft OAuth Security', () => {
     test('should validate Microsoft OAuth audience', async () => {
       const wrongAudienceToken = global.testUtils.generateTestAzureToken({
-        iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+        iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         aud: 'wrong-client-id',
         idp: 'live.com',
         emails: ['audience@outlook.com']

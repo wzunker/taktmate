@@ -6,7 +6,7 @@ const app = require('../../index');
 
 // Mock Azure AD B2C for load testing
 jest.mock('@azure/msal-node');
-jest.mock('../../services/azureB2CApiService');
+jest.mock('../../services/entraExternalIdApiService');
 
 describe('Authentication Load Testing', () => {
   const mockUsers = Array.from({ length: 100 }, (_, i) => ({

@@ -11,7 +11,7 @@ const {
   extractUserProfile,
   isFeatureEnabled,
   customClaims 
-} = require('../config/azureAdB2C');
+} = require('../config/entraExternalId');
 
 // Import Application Insights telemetry (optional)
 let telemetry = null;

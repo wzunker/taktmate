@@ -14,7 +14,7 @@ const { LegalDocumentsService } = require('./services/legalDocumentsService');
 const { CookieConsentService } = require('./services/cookieConsentService');
 const { DataRetentionService } = require('./services/dataRetentionService');
 const { AuditLoggingService } = require('./services/auditLoggingService');
-const { config: azureConfig } = require('./config/azureAdB2C');
+const { config: azureConfig } = require('./config/entraExternalId');
 
 // Helper function to convert markdown to basic HTML
 function markdownToHtml(markdown) {

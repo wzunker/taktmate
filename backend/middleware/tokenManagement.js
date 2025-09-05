@@ -1,14 +1,14 @@
-// TaktMate Azure AD B2C Token Management and Session Timeout System
+// TaktMate Microsoft Entra External ID Token Management and Session Timeout System
 // Comprehensive token lifecycle management, refresh handling, and session timeout configuration
 
 const jwt = require('jsonwebtoken');
 const jwksClient = require('jwks-rsa');
 const axios = require('axios');
-const { config: azureConfig } = require('../config/azureAdB2C');
+const { config: azureConfig } = require('../config/entraExternalId');
 
 /**
  * Advanced Token Management Service
- * Handles Azure AD B2C token lifecycle, refresh, session timeout, and security policies
+ * Handles Microsoft Entra External ID token lifecycle, refresh, session timeout, and security policies
  */
 class TokenManagementService {
     constructor(appInsights = null) {
@@ -108,7 +108,7 @@ class TokenManagementService {
     }
     
     /**
-     * Validate Azure AD B2C token with comprehensive security checks
+     * Validate Microsoft Entra External ID token with comprehensive security checks
      */
     async validateToken(token, options = {}) {
         const startTime = Date.now();
@@ -212,7 +212,7 @@ class TokenManagementService {
     }
     
     /**
-     * Refresh Azure AD B2C token
+     * Refresh Microsoft Entra External ID token
      */
     async refreshToken(refreshToken, options = {}) {
         const startTime = Date.now();
@@ -562,7 +562,7 @@ class TokenManagementService {
             return true;
         }
         
-        // Temporary Azure AD B2C errors
+        // Temporary Microsoft Entra External ID errors
         const retryableErrorCodes = [
             'temporarily_unavailable',
             'server_error',

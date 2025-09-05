@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Configure Azure AD B2C Redirect URLs for TaktMate
-# Usage: ./configure-b2c-urls.sh [environment] [tenant-name] [app-id] [frontend-url] [backend-url]
-# Example: ./configure-b2c-urls.sh production taktmate b2c-app-id https://app.taktmate.com https://api.taktmate.com
+# Configure Microsoft Entra External ID Redirect URLs for TaktMate
+# Usage: ./configure-entra-external-id-urls.sh [environment] [tenant-name] [app-id] [frontend-url] [backend-url]
+# Example: ./configure-entra-external-id-urls.sh production taktmate entra-app-id https://app.taktmate.com https://api.taktmate.com
 
 set -e
 
@@ -35,7 +35,7 @@ show_usage() {
     echo ""
     echo "Parameters:"
     echo "  environment   - Environment (production, staging, development)"
-    echo "  tenant-name   - Azure AD B2C tenant name (without .onmicrosoft.com)"
+    echo "  tenant-name   - Microsoft Entra External ID tenant name (without .onmicrosoft.com)"
     echo "  app-id        - Application (client) ID"
     echo "  frontend-url  - Frontend application URL"
     echo "  backend-url   - Backend API URL"
@@ -74,7 +74,7 @@ if [[ "$ENVIRONMENT" != "development" ]]; then
     fi
 fi
 
-print_status "Configuring Azure AD B2C redirect URLs for $ENVIRONMENT environment"
+print_status "Configuring Microsoft Entra External ID redirect URLs for $ENVIRONMENT environment"
 print_status "Tenant: $TENANT_NAME.onmicrosoft.com"
 print_status "App ID: $APP_ID"
 print_status "Frontend URL: $FRONTEND_URL"
@@ -91,8 +91,8 @@ if ! az account show &> /dev/null; then
     exit 1
 fi
 
-# Check if we can access the B2C tenant
-print_status "Checking B2C tenant access..."
+# Check if we can access the Microsoft Entra External ID tenant
+print_status "Checking Microsoft Entra External ID tenant access..."
 if ! az ad app show --id "$APP_ID" &> /dev/null; then
     print_error "Cannot access application $APP_ID. Please check:"
     echo "  1. Application ID is correct"
@@ -252,7 +252,7 @@ WEB_CONFIG=$(jq -n \
     }')
 
 # Update the application
-print_status "Updating Azure AD B2C application configuration..."
+print_status "Updating Microsoft Entra External ID application configuration..."
 
 if az ad app update --id "$APP_ID" --web "$WEB_CONFIG" --output none; then
     print_success "Application redirect URLs updated successfully!"
@@ -332,7 +332,7 @@ echo "   - Complete authentication and verify callback works"
 echo "   - Test sign out and verify logout redirect works"
 echo ""
 echo "4. Update Key Vault secrets if needed:"
-echo "   az keyvault secret set --vault-name taktmate-kv-$ENVIRONMENT --name 'Azure-AD-B2C-Redirect-URI' --value '$FRONTEND_URL/auth/callback'"
+echo "   az keyvault secret set --vault-name taktmate-kv-$ENVIRONMENT --name 'Entra-External-ID-Redirect-URI' --value '$FRONTEND_URL/auth/callback'"
 echo ""
 
 # Environment-specific recommendations
@@ -341,7 +341,7 @@ case "$ENVIRONMENT" in
         echo "5. Production-specific recommendations:"
         echo "   - Verify SSL certificates are valid"
         echo "   - Test from different browsers and devices"
-        echo "   - Monitor authentication logs in Azure AD B2C"
+        echo "   - Monitor authentication logs in Microsoft Entra External ID"
         echo "   - Set up alerts for authentication failures"
         ;;
     "staging")
@@ -358,4 +358,4 @@ case "$ENVIRONMENT" in
         ;;
 esac
 
-print_success "Azure AD B2C redirect URL configuration completed for $ENVIRONMENT environment!"
+print_success "Microsoft Entra External ID redirect URL configuration completed for $ENVIRONMENT environment!"

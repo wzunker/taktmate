@@ -190,7 +190,7 @@ SETTING_NAME=@Microsoft.KeyVault(VaultName=vault-name;SecretName=secret-name)
 # Examples
 OPENAI_API_KEY=@Microsoft.KeyVault(VaultName=taktmate-kv-prod;SecretName=OpenAI-API-Key)
 JWT_SECRET=@Microsoft.KeyVault(VaultName=taktmate-kv-prod;SecretName=JWT-Secret)
-AZURE_AD_B2C_CLIENT_SECRET=@Microsoft.KeyVault(VaultName=taktmate-kv-prod;SecretName=Azure-AD-B2C-Client-Secret)
+ENTRA_EXTERNAL_ID_CLIENT_SECRET=@Microsoft.KeyVault(VaultName=taktmate-kv-prod;SecretName=Azure-AD-B2C-Client-Secret)
 ```
 
 ### Secret Categories
@@ -216,26 +216,26 @@ APPINSIGHTS_INSTRUMENTATION_KEY=@Microsoft.KeyVault(...)
 APPLICATIONINSIGHTS_CONNECTION_STRING=@Microsoft.KeyVault(...)
 ```
 
-#### Azure AD B2C Configuration
+#### Microsoft Entra External ID Configuration
 ```env
 # Tenant Configuration
-AZURE_AD_B2C_TENANT_NAME={tenant-name}
-AZURE_AD_B2C_TENANT_ID=@Microsoft.KeyVault(...)
-AZURE_AD_B2C_CLIENT_ID=@Microsoft.KeyVault(...)
-AZURE_AD_B2C_CLIENT_SECRET=@Microsoft.KeyVault(...)
+ENTRA_EXTERNAL_ID_TENANT_NAME={tenant-name}
+ENTRA_EXTERNAL_ID_TENANT_ID=@Microsoft.KeyVault(...)
+ENTRA_EXTERNAL_ID_CLIENT_ID=@Microsoft.KeyVault(...)
+ENTRA_EXTERNAL_ID_CLIENT_SECRET=@Microsoft.KeyVault(...)
 
 # Endpoints
-AZURE_AD_B2C_AUTHORITY=https://{tenant}.b2clogin.com/{tenant}.onmicrosoft.com/B2C_1_SignUpSignIn
-AZURE_AD_B2C_KNOWN_AUTHORITY={tenant}.b2clogin.com
-AZURE_AD_B2C_DISCOVERY_ENDPOINT=https://{tenant}.b2clogin.com/{tenant}.onmicrosoft.com/B2C_1_SignUpSignIn/v2.0/.well-known/openid_configuration
+ENTRA_EXTERNAL_ID_AUTHORITY=https://{tenant}.ciamlogin.com/{tenant}.onmicrosoft.com/B2C_1_SignUpSignIn
+ENTRA_EXTERNAL_ID_KNOWN_AUTHORITY={tenant}.ciamlogin.com
+ENTRA_EXTERNAL_ID_DISCOVERY_ENDPOINT=https://{tenant}.ciamlogin.com/{tenant}.onmicrosoft.com/B2C_1_SignUpSignIn/v2.0/.well-known/openid_configuration
 
 # Policies
-AZURE_AD_B2C_SIGNUP_SIGNIN_POLICY=B2C_1_SignUpSignIn
-AZURE_AD_B2C_EDIT_PROFILE_POLICY=B2C_1_EditProfile
-AZURE_AD_B2C_RESET_PASSWORD_POLICY=B2C_1_ResetPassword
+ENTRA_EXTERNAL_ID_SIGNUP_SIGNIN_POLICY=B2C_1_SignUpSignIn
+ENTRA_EXTERNAL_ID_EDIT_PROFILE_POLICY=B2C_1_EditProfile
+ENTRA_EXTERNAL_ID_RESET_PASSWORD_POLICY=B2C_1_ResetPassword
 
 # Scopes
-AZURE_AD_B2C_SCOPE=https://{tenant}.onmicrosoft.com/api/read
+ENTRA_EXTERNAL_ID_SCOPE=https://{tenant}.onmicrosoft.com/api/read
 ```
 
 #### Application Configuration
@@ -287,21 +287,21 @@ ENABLE_RESOURCE_MONITORING={true|false}
 
 ### Frontend Configuration Variables
 
-#### Azure AD B2C Configuration
+#### Microsoft Entra External ID Configuration
 ```env
 # Client Configuration
-REACT_APP_AZURE_AD_B2C_CLIENT_ID=${AZURE_AD_B2C_CLIENT_ID}
-REACT_APP_AZURE_AD_B2C_AUTHORITY=https://{tenant}.b2clogin.com/{tenant}.onmicrosoft.com/B2C_1_SignUpSignIn
-REACT_APP_AZURE_AD_B2C_KNOWN_AUTHORITY={tenant}.b2clogin.com
-REACT_APP_AZURE_AD_B2C_TENANT_NAME={tenant}
+REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID=${ENTRA_EXTERNAL_ID_CLIENT_ID}
+REACT_APP_ENTRA_EXTERNAL_ID_AUTHORITY=https://{tenant}.ciamlogin.com/{tenant}.onmicrosoft.com/B2C_1_SignUpSignIn
+REACT_APP_ENTRA_EXTERNAL_ID_KNOWN_AUTHORITY={tenant}.ciamlogin.com
+REACT_APP_ENTRA_EXTERNAL_ID_TENANT_NAME={tenant}
 
 # Policies
-REACT_APP_AZURE_AD_B2C_SIGNUP_SIGNIN_POLICY=B2C_1_SignUpSignIn
-REACT_APP_AZURE_AD_B2C_EDIT_PROFILE_POLICY=B2C_1_EditProfile
-REACT_APP_AZURE_AD_B2C_RESET_PASSWORD_POLICY=B2C_1_ResetPassword
+REACT_APP_ENTRA_EXTERNAL_ID_SIGNUP_SIGNIN_POLICY=B2C_1_SignUpSignIn
+REACT_APP_ENTRA_EXTERNAL_ID_EDIT_PROFILE_POLICY=B2C_1_EditProfile
+REACT_APP_ENTRA_EXTERNAL_ID_RESET_PASSWORD_POLICY=B2C_1_ResetPassword
 
 # Scopes
-REACT_APP_AZURE_AD_B2C_SCOPE=https://{tenant}.onmicrosoft.com/api/read
+REACT_APP_ENTRA_EXTERNAL_ID_SCOPE=https://{tenant}.onmicrosoft.com/api/read
 ```
 
 #### API Configuration
@@ -406,7 +406,7 @@ The configuration testing script performs comprehensive validation:
 
 #### External Service Validation
 - **OpenAI API connectivity** (if comprehensive testing enabled)
-- **Azure AD B2C endpoint** availability
+- **Microsoft Entra External ID endpoint** availability
 - **Discovery endpoint** validation
 
 #### Environment Consistency

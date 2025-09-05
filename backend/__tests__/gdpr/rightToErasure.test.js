@@ -4,11 +4,11 @@
 const request = require('supertest');
 const app = require('../../index');
 const { AccountDeletionService } = require('../../services/accountDeletionService');
-const { AzureB2CApiService } = require('../../services/azureB2CApiService');
+const { EntraExternalIdApiService } = require('../../services/entraExternalIdApiService');
 
 // Mock services
 jest.mock('../../services/accountDeletionService');
-jest.mock('../../services/azureB2CApiService');
+jest.mock('../../services/entraExternalIdApiService');
 jest.mock('@azure/msal-node');
 
 describe('GDPR Right to Erasure Validation', () => {
@@ -34,8 +34,8 @@ describe('GDPR Right to Erasure Validation', () => {
     AccountDeletionService.prototype.cancelDeletion = jest.fn();
     
     // Mock Azure B2C API service
-    AzureB2CApiService.prototype.deleteUser = jest.fn();
-    AzureB2CApiService.prototype.getUserData = jest.fn();
+    EntraExternalIdApiService.prototype.deleteUser = jest.fn();
+    EntraExternalIdApiService.prototype.getUserData = jest.fn();
   });
 
   describe('Deletion Request Processing', () => {

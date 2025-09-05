@@ -4,10 +4,10 @@
 const request = require('supertest');
 const app = require('../../index');
 const { GDPRComplianceService } = require('../../services/gdprComplianceService');
-const { AzureB2CApiService } = require('../../services/azureB2CApiService');
+const { EntraExternalIdApiService } = require('../../services/entraExternalIdApiService');
 
 // Mock Azure AD B2C API service
-jest.mock('../../services/azureB2CApiService');
+jest.mock('../../services/entraExternalIdApiService');
 jest.mock('@azure/msal-node');
 
 describe('GDPR Data Portability Validation', () => {
@@ -29,9 +29,9 @@ describe('GDPR Data Portability Validation', () => {
     mockAuthToken = 'valid-jwt-token';
     
     // Mock Azure B2C API service
-    AzureB2CApiService.prototype.getUserData = jest.fn();
-    AzureB2CApiService.prototype.getUserAttributes = jest.fn();
-    AzureB2CApiService.prototype.getUserSignInLogs = jest.fn();
+    EntraExternalIdApiService.prototype.getUserData = jest.fn();
+    EntraExternalIdApiService.prototype.getUserAttributes = jest.fn();
+    EntraExternalIdApiService.prototype.getUserSignInLogs = jest.fn();
   });
 
   describe('Data Export Request Processing', () => {
@@ -43,7 +43,7 @@ describe('GDPR Data Portability Validation', () => {
         estimatedCompletion: new Date(Date.now() + 300000).toISOString() // 5 minutes
       };
 
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: {
           profile: mockUser,
@@ -67,7 +67,7 @@ describe('GDPR Data Portability Validation', () => {
         message: expect.stringContaining('export initiated')
       });
 
-      expect(AzureB2CApiService.prototype.getUserData).toHaveBeenCalledWith(mockUser.id);
+      expect(EntraExternalIdApiService.prototype.getUserData).toHaveBeenCalledWith(mockUser.id);
     });
 
     test('should handle large dataset export with pagination', async () => {
@@ -85,7 +85,7 @@ describe('GDPR Data Portability Validation', () => {
         }))
       };
 
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: largeDataset
       });
@@ -127,7 +127,7 @@ describe('GDPR Data Portability Validation', () => {
         name: 'Minimal User'
       };
 
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: {
           profile: minimalUser,
@@ -150,7 +150,7 @@ describe('GDPR Data Portability Validation', () => {
 
   describe('Data Export Formats and Structure', () => {
     test('should export data in JSON format by default', async () => {
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: {
           profile: mockUser,
@@ -169,7 +169,7 @@ describe('GDPR Data Portability Validation', () => {
     });
 
     test('should support CSV format export', async () => {
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: {
           profile: mockUser,
@@ -191,7 +191,7 @@ describe('GDPR Data Portability Validation', () => {
     });
 
     test('should support XML format export', async () => {
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: { profile: mockUser }
       });
@@ -206,7 +206,7 @@ describe('GDPR Data Portability Validation', () => {
     });
 
     test('should include data schema and metadata', async () => {
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: { profile: mockUser }
       });
@@ -245,7 +245,7 @@ describe('GDPR Data Portability Validation', () => {
         }]
       };
 
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: completeUserData
       });
@@ -285,7 +285,7 @@ describe('GDPR Data Portability Validation', () => {
         }
       };
 
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: sensitiveUserData
       });
@@ -302,7 +302,7 @@ describe('GDPR Data Portability Validation', () => {
     });
 
     test('should include data processing lawful basis information', async () => {
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: { profile: mockUser }
       });
@@ -348,7 +348,7 @@ describe('GDPR Data Portability Validation', () => {
     });
 
     test('should generate secure download URLs with expiration', async () => {
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: { profile: mockUser }
       });
@@ -377,7 +377,7 @@ describe('GDPR Data Portability Validation', () => {
         }
       }));
 
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: { profile: mockUser }
       });
@@ -431,7 +431,7 @@ describe('GDPR Data Portability Validation', () => {
     });
 
     test('should handle export failure scenarios', async () => {
-      AzureB2CApiService.prototype.getUserData.mockRejectedValue(
+      EntraExternalIdApiService.prototype.getUserData.mockRejectedValue(
         new Error('Azure AD B2C service unavailable')
       );
 
@@ -451,7 +451,7 @@ describe('GDPR Data Portability Validation', () => {
 
   describe('Data Export Compliance Validation', () => {
     test('should include GDPR compliance metadata', async () => {
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: { profile: mockUser }
       });
@@ -471,7 +471,7 @@ describe('GDPR Data Portability Validation', () => {
     });
 
     test('should validate data completeness certification', async () => {
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: { 
           profile: mockUser,
@@ -498,7 +498,7 @@ describe('GDPR Data Portability Validation', () => {
     });
 
     test('should handle cross-border data transfer compliance', async () => {
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: { profile: mockUser }
       });
@@ -519,7 +519,7 @@ describe('GDPR Data Portability Validation', () => {
 
   describe('Performance and Scalability', () => {
     test('should handle concurrent export requests', async () => {
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: { profile: mockUser }
       });
@@ -548,7 +548,7 @@ describe('GDPR Data Portability Validation', () => {
         estimatedWaitTime: '15 minutes'
       };
 
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: { profile: mockUser },
         queued: true
@@ -575,7 +575,7 @@ describe('GDPR Data Portability Validation', () => {
         }))
       };
 
-      AzureB2CApiService.prototype.getUserData.mockResolvedValue({
+      EntraExternalIdApiService.prototype.getUserData.mockResolvedValue({
         success: true,
         data: largeDataset
       });

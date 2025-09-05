@@ -1,15 +1,15 @@
-// TaktMate Azure AD B2C API Service
-// Integrates with Microsoft Graph API for comprehensive user data export using Azure AD B2C APIs
+// TaktMate Microsoft Entra External ID API Service
+// Integrates with Microsoft Graph API for comprehensive user data export using Microsoft Entra External ID APIs
 
 const axios = require('axios');
 const { ClientCredentialFlow } = require('@azure/msal-node');
-const { config: azureConfig } = require('../config/azureAdB2C');
+const { config: azureConfig } = require('../config/entraExternalId');
 
 /**
- * Azure AD B2C API Service
+ * Microsoft Entra External ID API Service
  * Provides comprehensive user data export functionality using Microsoft Graph API
  */
-class AzureB2CApiService {
+class EntraExternalIdApiService {
     constructor(appInsights = null) {
         this.appInsights = appInsights;
         
@@ -19,7 +19,7 @@ class AzureB2CApiService {
             graphApiBaseUrl: 'https://graph.microsoft.com/v1.0',
             graphApiBetaUrl: 'https://graph.microsoft.com/beta',
             
-            // Azure AD B2C specific endpoints
+            // Microsoft Entra External ID specific endpoints
             tenantId: azureConfig.config.tenantId,
             clientId: azureConfig.config.clientId,
             clientSecret: azureConfig.config.clientSecret,
@@ -76,7 +76,7 @@ class AzureB2CApiService {
             totalResponseTime: 0
         };
         
-        console.log('🔗 Azure AD B2C API Service initialized');
+        console.log('🔗 Microsoft Entra External ID API Service initialized');
         console.log(`   Graph API Base URL: ${this.config.graphApiBaseUrl}`);
         console.log(`   Tenant ID: ${this.config.tenantId ? this.config.tenantId.substring(0, 8) + '...' : 'Not configured'}`);
         console.log(`   User Profile Export: ${this.config.enableUserProfile ? '✅' : '❌'}`);
@@ -98,10 +98,10 @@ class AzureB2CApiService {
             // Test API connectivity
             await this.testApiConnectivity();
             
-            console.log('✅ Azure AD B2C API Service initialized successfully');
+            console.log('✅ Microsoft Entra External ID API Service initialized successfully');
             
         } catch (error) {
-            console.error('❌ Failed to initialize Azure AD B2C API Service:', error.message);
+            console.error('❌ Failed to initialize Microsoft Entra External ID API Service:', error.message);
             throw error;
         }
     }
@@ -348,7 +348,7 @@ class AzureB2CApiService {
     }
     
     /**
-     * Export comprehensive user data from Azure AD B2C
+     * Export comprehensive user data from Microsoft Entra External ID
      */
     async exportUserData(userId, options = {}) {
         try {
@@ -359,7 +359,7 @@ class AzureB2CApiService {
                     exportDate: new Date().toISOString(),
                     userId: userId,
                     tenantId: this.config.tenantId,
-                    exportedBy: 'Azure AD B2C API Service',
+                    exportedBy: 'Microsoft Entra External ID API Service',
                     version: '2.0'
                 },
                 userProfile: null,
@@ -859,5 +859,5 @@ class AzureB2CApiService {
 }
 
 module.exports = {
-    AzureB2CApiService
+    EntraExternalIdApiService
 };

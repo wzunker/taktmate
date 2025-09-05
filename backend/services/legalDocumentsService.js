@@ -3,7 +3,7 @@
 
 const fs = require('fs').promises;
 const path = require('path');
-const { config: azureConfig } = require('../config/azureAdB2C');
+const { config: azureConfig } = require('../config/entraExternalId');
 
 /**
  * Legal Documents Service

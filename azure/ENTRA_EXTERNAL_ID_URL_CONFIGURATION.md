@@ -1,9 +1,9 @@
-# Azure AD B2C URL Configuration Guide for TaktMate
+# Microsoft Entra External ID URL Configuration Guide for TaktMate
 
 ## Overview
-This guide provides comprehensive instructions for configuring Azure AD B2C redirect URLs and authentication settings for different environments, including automated scripts for URL management, validation, and troubleshooting.
+This guide provides comprehensive instructions for configuring Microsoft Entra External ID redirect URLs and authentication settings for different environments, including automated scripts for URL management, validation, and troubleshooting.
 
-## 🔐 Azure AD B2C URL Configuration Concepts
+## 🔐 Microsoft Entra External ID URL Configuration Concepts
 
 ### Redirect URLs
 - **Sign-in Redirect URLs**: Where users are redirected after successful authentication
@@ -78,22 +78,22 @@ Logout URL:
 #### Bash Usage
 ```bash
 cd azure
-./configure-b2c-urls.sh production taktmate 12345678-1234-1234-1234-123456789012 https://app.taktmate.com https://api.taktmate.com
-./configure-b2c-urls.sh staging taktmate-staging 87654321-4321-4321-4321-210987654321 https://staging.taktmate.com https://api-staging.taktmate.com
-./configure-b2c-urls.sh development taktmate-dev 11111111-2222-3333-4444-555555555555 http://localhost:3000 http://localhost:3001
+./configure-entra-external-id-urls.sh production taktmate 12345678-1234-1234-1234-123456789012 https://app.taktmate.com https://api.taktmate.com
+./configure-entra-external-id-urls.sh staging taktmate-staging 87654321-4321-4321-4321-210987654321 https://staging.taktmate.com https://api-staging.taktmate.com
+./configure-entra-external-id-urls.sh development taktmate-dev 11111111-2222-3333-4444-555555555555 http://localhost:3000 http://localhost:3001
 ```
 
 #### PowerShell Usage
 ```powershell
 cd azure
-.\configure-b2c-urls.ps1 -Environment "production" -TenantName "taktmate" -AppId "12345678-1234-1234-1234-123456789012" -FrontendUrl "https://app.taktmate.com" -BackendUrl "https://api.taktmate.com"
+.\configure-entra-external-id-urls.ps1 -Environment "production" -TenantName "taktmate" -AppId "12345678-1234-1234-1234-123456789012" -FrontendUrl "https://app.taktmate.com" -BackendUrl "https://api.taktmate.com"
 ```
 
 #### Script Features
 - **Automatic URL Generation**: Creates all required redirect URLs
 - **Environment-Specific**: Different configurations per environment
 - **Validation**: Checks for HTTPS requirement in production
-- **Azure CLI Integration**: Updates Azure AD B2C application directly
+- **Azure CLI Integration**: Updates Microsoft Entra External ID application directly
 - **Backup**: Saves configuration to JSON file
 - **CORS Recommendations**: Provides backend CORS configuration guidance
 
@@ -101,9 +101,9 @@ cd azure
 
 #### Usage
 ```bash
-./test-b2c-urls.sh production taktmate 12345678-1234-1234-1234-123456789012 https://app.taktmate.com
-./test-b2c-urls.sh staging taktmate-staging 87654321-4321-4321-4321-210987654321 https://staging.taktmate.com
-./test-b2c-urls.sh development taktmate-dev 11111111-2222-3333-4444-555555555555 http://localhost:3000
+./test-entra-external-id-urls.sh production taktmate 12345678-1234-1234-1234-123456789012 https://app.taktmate.com
+./test-entra-external-id-urls.sh staging taktmate-staging 87654321-4321-4321-4321-210987654321 https://staging.taktmate.com
+./test-entra-external-id-urls.sh development taktmate-dev 11111111-2222-3333-4444-555555555555 http://localhost:3000
 ```
 
 #### Test Categories
@@ -119,43 +119,43 @@ cd azure
 
 #### Generate Environment Variables
 ```bash
-./manage-b2c-config.sh generate-env production
-./manage-b2c-config.sh generate-env staging
-./manage-b2c-config.sh generate-env development
+./manage-entra-external-id-config.sh generate-env production
+./manage-entra-external-id-config.sh generate-env staging
+./manage-entra-external-id-config.sh generate-env development
 ```
 
 #### Update Key Vault Secrets
 ```bash
-./manage-b2c-config.sh update-secrets production
-./manage-b2c-config.sh update-secrets staging
+./manage-entra-external-id-config.sh update-secrets production
+./manage-entra-external-id-config.sh update-secrets staging
 ```
 
 #### Validate Configuration
 ```bash
-./manage-b2c-config.sh validate production
-./manage-b2c-config.sh validate staging
-./manage-b2c-config.sh validate development
+./manage-entra-external-id-config.sh validate production
+./manage-entra-external-id-config.sh validate staging
+./manage-entra-external-id-config.sh validate development
 ```
 
 #### Export/Import Configuration
 ```bash
 # Export configuration
-./manage-b2c-config.sh export production b2c-prod-config.json
+./manage-entra-external-id-config.sh export production b2c-prod-config.json
 
 # Import configuration
-./manage-b2c-config.sh import staging b2c-prod-config.json
+./manage-entra-external-id-config.sh import staging b2c-prod-config.json
 ```
 
 ## 📋 Step-by-Step Configuration Process
 
-### Step 1: Prepare Azure AD B2C Application
+### Step 1: Prepare Microsoft Entra External ID Application
 1. **Create B2C Tenant** (if not exists)
    ```bash
    az account set --subscription "your-subscription-id"
    ```
 
 2. **Get Application ID**
-   - Navigate to Azure Portal > Azure AD B2C > App registrations
+   - Navigate to Azure Portal > Microsoft Entra External ID > App registrations
    - Find your TaktMate application
    - Copy the Application (client) ID
 
@@ -166,17 +166,17 @@ cd azure
 ### Step 2: Configure Redirect URLs
 1. **Run Configuration Script**
    ```bash
-   ./configure-b2c-urls.sh production taktmate YOUR_APP_ID https://app.taktmate.com https://api.taktmate.com
+   ./configure-entra-external-id-urls.sh production taktmate YOUR_APP_ID https://app.taktmate.com https://api.taktmate.com
    ```
 
 2. **Verify Configuration**
    ```bash
-   ./test-b2c-urls.sh production taktmate YOUR_APP_ID https://app.taktmate.com
+   ./test-entra-external-id-urls.sh production taktmate YOUR_APP_ID https://app.taktmate.com
    ```
 
 3. **Update Environment Variables**
    ```bash
-   ./manage-b2c-config.sh generate-env production
+   ./manage-entra-external-id-config.sh generate-env production
    ```
 
 ### Step 3: Update Application Configuration
@@ -189,7 +189,7 @@ cd azure
 2. **Backend Environment Variables**
    ```bash
    # Update Key Vault secrets
-   ./manage-b2c-config.sh update-secrets production
+   ./manage-entra-external-id-config.sh update-secrets production
    
    # Or update environment variables directly
    export AZURE_AD_B2C_TENANT_NAME="taktmate.onmicrosoft.com"
@@ -220,7 +220,7 @@ cd azure
 
 2. **Automated Testing**
    ```bash
-   ./test-b2c-urls.sh production taktmate YOUR_APP_ID https://app.taktmate.com
+   ./test-entra-external-id-urls.sh production taktmate YOUR_APP_ID https://app.taktmate.com
    ```
 
 ## 🔧 Environment-Specific Configuration
@@ -230,8 +230,8 @@ cd azure
 #### Production (.env.production)
 ```bash
 REACT_APP_AZURE_AD_B2C_CLIENT_ID=your-production-client-id
-REACT_APP_AZURE_AD_B2C_AUTHORITY=https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin
-REACT_APP_AZURE_AD_B2C_KNOWN_AUTHORITY=taktmate.b2clogin.com
+REACT_APP_AZURE_AD_B2C_AUTHORITY=https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin
+REACT_APP_AZURE_AD_B2C_KNOWN_AUTHORITY=taktmate.ciamlogin.com
 REACT_APP_AZURE_AD_B2C_TENANT_NAME=taktmate.onmicrosoft.com
 REACT_APP_AZURE_AD_B2C_SCOPE=openid profile
 REACT_APP_AZURE_AD_B2C_SIGNUP_SIGNIN_POLICY=B2C_1_signupsignin
@@ -245,8 +245,8 @@ REACT_APP_API_BASE_URL=https://api.taktmate.com
 #### Staging (.env.staging)
 ```bash
 REACT_APP_AZURE_AD_B2C_CLIENT_ID=your-staging-client-id
-REACT_APP_AZURE_AD_B2C_AUTHORITY=https://taktmate-staging.b2clogin.com/taktmate-staging.onmicrosoft.com/B2C_1_signupsignin
-REACT_APP_AZURE_AD_B2C_KNOWN_AUTHORITY=taktmate-staging.b2clogin.com
+REACT_APP_AZURE_AD_B2C_AUTHORITY=https://taktmate-staging.ciamlogin.com/taktmate-staging.onmicrosoft.com/B2C_1_signupsignin
+REACT_APP_AZURE_AD_B2C_KNOWN_AUTHORITY=taktmate-staging.ciamlogin.com
 REACT_APP_AZURE_AD_B2C_TENANT_NAME=taktmate-staging.onmicrosoft.com
 REACT_APP_REDIRECT_URI=https://staging.taktmate.com/auth/callback
 REACT_APP_POST_LOGOUT_REDIRECT_URI=https://staging.taktmate.com
@@ -256,8 +256,8 @@ REACT_APP_API_BASE_URL=https://api-staging.taktmate.com
 #### Development (.env.development)
 ```bash
 REACT_APP_AZURE_AD_B2C_CLIENT_ID=your-dev-client-id
-REACT_APP_AZURE_AD_B2C_AUTHORITY=https://taktmate-dev.b2clogin.com/taktmate-dev.onmicrosoft.com/B2C_1_signupsignin
-REACT_APP_AZURE_AD_B2C_KNOWN_AUTHORITY=taktmate-dev.b2clogin.com
+REACT_APP_AZURE_AD_B2C_AUTHORITY=https://taktmate-dev.ciamlogin.com/taktmate-dev.onmicrosoft.com/B2C_1_signupsignin
+REACT_APP_AZURE_AD_B2C_KNOWN_AUTHORITY=taktmate-dev.ciamlogin.com
 REACT_APP_AZURE_AD_B2C_TENANT_NAME=taktmate-dev.onmicrosoft.com
 REACT_APP_REDIRECT_URI=http://localhost:3000/auth/callback
 REACT_APP_POST_LOGOUT_REDIRECT_URI=http://localhost:3000
@@ -294,14 +294,14 @@ ALLOWED_ORIGINS=https://app.taktmate.com,https://staging.taktmate.com
 ### Automated Testing
 ```bash
 # Test all environments
-./test-b2c-urls.sh production taktmate YOUR_PROD_APP_ID https://app.taktmate.com
-./test-b2c-urls.sh staging taktmate-staging YOUR_STAGING_APP_ID https://staging.taktmate.com
-./test-b2c-urls.sh development taktmate-dev YOUR_DEV_APP_ID http://localhost:3000
+./test-entra-external-id-urls.sh production taktmate YOUR_PROD_APP_ID https://app.taktmate.com
+./test-entra-external-id-urls.sh staging taktmate-staging YOUR_STAGING_APP_ID https://staging.taktmate.com
+./test-entra-external-id-urls.sh development taktmate-dev YOUR_DEV_APP_ID http://localhost:3000
 
 # Validate configuration
-./manage-b2c-config.sh validate production
-./manage-b2c-config.sh validate staging
-./manage-b2c-config.sh validate development
+./manage-entra-external-id-config.sh validate production
+./manage-entra-external-id-config.sh validate staging
+./manage-entra-external-id-config.sh validate development
 ```
 
 ### Manual Testing Checklist
@@ -372,12 +372,12 @@ const corsOptions = {
 - name: Configure B2C URLs for Production
   run: |
     cd azure
-    ./configure-b2c-urls.sh production taktmate ${{ secrets.B2C_APP_ID }} https://app.taktmate.com https://api.taktmate.com
+    ./configure-entra-external-id-urls.sh production taktmate ${{ secrets.B2C_APP_ID }} https://app.taktmate.com https://api.taktmate.com
 
 - name: Test B2C Configuration
   run: |
     cd azure
-    ./test-b2c-urls.sh production taktmate ${{ secrets.B2C_APP_ID }} https://app.taktmate.com
+    ./test-entra-external-id-urls.sh production taktmate ${{ secrets.B2C_APP_ID }} https://app.taktmate.com
 ```
 
 ### Azure DevOps Integration
@@ -385,8 +385,8 @@ const corsOptions = {
 # In azure-pipelines.yml
 - script: |
     cd azure
-    ./configure-b2c-urls.sh $(Environment) $(TenantName) $(B2CAppId) $(FrontendUrl) $(BackendUrl)
-    ./test-b2c-urls.sh $(Environment) $(TenantName) $(B2CAppId) $(FrontendUrl)
+    ./configure-entra-external-id-urls.sh $(Environment) $(TenantName) $(B2CAppId) $(FrontendUrl) $(BackendUrl)
+    ./test-entra-external-id-urls.sh $(Environment) $(TenantName) $(B2CAppId) $(FrontendUrl)
   displayName: 'Configure and Test B2C URLs'
 ```
 
@@ -439,7 +439,7 @@ az ad app show --id YOUR_APP_ID --query "{redirectUris:web.redirectUris, logoutU
 
 #### Test B2C Discovery Endpoint
 ```bash
-curl -s "https://your-tenant.b2clogin.com/your-tenant.onmicrosoft.com/B2C_1_signupsignin/v2.0/.well-known/openid_configuration" | jq .
+curl -s "https://your-tenant.ciamlogin.com/your-tenant.onmicrosoft.com/B2C_1_signupsignin/v2.0/.well-known/openid_configuration" | jq .
 ```
 
 #### Validate Frontend Configuration
@@ -478,13 +478,13 @@ Set up alerts for:
 ## 📚 Additional Resources
 
 ### Documentation
-- [Azure AD B2C Documentation](https://docs.microsoft.com/en-us/azure/active-directory-b2c/)
+- [Microsoft Entra External ID Documentation](https://docs.microsoft.com/en-us/azure/active-directory-b2c/)
 - [MSAL.js Documentation](https://docs.microsoft.com/en-us/azure/active-directory/develop/msal-js-initializing-client-applications)
 - [B2C Custom Policies](https://docs.microsoft.com/en-us/azure/active-directory-b2c/custom-policy-overview)
 
 ### Tools
 - [JWT.io](https://jwt.io/) - JWT token decoder
 - [B2C Policy Explorer](https://docs.microsoft.com/en-us/azure/active-directory-b2c/troubleshoot-custom-policies)
-- [Azure AD B2C Community Samples](https://github.com/azure-ad-b2c/samples)
+- [Microsoft Entra External ID Community Samples](https://github.com/azure-ad-b2c/samples)
 
 This comprehensive B2C URL configuration provides production-ready authentication setup with automated deployment, comprehensive testing, and detailed troubleshooting guidance for the TaktMate application.

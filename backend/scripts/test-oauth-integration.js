@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Comprehensive OAuth Integration Test Runner
-// Tests Google and Microsoft OAuth integrations through Azure AD B2C
+// Tests Google and Microsoft OAuth integrations through Microsoft Entra External ID
 
 const { execSync } = require('child_process');
 const fs = require('fs');
@@ -23,13 +23,13 @@ const oauthTestCategories = [
   {
     name: 'Google OAuth Integration',
     script: 'test:oauth:google',
-    description: 'Tests Google OAuth flow through Azure AD B2C',
+    description: 'Tests Google OAuth flow through Microsoft Entra External ID',
     critical: true
   },
   {
     name: 'Microsoft OAuth Integration', 
     script: 'test:oauth:microsoft',
-    description: 'Tests Microsoft OAuth flow through Azure AD B2C',
+    description: 'Tests Microsoft OAuth flow through Microsoft Entra External ID',
     critical: true
   },
   {
@@ -259,7 +259,7 @@ function generateReport() {
   console.log(`\n💡 Recommendations:`);
   if (results.failed > 0) {
     console.log(`   • Fix ${results.failed} failing test(s)`);
-    console.log(`   • Review OAuth configuration for Azure AD B2C`);
+    console.log(`   • Review OAuth configuration for Microsoft Entra External ID`);
     console.log(`   • Check provider-specific token handling`);
   }
   

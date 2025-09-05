@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-// TaktMate Azure AD B2C API Service Testing Script
-// Tests Microsoft Graph API integration, user data export, and Azure AD B2C API functionality
+// TaktMate Microsoft Entra External ID API Service Testing Script
+// Tests Microsoft Graph API integration, user data export, and Microsoft Entra External ID API functionality
 
 const axios = require('axios');
 const fs = require('fs');
@@ -24,10 +24,10 @@ class AzureB2CApiTest {
         this.mockUserData = {
             userId: 'test-user-b2c-12345',
             email: 'test.user@taktmate.onmicrosoft.com',
-            name: 'Azure B2C Test User'
+            name: 'Microsoft Entra External ID Test User'
         };
         
-        console.log('🔗 TaktMate Azure AD B2C API Testing Suite');
+        console.log('🔗 TaktMate Microsoft Entra External ID API Testing Suite');
         console.log(`🌐 Testing API: ${this.apiBaseUrl}`);
         console.log('');
     }
@@ -91,16 +91,16 @@ class AzureB2CApiTest {
     }
     
     /**
-     * Test GDPR compliance status with Azure B2C API integration
+     * Test GDPR compliance status with Microsoft Entra External ID API integration
      */
     async testGDPRComplianceWithAzureB2C() {
-        console.log('\n🔗 Testing GDPR Compliance with Azure B2C API Integration...');
+        console.log('\n🔗 Testing GDPR Compliance with Microsoft Entra External ID API Integration...');
         
         const result = await this.makeRequest('GET', '/health/gdpr-compliance');
         
         if (!result.success) {
             this.recordResult(
-                'GDPR Compliance with Azure B2C API',
+                'GDPR Compliance with Microsoft Entra External ID API',
                 'FAIL',
                 `Request failed: ${result.error}`,
                 { error: result.error }
@@ -110,7 +110,7 @@ class AzureB2CApiTest {
         
         if (result.status !== 200) {
             this.recordResult(
-                'GDPR Compliance with Azure B2C API',
+                'GDPR Compliance with Microsoft Entra External ID API',
                 'FAIL',
                 `Unexpected status code: ${result.status}`,
                 { status: result.status, data: result.data }
@@ -123,7 +123,7 @@ class AzureB2CApiTest {
         
         if (!gdprCompliance) {
             this.recordResult(
-                'GDPR Compliance with Azure B2C API',
+                'GDPR Compliance with Microsoft Entra External ID API',
                 'FAIL',
                 'GDPR compliance data not found',
                 { data: data }
@@ -131,31 +131,31 @@ class AzureB2CApiTest {
             return;
         }
         
-        // Check if Azure B2C API service is integrated
-        const azureB2CApiService = gdprCompliance.azureB2CApiService;
+        // Check if Microsoft Entra External ID API service is integrated
+        const entraExternalIdApiService = gdprCompliance.entraExternalIdApiService;
         
-        if (!azureB2CApiService) {
+        if (!entraExternalIdApiService) {
             this.recordResult(
-                'GDPR Compliance with Azure B2C API',
+                'GDPR Compliance with Microsoft Entra External ID API',
                 'WARN',
-                'Azure B2C API Service integration not found',
+                'Microsoft Entra External ID API Service integration not found',
                 { gdprCompliance: gdprCompliance }
             );
             return;
         }
         
-        if (azureB2CApiService.error) {
+        if (entraExternalIdApiService.error) {
             this.recordResult(
-                'GDPR Compliance with Azure B2C API',
+                'GDPR Compliance with Microsoft Entra External ID API',
                 'WARN',
-                `Azure B2C API Service error: ${azureB2CApiService.error}`,
-                { error: azureB2CApiService.error, responseTime: result.responseTime }
+                `Microsoft Entra External ID API Service error: ${entraExternalIdApiService.error}`,
+                { error: entraExternalIdApiService.error, responseTime: result.responseTime }
             );
             return;
         }
         
-        // Validate Azure B2C API service configuration
-        const config = azureB2CApiService.configuration;
+        // Validate Microsoft Entra External ID API service configuration
+        const config = entraExternalIdApiService.configuration;
         const issues = [];
         
         if (!config.graphApiBaseUrl) {
@@ -176,9 +176,9 @@ class AzureB2CApiTest {
         
         if (issues.length === 0) {
             this.recordResult(
-                'GDPR Compliance with Azure B2C API',
+                'GDPR Compliance with Microsoft Entra External ID API',
                 'PASS',
-                'Azure B2C API Service successfully integrated with GDPR compliance',
+                'Microsoft Entra External ID API Service successfully integrated with GDPR compliance',
                 { 
                     graphApiBaseUrl: config.graphApiBaseUrl,
                     tenantId: config.tenantId,
@@ -186,17 +186,17 @@ class AzureB2CApiTest {
                     enableSignInActivity: config.enableSignInActivity,
                     enableAuditLogs: config.enableAuditLogs,
                     enableDirectoryObjects: config.enableDirectoryObjects,
-                    requestsTotal: azureB2CApiService.requestsTotal,
-                    requestsSuccessful: azureB2CApiService.requestsSuccessful,
-                    dataExportsCompleted: azureB2CApiService.dataExportsCompleted,
+                    requestsTotal: entraExternalIdApiService.requestsTotal,
+                    requestsSuccessful: entraExternalIdApiService.requestsSuccessful,
+                    dataExportsCompleted: entraExternalIdApiService.dataExportsCompleted,
                     responseTime: result.responseTime
                 }
             );
         } else {
             this.recordResult(
-                'GDPR Compliance with Azure B2C API',
+                'GDPR Compliance with Microsoft Entra External ID API',
                 'WARN',
-                `Azure B2C API configuration issues: ${issues.join(', ')}`,
+                `Microsoft Entra External ID API configuration issues: ${issues.join(', ')}`,
                 { 
                     issues: issues,
                     configuration: config,
@@ -207,16 +207,16 @@ class AzureB2CApiTest {
     }
     
     /**
-     * Test Azure B2C API service statistics
+     * Test Microsoft Entra External ID API service statistics
      */
     async testAzureB2CApiStatistics() {
-        console.log('\n📊 Testing Azure B2C API Service Statistics...');
+        console.log('\n📊 Testing Microsoft Entra External ID API Service Statistics...');
         
         const result = await this.makeRequest('GET', '/health/gdpr-compliance');
         
         if (!result.success || result.status !== 200) {
             this.recordResult(
-                'Azure B2C API Statistics',
+                'Microsoft Entra External ID API Statistics',
                 'FAIL',
                 'Cannot retrieve GDPR compliance data for statistics testing',
                 { error: result.error || result.status }
@@ -225,14 +225,14 @@ class AzureB2CApiTest {
         }
         
         const gdprCompliance = result.data.gdpr_compliance;
-        const azureB2CApiService = gdprCompliance?.azureB2CApiService;
+        const entraExternalIdApiService = gdprCompliance?.entraExternalIdApiService;
         
-        if (!azureB2CApiService || azureB2CApiService.error) {
+        if (!entraExternalIdApiService || entraExternalIdApiService.error) {
             this.recordResult(
-                'Azure B2C API Statistics',
+                'Microsoft Entra External ID API Statistics',
                 'WARN',
-                'Azure B2C API Service statistics not available',
-                { error: azureB2CApiService?.error || 'Service not initialized' }
+                'Microsoft Entra External ID API Service statistics not available',
+                { error: entraExternalIdApiService?.error || 'Service not initialized' }
             );
             return;
         }
@@ -249,41 +249,41 @@ class AzureB2CApiTest {
         ];
         
         const missingStats = expectedStats.filter(stat => 
-            azureB2CApiService[stat] === undefined
+            entraExternalIdApiService[stat] === undefined
         );
         
         if (missingStats.length === 0) {
-            const successRate = azureB2CApiService.requestsTotal > 0 ? 
-                (azureB2CApiService.requestsSuccessful / azureB2CApiService.requestsTotal * 100).toFixed(1) : 0;
+            const successRate = entraExternalIdApiService.requestsTotal > 0 ? 
+                (entraExternalIdApiService.requestsSuccessful / entraExternalIdApiService.requestsTotal * 100).toFixed(1) : 0;
             
-            const cacheHitRate = (azureB2CApiService.cacheHits + azureB2CApiService.cacheMisses) > 0 ? 
-                (azureB2CApiService.cacheHits / (azureB2CApiService.cacheHits + azureB2CApiService.cacheMisses) * 100).toFixed(1) : 0;
+            const cacheHitRate = (entraExternalIdApiService.cacheHits + entraExternalIdApiService.cacheMisses) > 0 ? 
+                (entraExternalIdApiService.cacheHits / (entraExternalIdApiService.cacheHits + entraExternalIdApiService.cacheMisses) * 100).toFixed(1) : 0;
             
             this.recordResult(
-                'Azure B2C API Statistics',
+                'Microsoft Entra External ID API Statistics',
                 'PASS',
-                'Azure B2C API Service statistics are comprehensive',
+                'Microsoft Entra External ID API Service statistics are comprehensive',
                 { 
-                    requestsTotal: azureB2CApiService.requestsTotal,
-                    requestsSuccessful: azureB2CApiService.requestsSuccessful,
-                    requestsFailed: azureB2CApiService.requestsFailed,
+                    requestsTotal: entraExternalIdApiService.requestsTotal,
+                    requestsSuccessful: entraExternalIdApiService.requestsSuccessful,
+                    requestsFailed: entraExternalIdApiService.requestsFailed,
                     successRate: successRate + '%',
-                    cacheHits: azureB2CApiService.cacheHits,
-                    cacheMisses: azureB2CApiService.cacheMisses,
+                    cacheHits: entraExternalIdApiService.cacheHits,
+                    cacheMisses: entraExternalIdApiService.cacheMisses,
                     cacheHitRate: cacheHitRate + '%',
-                    dataExportsCompleted: azureB2CApiService.dataExportsCompleted,
-                    averageResponseTime: azureB2CApiService.averageResponseTime + 'ms',
+                    dataExportsCompleted: entraExternalIdApiService.dataExportsCompleted,
+                    averageResponseTime: entraExternalIdApiService.averageResponseTime + 'ms',
                     responseTime: result.responseTime
                 }
             );
         } else {
             this.recordResult(
-                'Azure B2C API Statistics',
+                'Microsoft Entra External ID API Statistics',
                 'WARN',
                 `Missing statistics fields: ${missingStats.join(', ')}`,
                 { 
                     missingStats: missingStats,
-                    availableStats: Object.keys(azureB2CApiService),
+                    availableStats: Object.keys(entraExternalIdApiService),
                     responseTime: result.responseTime
                 }
             );
@@ -291,16 +291,16 @@ class AzureB2CApiTest {
     }
     
     /**
-     * Test Azure B2C API cache configuration
+     * Test Microsoft Entra External ID API cache configuration
      */
     async testAzureB2CApiCacheConfiguration() {
-        console.log('\n🗄️ Testing Azure B2C API Cache Configuration...');
+        console.log('\n🗄️ Testing Microsoft Entra External ID API Cache Configuration...');
         
         const result = await this.makeRequest('GET', '/health/gdpr-compliance');
         
         if (!result.success || result.status !== 200) {
             this.recordResult(
-                'Azure B2C API Cache Configuration',
+                'Microsoft Entra External ID API Cache Configuration',
                 'FAIL',
                 'Cannot retrieve GDPR compliance data for cache testing',
                 { error: result.error || result.status }
@@ -309,26 +309,26 @@ class AzureB2CApiTest {
         }
         
         const gdprCompliance = result.data.gdpr_compliance;
-        const azureB2CApiService = gdprCompliance?.azureB2CApiService;
+        const entraExternalIdApiService = gdprCompliance?.entraExternalIdApiService;
         
-        if (!azureB2CApiService || azureB2CApiService.error) {
+        if (!entraExternalIdApiService || entraExternalIdApiService.error) {
             this.recordResult(
-                'Azure B2C API Cache Configuration',
+                'Microsoft Entra External ID API Cache Configuration',
                 'WARN',
-                'Azure B2C API Service cache configuration not available',
-                { error: azureB2CApiService?.error || 'Service not initialized' }
+                'Microsoft Entra External ID API Service cache configuration not available',
+                { error: entraExternalIdApiService?.error || 'Service not initialized' }
             );
             return;
         }
         
-        const cache = azureB2CApiService.cache;
+        const cache = entraExternalIdApiService.cache;
         
         if (!cache) {
             this.recordResult(
-                'Azure B2C API Cache Configuration',
+                'Microsoft Entra External ID API Cache Configuration',
                 'WARN',
-                'Cache configuration not found in Azure B2C API Service',
-                { azureB2CApiService: azureB2CApiService }
+                'Cache configuration not found in Microsoft Entra External ID API Service',
+                { entraExternalIdApiService: entraExternalIdApiService }
             );
             return;
         }
@@ -362,9 +362,9 @@ class AzureB2CApiTest {
         
         if (cacheIssues.length === 0) {
             this.recordResult(
-                'Azure B2C API Cache Configuration',
+                'Microsoft Entra External ID API Cache Configuration',
                 'PASS',
-                'Azure B2C API Service cache configuration is valid',
+                'Microsoft Entra External ID API Service cache configuration is valid',
                 { 
                     cacheSize: cache.size,
                     maxSize: cache.maxSize,
@@ -376,7 +376,7 @@ class AzureB2CApiTest {
             );
         } else {
             this.recordResult(
-                'Azure B2C API Cache Configuration',
+                'Microsoft Entra External ID API Cache Configuration',
                 'WARN',
                 `Cache configuration issues: ${cacheIssues.join(', ')}`,
                 { 
@@ -390,16 +390,16 @@ class AzureB2CApiTest {
     }
     
     /**
-     * Test Azure B2C API token management
+     * Test Microsoft Entra External ID API token management
      */
     async testAzureB2CApiTokenManagement() {
-        console.log('\n🔐 Testing Azure B2C API Token Management...');
+        console.log('\n🔐 Testing Microsoft Entra External ID API Token Management...');
         
         const result = await this.makeRequest('GET', '/health/gdpr-compliance');
         
         if (!result.success || result.status !== 200) {
             this.recordResult(
-                'Azure B2C API Token Management',
+                'Microsoft Entra External ID API Token Management',
                 'FAIL',
                 'Cannot retrieve GDPR compliance data for token testing',
                 { error: result.error || result.status }
@@ -408,26 +408,26 @@ class AzureB2CApiTest {
         }
         
         const gdprCompliance = result.data.gdpr_compliance;
-        const azureB2CApiService = gdprCompliance?.azureB2CApiService;
+        const entraExternalIdApiService = gdprCompliance?.entraExternalIdApiService;
         
-        if (!azureB2CApiService || azureB2CApiService.error) {
+        if (!entraExternalIdApiService || entraExternalIdApiService.error) {
             this.recordResult(
-                'Azure B2C API Token Management',
+                'Microsoft Entra External ID API Token Management',
                 'WARN',
-                'Azure B2C API Service token management not available',
-                { error: azureB2CApiService?.error || 'Service not initialized' }
+                'Microsoft Entra External ID API Service token management not available',
+                { error: entraExternalIdApiService?.error || 'Service not initialized' }
             );
             return;
         }
         
-        const token = azureB2CApiService.token;
+        const token = entraExternalIdApiService.token;
         
         if (!token) {
             this.recordResult(
-                'Azure B2C API Token Management',
+                'Microsoft Entra External ID API Token Management',
                 'WARN',
-                'Token management information not found in Azure B2C API Service',
-                { azureB2CApiService: azureB2CApiService }
+                'Token management information not found in Microsoft Entra External ID API Service',
+                { entraExternalIdApiService: entraExternalIdApiService }
             );
             return;
         }
@@ -460,9 +460,9 @@ class AzureB2CApiTest {
         
         if (tokenIssues.length === 0) {
             this.recordResult(
-                'Azure B2C API Token Management',
+                'Microsoft Entra External ID API Token Management',
                 'PASS',
-                'Azure B2C API Service token management is functional',
+                'Microsoft Entra External ID API Service token management is functional',
                 { 
                     hasToken: token.hasToken,
                     expiresAt: token.expiresAt,
@@ -473,7 +473,7 @@ class AzureB2CApiTest {
             );
         } else {
             this.recordResult(
-                'Azure B2C API Token Management',
+                'Microsoft Entra External ID API Token Management',
                 'WARN',
                 `Token management issues: ${tokenIssues.join(', ')}`,
                 { 
@@ -487,10 +487,10 @@ class AzureB2CApiTest {
     }
     
     /**
-     * Test GDPR data export with Azure B2C API integration
+     * Test GDPR data export with Microsoft Entra External ID API integration
      */
     async testGDPRDataExportWithAzureB2C() {
-        console.log('\n📤 Testing GDPR Data Export with Azure B2C API Integration...');
+        console.log('\n📤 Testing GDPR Data Export with Microsoft Entra External ID API Integration...');
         
         // Test data export endpoint (requires authentication)
         const exportResult = await this.makeRequest('GET', '/api/gdpr/export?format=json', {
@@ -501,25 +501,25 @@ class AzureB2CApiTest {
         
         if (exportResult.status === 401 || exportResult.status === 403) {
             this.recordResult(
-                'GDPR Data Export with Azure B2C API',
+                'GDPR Data Export with Microsoft Entra External ID API',
                 'PASS',
-                'Data export endpoint correctly requires authentication (Azure B2C API integration ready)',
+                'Data export endpoint correctly requires authentication (Microsoft Entra External ID API integration ready)',
                 { 
                     status: exportResult.status,
                     responseTime: exportResult.responseTime
                 }
             );
         } else if (exportResult.status === 200) {
-            // If somehow it returns 200, check if it contains Azure B2C data structure
+            // If somehow it returns 200, check if it contains Microsoft Entra External ID data structure
             const hasAzureB2CStructure = exportResult.data && 
                 (exportResult.data.azureAdB2CData || 
                  (typeof exportResult.data === 'string' && exportResult.data.includes('azureAdB2CData')));
             
             if (hasAzureB2CStructure) {
                 this.recordResult(
-                    'GDPR Data Export with Azure B2C API',
+                    'GDPR Data Export with Microsoft Entra External ID API',
                     'PASS',
-                    'Data export includes Azure AD B2C data structure',
+                    'Data export includes Microsoft Entra External ID data structure',
                     { 
                         status: exportResult.status,
                         hasAzureB2CData: true,
@@ -529,9 +529,9 @@ class AzureB2CApiTest {
                 );
             } else {
                 this.recordResult(
-                    'GDPR Data Export with Azure B2C API',
+                    'GDPR Data Export with Microsoft Entra External ID API',
                     'WARN',
-                    'Data export successful but Azure B2C data structure not detected',
+                    'Data export successful but Microsoft Entra External ID data structure not detected',
                     { 
                         status: exportResult.status,
                         hasAzureB2CData: false,
@@ -541,7 +541,7 @@ class AzureB2CApiTest {
             }
         } else {
             this.recordResult(
-                'GDPR Data Export with Azure B2C API',
+                'GDPR Data Export with Microsoft Entra External ID API',
                 'WARN',
                 `Unexpected response from data export endpoint: ${exportResult.status}`,
                 { 
@@ -554,10 +554,10 @@ class AzureB2CApiTest {
     }
     
     /**
-     * Test Azure B2C API service performance
+     * Test Microsoft Entra External ID API service performance
      */
     async testAzureB2CApiPerformance() {
-        console.log('\n⚡ Testing Azure B2C API Service Performance...');
+        console.log('\n⚡ Testing Microsoft Entra External ID API Service Performance...');
         
         const iterations = 3;
         const responseTimes = [];
@@ -573,7 +573,7 @@ class AzureB2CApiTest {
         
         if (responseTimes.length === 0) {
             this.recordResult(
-                'Azure B2C API Service Performance',
+                'Microsoft Entra External ID API Service Performance',
                 'FAIL',
                 'No successful requests for performance testing',
                 {}
@@ -587,7 +587,7 @@ class AzureB2CApiTest {
         
         if (avgResponseTime < 1000) { // Less than 1 second average
             this.recordResult(
-                'Azure B2C API Service Performance',
+                'Microsoft Entra External ID API Service Performance',
                 'PASS',
                 `Good performance: ${avgResponseTime}ms average`,
                 { 
@@ -599,7 +599,7 @@ class AzureB2CApiTest {
             );
         } else if (avgResponseTime < 3000) { // Less than 3 seconds
             this.recordResult(
-                'Azure B2C API Service Performance',
+                'Microsoft Entra External ID API Service Performance',
                 'WARN',
                 `Acceptable performance: ${avgResponseTime}ms average`,
                 { 
@@ -611,7 +611,7 @@ class AzureB2CApiTest {
             );
         } else {
             this.recordResult(
-                'Azure B2C API Service Performance',
+                'Microsoft Entra External ID API Service Performance',
                 'FAIL',
                 `Poor performance: ${avgResponseTime}ms average`,
                 { 
@@ -652,7 +652,7 @@ class AzureB2CApiTest {
             mockUserData: this.mockUserData
         };
         
-        console.log('\n🔗 Azure AD B2C API Test Summary');
+        console.log('\n🔗 Microsoft Entra External ID API Test Summary');
         console.log('==================================');
         console.log(`Total Tests: ${summary.totalTests}`);
         console.log(`✅ Passed: ${summary.passed}`);
@@ -699,7 +699,7 @@ class AzureB2CApiTest {
     }
     
     /**
-     * Run all Azure B2C API tests
+     * Run all Microsoft Entra External ID API tests
      */
     async runAllTests() {
         try {

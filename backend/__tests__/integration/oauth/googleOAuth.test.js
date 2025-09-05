@@ -1,4 +1,4 @@
-// Integration tests for Google OAuth through Azure AD B2C
+// Integration tests for Google OAuth through Microsoft Entra External ID
 // Tests complete OAuth flow with Google as identity provider
 
 const request = require('supertest');
@@ -66,7 +66,7 @@ describe('Google OAuth Integration Tests', () => {
 
       expect(response.body).toHaveProperty('loginUrl');
       expect(response.body.loginUrl).toContain('https://');
-      expect(response.body.loginUrl).toContain('.b2clogin.com');
+      expect(response.body.loginUrl).toContain('.ciamlogin.com');
       expect(response.body.loginUrl).toContain('oauth2/v2.0/authorize');
       expect(response.body.loginUrl).toContain('state=google-state-123');
       expect(response.body.loginUrl).toContain('nonce=google-nonce-456');
@@ -83,15 +83,15 @@ describe('Google OAuth Integration Tests', () => {
       expect(response.body).toHaveProperty('tokenEndpoint');
       expect(response.body).toHaveProperty('userInfoEndpoint');
       expect(response.body).toHaveProperty('jwksUri');
-      expect(response.body.issuer).toContain('.b2clogin.com');
+      expect(response.body.issuer).toContain('.ciamlogin.com');
     });
   });
 
   describe('Google OAuth Token Processing', () => {
     test('should process Google OAuth callback with valid token', async () => {
-      // Create a Google-specific Azure AD B2C token
+      // Create a Google-specific Microsoft Entra External ID token
       const googleToken = global.testUtils.generateTestAzureToken({
-        iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+        iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         aud: process.env.AZURE_AD_B2C_CLIENT_ID,
         idp: 'google.com',
         emails: ['user@gmail.com'],
@@ -132,7 +132,7 @@ describe('Google OAuth Integration Tests', () => {
     test('should handle Google OAuth token with minimal profile', async () => {
       // Test with minimal Google profile data
       const minimalGoogleToken = global.testUtils.generateTestAzureToken({
-        iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+        iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         aud: process.env.AZURE_AD_B2C_CLIENT_ID,
         idp: 'google.com',
         emails: ['minimal@gmail.com'],
@@ -157,7 +157,7 @@ describe('Google OAuth Integration Tests', () => {
     test('should validate Google OAuth token signature', async () => {
       // Create an invalid token (wrong signature)
       const invalidToken = jwt.sign({
-        iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+        iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         aud: process.env.AZURE_AD_B2C_CLIENT_ID,
         idp: 'google.com',
         emails: ['invalid@gmail.com']
@@ -179,7 +179,7 @@ describe('Google OAuth Integration Tests', () => {
     test('should validate Google OAuth token expiration', async () => {
       // Create an expired Google token
       const expiredToken = global.testUtils.generateTestAzureToken({
-        iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+        iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         aud: process.env.AZURE_AD_B2C_CLIENT_ID,
         idp: 'google.com',
         emails: ['expired@gmail.com'],
@@ -402,7 +402,7 @@ describe('Google OAuth Integration Tests', () => {
   describe('Google OAuth Security', () => {
     test('should validate Google OAuth audience', async () => {
       const wrongAudienceToken = global.testUtils.generateTestAzureToken({
-        iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+        iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         aud: 'wrong-client-id',
         idp: 'google.com',
         emails: ['audience@gmail.com']

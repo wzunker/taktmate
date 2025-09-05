@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * End-to-End Azure AD B2C User Flow Testing for TaktMate
+ * End-to-End Microsoft Entra External ID User Flow Testing for TaktMate
  * 
- * This script performs comprehensive testing of Azure AD B2C user flows,
+ * This script performs comprehensive testing of Microsoft Entra External ID user flows,
  * token generation, validation, and integration testing.
  */
 
@@ -122,10 +122,10 @@ function makeHttpRequest(url, options = {}) {
 }
 
 /**
- * Test Azure AD B2C endpoints connectivity
+ * Test Microsoft Entra External ID endpoints connectivity
  */
 async function testEndpointsConnectivity() {
-  log('\n🌐 Testing Azure AD B2C Endpoints Connectivity', colors.cyan);
+  log('\n🌐 Testing Microsoft Entra External ID Endpoints Connectivity', colors.cyan);
   log('=' .repeat(60), colors.cyan);
 
   const endpoints = [
@@ -553,7 +553,7 @@ function generateTestReport() {
 
   // Overall status
   if (successRate >= 90) {
-    log(`\n✅ Overall Status: EXCELLENT - Azure AD B2C is ready for production`, colors.green);
+    log(`\n✅ Overall Status: EXCELLENT - Microsoft Entra External ID is ready for production`, colors.green);
   } else if (successRate >= 80) {
     log(`\n⚠️  Overall Status: GOOD - Minor issues need attention`, colors.yellow);
   } else if (successRate >= 60) {
@@ -581,7 +581,7 @@ function generateRecommendations(successRate, errors) {
 
   const connectivityErrors = errors.filter(e => e.test.includes('connectivity'));
   if (connectivityErrors.length > 0) {
-    recommendations.push('🌐 Check network connectivity and Azure AD B2C tenant configuration');
+    recommendations.push('🌐 Check network connectivity and Microsoft Entra External ID tenant configuration');
   }
 
   const configErrors = errors.filter(e => e.test.includes('configuration'));
@@ -611,7 +611,7 @@ function displayManualTestingInstructions() {
   log('=' .repeat(60), colors.cyan);
 
   log('\n1. Azure Portal Testing:', colors.yellow);
-  log('   • Go to Azure AD B2C > User flows > B2C_1_signupsignin1', colors.blue);
+  log('   • Go to Microsoft Entra External ID > User flows > B2C_1_signupsignin1', colors.blue);
   log('   • Click "Run user flow"', colors.blue);
   log('   • Select your application and use https://jwt.ms as reply URL', colors.blue);
   log('   • Complete authentication flow and verify token claims', colors.blue);
@@ -642,7 +642,7 @@ function displayManualTestingInstructions() {
 async function main() {
   const command = process.argv[2] || 'all';
 
-  log('🧪 TaktMate Azure AD B2C End-to-End Testing', colors.bright);
+  log('🧪 TaktMate Microsoft Entra External ID End-to-End Testing', colors.bright);
   log(`Environment: ${process.env.NODE_ENV || 'development'}`, colors.blue);
   log(`Tenant: ${config.tenantName}`, colors.blue);
 
@@ -673,7 +673,7 @@ async function main() {
       case 'help':
         log('\nUsage: node test-e2e-flows.js [command]', colors.yellow);
         log('\nCommands:', colors.yellow);
-        log('  connectivity - Test Azure AD B2C endpoint connectivity', colors.blue);
+        log('  connectivity - Test Microsoft Entra External ID endpoint connectivity', colors.blue);
         log('  urls         - Test user flow URL generation', colors.blue);
         log('  tokens       - Test JWT token validation and user profile extraction', colors.blue);
         log('  performance  - Test JWKS caching and performance benchmarks', colors.blue);
@@ -699,7 +699,7 @@ async function main() {
         if (report.success) {
           log('1. Proceed with manual testing using the instructions above', colors.blue);
           log('2. Test integration with your React application', colors.blue);
-          log('3. Complete Task 1.7: Document Azure AD B2C setup', colors.blue);
+          log('3. Complete Task 1.7: Document Microsoft Entra External ID setup', colors.blue);
         } else {
           log('1. Fix the issues identified in the test report', colors.red);
           log('2. Re-run tests to verify fixes', colors.blue);

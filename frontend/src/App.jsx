@@ -393,7 +393,7 @@ function AppContent() {
               TaktMate - Secure CSV Chat Platform powered by OpenAI GPT-4
             </p>
             <div className="flex items-center space-x-4 text-sm text-gray-500">
-              <span>Protected by Azure AD B2C</span>
+              <span>Protected by Microsoft Entra External ID</span>
               <AnimatePresence>
                 {isAuthenticated && (
                   <motion.span
@@ -482,7 +482,7 @@ function LoginPage() {
           className="mt-8"
         >
           <LoginButton variant="primary" size="lg" className="w-full">
-            Sign In with Azure AD B2C
+            Sign In with Microsoft Entra External ID
           </LoginButton>
         </motion.div>
         
@@ -494,7 +494,7 @@ function LoginPage() {
           className="text-center text-xs text-gray-500"
         >
           <div className="space-y-2">
-            <p>🔒 Enterprise-grade security with Azure AD B2C</p>
+            <p>🔒 Enterprise-grade security with Microsoft Entra External ID</p>
             <p>💼 Chat with your CSV data using AI</p>
             <p>⚡ Instant insights powered by GPT-4</p>
           </div>

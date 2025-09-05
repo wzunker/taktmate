@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Test Azure AD B2C Redirect URL Configuration
+# Test Microsoft Entra External ID Redirect URL Configuration
 # Usage: ./test-b2c-urls.sh [environment] [tenant-name] [app-id] [frontend-url]
 # Example: ./test-b2c-urls.sh production taktmate 12345678-1234-1234-1234-123456789012 https://app.taktmate.com
 
@@ -41,7 +41,7 @@ show_usage() {
     echo ""
     echo "Parameters:"
     echo "  environment   - Environment (production, staging, development)"
-    echo "  tenant-name   - Azure AD B2C tenant name (without .onmicrosoft.com)"
+    echo "  tenant-name   - Microsoft Entra External ID tenant name (without .onmicrosoft.com)"
     echo "  app-id        - Application (client) ID"
     echo "  frontend-url  - Frontend application URL"
     echo ""
@@ -64,7 +64,7 @@ if [[ ! "$ENVIRONMENT" =~ ^(production|staging|development)$ ]]; then
     exit 1
 fi
 
-print_status "Testing Azure AD B2C configuration for $ENVIRONMENT environment"
+print_status "Testing Microsoft Entra External ID configuration for $ENVIRONMENT environment"
 print_status "Tenant: $TENANT_NAME.onmicrosoft.com"
 print_status "App ID: $APP_ID"
 print_status "Frontend URL: $FRONTEND_URL"

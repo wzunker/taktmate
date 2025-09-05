@@ -2,8 +2,8 @@
 // Comprehensive user account deletion workflow through Azure AD B2C with GDPR compliance
 
 const axios = require('axios');
-const { config: azureConfig } = require('../config/azureAdB2C');
-const { AzureB2CApiService } = require('./azureB2CApiService');
+const { config: azureConfig } = require('../config/entraExternalId');
+const { EntraExternalIdApiService } = require('./entraExternalIdApiService');
 
 /**
  * Account Deletion Service
@@ -16,7 +16,7 @@ class AccountDeletionService {
         this.sessionManagement = sessionManagement;
         
         // Initialize Azure B2C API service
-        this.azureB2CApiService = new AzureB2CApiService(appInsights);
+        this.entraExternalIdApiService = new EntraExternalIdApiService(appInsights);
         
         // Account deletion configuration
         this.config = {
@@ -147,7 +147,7 @@ class AccountDeletionService {
     async initialize() {
         try {
             // Initialize Azure B2C API service
-            await this.azureB2CApiService.initialize();
+            await this.entraExternalIdApiService.initialize();
             
             // Start deletion queue processor
             this.startDeletionProcessor();
@@ -554,7 +554,7 @@ class AccountDeletionService {
         
         // Verify user exists in Azure AD B2C
         try {
-            const userProfile = await this.azureB2CApiService.exportUserProfile(deletionRequest.userId);
+            const userProfile = await this.entraExternalIdApiService.exportUserProfile(deletionRequest.userId);
             if (!userProfile || !userProfile.profile) {
                 console.warn(`⚠️ User ${deletionRequest.userId} not found in Azure AD B2C, may have been already deleted`);
             }
@@ -574,7 +574,7 @@ class AccountDeletionService {
         
         try {
             // Create comprehensive data backup using Azure B2C API service
-            const backupData = await this.azureB2CApiService.exportUserData(deletionRequest.userId);
+            const backupData = await this.entraExternalIdApiService.exportUserData(deletionRequest.userId);
             
             // Store backup data (in production, this would be stored securely)
             const backupLocation = `backup_${deletionRequest.userId}_${Date.now()}.json`;
@@ -687,7 +687,7 @@ class AccountDeletionService {
             // Delete user from Azure AD B2C using Microsoft Graph API
             const deleteEndpoint = `/users/${deletionRequest.userId}`;
             
-            await this.azureB2CApiService.makeGraphApiRequest('DELETE', deleteEndpoint);
+            await this.entraExternalIdApiService.makeGraphApiRequest('DELETE', deleteEndpoint);
             
             // Update verification
             deletionRequest.verification.azureB2CDeleted = true;
@@ -720,7 +720,7 @@ class AccountDeletionService {
             // Verify Azure AD B2C account deletion
             if (this.config.enableAzureB2CDeletion) {
                 try {
-                    await this.azureB2CApiService.makeGraphApiRequest('GET', `/users/${deletionRequest.userId}`);
+                    await this.entraExternalIdApiService.makeGraphApiRequest('GET', `/users/${deletionRequest.userId}`);
                     // If we reach here, user still exists
                     throw new Error('User account still exists in Azure AD B2C');
                 } catch (error) {

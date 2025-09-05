@@ -218,7 +218,7 @@ describe('JWT Authentication Middleware', () => {
       expect(next).toHaveBeenCalled();
     });
 
-    test('should handle Azure AD B2C token format', async () => {
+    test('should handle Microsoft Entra External ID token format', async () => {
       const middleware = jwtAuthMiddleware();
       const azureToken = global.testUtils.generateTestAzureToken({
         sub: 'azure-user-123',
@@ -259,10 +259,10 @@ describe('JWT Authentication Middleware', () => {
       await middleware(req1, res1, next1);
       expect(req1.user.id).toBe('user-sub-123');
       
-      // Test with 'oid' field (Azure AD B2C) - create token without 'sub' field
+      // Test with 'oid' field (Microsoft Entra External ID) - create token without 'sub' field
       const jwt = require('jsonwebtoken');
       const oidOnlyPayload = {
-        iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+        iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         aud: process.env.AZURE_CLIENT_ID,
         name: 'Test Azure User',
         emails: ['test@example.com'],

@@ -8,7 +8,7 @@ const path = require('path');
 
 // Mock dependencies for load testing
 jest.mock('@azure/msal-node');
-jest.mock('../../services/azureB2CApiService');
+jest.mock('../../services/entraExternalIdApiService');
 
 describe('API Endpoints Load Testing', () => {
   const mockUsers = Array.from({ length: 50 }, (_, i) => ({

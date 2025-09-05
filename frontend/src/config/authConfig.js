@@ -1,21 +1,21 @@
 /**
- * Azure AD B2C Authentication Configuration
+ * Microsoft Entra External ID Authentication Configuration
  * 
- * This configuration file contains all the necessary settings for Azure AD B2C
+ * This configuration file contains all the necessary settings for Microsoft Entra External ID
  * authentication integration with the TaktMate frontend application.
  */
 
 import { LogLevel } from '@azure/msal-browser';
 
 /**
- * Configuration object for Azure AD B2C
- * These values should be set based on your Azure AD B2C tenant configuration
+ * Configuration object for Microsoft Entra External ID
+ * These values should be set based on your Microsoft Entra External ID tenant configuration
  */
 export const msalConfig = {
   auth: {
-    clientId: process.env.REACT_APP_AZURE_AD_B2C_CLIENT_ID || 'your-client-id-here',
-    authority: process.env.REACT_APP_AZURE_AD_B2C_AUTHORITY || 'https://your-tenant.b2clogin.com/your-tenant.onmicrosoft.com/B2C_1_signupsignin',
-    knownAuthorities: [process.env.REACT_APP_AZURE_AD_B2C_KNOWN_AUTHORITY || 'your-tenant.b2clogin.com'],
+    clientId: process.env.REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID || 'your-client-id-here',
+    authority: process.env.REACT_APP_ENTRA_EXTERNAL_ID_AUTHORITY || 'https://your-tenant.ciamlogin.com/your-tenant.onmicrosoft.com/B2C_1_signupsignin',
+    knownAuthorities: [process.env.REACT_APP_ENTRA_EXTERNAL_ID_KNOWN_AUTHORITY || 'your-tenant.ciamlogin.com'],
     redirectUri: process.env.REACT_APP_REDIRECT_URI || window.location.origin,
     postLogoutRedirectUri: process.env.REACT_APP_POST_LOGOUT_REDIRECT_URI || window.location.origin,
     navigateToLoginRequestUrl: false, // Set to true if you want to return to the page that initiated the login request
@@ -68,7 +68,7 @@ export const loginRequest = {
     'profile',
     'email',
     // Add any additional scopes your application needs
-    process.env.REACT_APP_AZURE_AD_B2C_SCOPE || 'https://your-tenant.onmicrosoft.com/your-api/access_as_user'
+    process.env.REACT_APP_ENTRA_EXTERNAL_ID_SCOPE || 'https://your-tenant.onmicrosoft.com/your-api/access_as_user'
   ],
 };
 
@@ -80,32 +80,32 @@ export const protectedResources = {
   taktmateApi: {
     endpoint: process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001',
     scopes: [
-      process.env.REACT_APP_AZURE_AD_B2C_SCOPE || 'https://your-tenant.onmicrosoft.com/your-api/access_as_user'
+      process.env.REACT_APP_ENTRA_EXTERNAL_ID_SCOPE || 'https://your-tenant.onmicrosoft.com/your-api/access_as_user'
     ],
   },
 };
 
 /**
- * Policy names for Azure AD B2C user flows
+ * Policy names for Microsoft Entra External ID user flows
  */
 export const b2cPolicies = {
-  signUpSignIn: process.env.REACT_APP_AZURE_AD_B2C_SIGNUP_SIGNIN_POLICY || 'B2C_1_signupsignin',
-  editProfile: process.env.REACT_APP_AZURE_AD_B2C_EDIT_PROFILE_POLICY || 'B2C_1_profileediting',
-  resetPassword: process.env.REACT_APP_AZURE_AD_B2C_RESET_PASSWORD_POLICY || 'B2C_1_passwordreset',
+  signUpSignIn: process.env.REACT_APP_ENTRA_EXTERNAL_ID_SIGNUP_SIGNIN_POLICY || 'B2C_1_signupsignin',
+  editProfile: process.env.REACT_APP_ENTRA_EXTERNAL_ID_EDIT_PROFILE_POLICY || 'B2C_1_profileediting',
+  resetPassword: process.env.REACT_APP_ENTRA_EXTERNAL_ID_RESET_PASSWORD_POLICY || 'B2C_1_passwordreset',
 };
 
 /**
- * Authority URLs for different B2C policies
+ * Authority URLs for different Microsoft Entra External ID policies
  */
 export const authorities = {
   signUpSignIn: {
-    authority: `https://${process.env.REACT_APP_AZURE_AD_B2C_TENANT_NAME || 'your-tenant'}.b2clogin.com/${process.env.REACT_APP_AZURE_AD_B2C_TENANT_NAME || 'your-tenant'}.onmicrosoft.com/${b2cPolicies.signUpSignIn}`,
+    authority: `https://${process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_NAME || 'your-tenant'}.ciamlogin.com/${process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_NAME || 'your-tenant'}.onmicrosoft.com/${b2cPolicies.signUpSignIn}`,
   },
   editProfile: {
-    authority: `https://${process.env.REACT_APP_AZURE_AD_B2C_TENANT_NAME || 'your-tenant'}.b2clogin.com/${process.env.REACT_APP_AZURE_AD_B2C_TENANT_NAME || 'your-tenant'}.onmicrosoft.com/${b2cPolicies.editProfile}`,
+    authority: `https://${process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_NAME || 'your-tenant'}.ciamlogin.com/${process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_NAME || 'your-tenant'}.onmicrosoft.com/${b2cPolicies.editProfile}`,
   },
   resetPassword: {
-    authority: `https://${process.env.REACT_APP_AZURE_AD_B2C_TENANT_NAME || 'your-tenant'}.b2clogin.com/${process.env.REACT_APP_AZURE_AD_B2C_TENANT_NAME || 'your-tenant'}.onmicrosoft.com/${b2cPolicies.resetPassword}`,
+    authority: `https://${process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_NAME || 'your-tenant'}.ciamlogin.com/${process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_NAME || 'your-tenant'}.onmicrosoft.com/${b2cPolicies.resetPassword}`,
   },
 };
 
@@ -114,17 +114,17 @@ export const authorities = {
  */
 export const validateConfiguration = () => {
   const requiredEnvVars = [
-    'REACT_APP_AZURE_AD_B2C_CLIENT_ID',
-    'REACT_APP_AZURE_AD_B2C_AUTHORITY',
-    'REACT_APP_AZURE_AD_B2C_KNOWN_AUTHORITY',
-    'REACT_APP_AZURE_AD_B2C_TENANT_NAME',
-    'REACT_APP_AZURE_AD_B2C_SCOPE',
+    'REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID',
+    'REACT_APP_ENTRA_EXTERNAL_ID_AUTHORITY',
+    'REACT_APP_ENTRA_EXTERNAL_ID_KNOWN_AUTHORITY',
+    'REACT_APP_ENTRA_EXTERNAL_ID_TENANT_NAME',
+    'REACT_APP_ENTRA_EXTERNAL_ID_SCOPE',
   ];
 
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
   
   if (missingVars.length > 0) {
-    console.warn('⚠️ Missing Azure AD B2C environment variables:', missingVars);
+    console.warn('⚠️ Missing Microsoft Entra External ID environment variables:', missingVars);
     console.warn('The application will use default values, but authentication may not work correctly.');
     console.warn('Please check your .env file and ensure all required variables are set.');
     return false;

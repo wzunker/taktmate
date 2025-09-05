@@ -1,9 +1,9 @@
-# Azure AD B2C Configuration Guide for TaktMate
+# Microsoft Entra External ID Configuration Guide for TaktMate
 
 ## Overview
-This guide provides comprehensive instructions for configuring Azure AD B2C redirect URLs and authentication settings for the TaktMate application's custom domains. It covers redirect URL management, policy configuration, authentication flow testing, and integration with custom domains across all environments.
+This guide provides comprehensive instructions for configuring Microsoft Entra External ID redirect URLs and authentication settings for the TaktMate application's custom domains. It covers redirect URL management, policy configuration, authentication flow testing, and integration with custom domains across all environments.
 
-## 🏗️ Azure AD B2C Architecture
+## 🏗️ Microsoft Entra External ID Architecture
 
 ### B2C Authentication Flow with Custom Domains
 ```
@@ -104,7 +104,7 @@ Environment Mapping:
 ## 📋 B2C Configuration Setup Process
 
 ### Prerequisites
-1. **Azure AD B2C tenant** created and configured
+1. **Microsoft Entra External ID tenant** created and configured
 2. **B2C application registration** with appropriate permissions
 3. **Custom domains** configured and accessible (Tasks 7.1-7.3)
 4. **Azure CLI** with Microsoft Graph permissions
@@ -260,26 +260,26 @@ Logout URLs:
 #### 1. Sign Up / Sign In Policy
 ```yaml
 Policy Name: B2C_1_signupsignin1
-Discovery URL: https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin1/v2.0/.well-known/openid_configuration
-Authorization URL: https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin1/oauth2/v2.0/authorize
-Token URL: https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin1/oauth2/v2.0/token
-JWKS URL: https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin1/discovery/v2.0/keys
+Discovery URL: https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin1/v2.0/.well-known/openid_configuration
+Authorization URL: https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin1/oauth2/v2.0/authorize
+Token URL: https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin1/oauth2/v2.0/token
+JWKS URL: https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin1/discovery/v2.0/keys
 ```
 
 #### 2. Edit Profile Policy
 ```yaml
 Policy Name: B2C_1_profileediting1
-Discovery URL: https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/B2C_1_profileediting1/v2.0/.well-known/openid_configuration
-Authorization URL: https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/B2C_1_profileediting1/oauth2/v2.0/authorize
-Token URL: https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/B2C_1_profileediting1/oauth2/v2.0/token
+Discovery URL: https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/B2C_1_profileediting1/v2.0/.well-known/openid_configuration
+Authorization URL: https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/B2C_1_profileediting1/oauth2/v2.0/authorize
+Token URL: https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/B2C_1_profileediting1/oauth2/v2.0/token
 ```
 
 #### 3. Password Reset Policy
 ```yaml
 Policy Name: B2C_1_passwordreset1
-Discovery URL: https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/B2C_1_passwordreset1/v2.0/.well-known/openid_configuration
-Authorization URL: https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/B2C_1_passwordreset1/oauth2/v2.0/authorize
-Token URL: https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/B2C_1_passwordreset1/oauth2/v2.0/token
+Discovery URL: https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/B2C_1_passwordreset1/v2.0/.well-known/openid_configuration
+Authorization URL: https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/B2C_1_passwordreset1/oauth2/v2.0/authorize
+Token URL: https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/B2C_1_passwordreset1/oauth2/v2.0/token
 ```
 
 ### Policy Testing and Validation
@@ -291,7 +291,7 @@ Token URL: https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/B2C_1_password
 ./test-b2c-authentication.sh all taktconnect.com --policies --verbose
 
 # Test specific policy endpoints
-curl -s "https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin1/v2.0/.well-known/openid_configuration" | jq .
+curl -s "https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin1/v2.0/.well-known/openid_configuration" | jq .
 ```
 
 ## 🧪 B2C Authentication Testing
@@ -398,7 +398,7 @@ az rest --method GET --url "https://graph.microsoft.com/v1.0/applications/$B2C_C
 # Check policy name matches environment variables
 
 # Test specific policy endpoint
-curl -I "https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin1/v2.0/.well-known/openid_configuration"
+curl -I "https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin1/v2.0/.well-known/openid_configuration"
 ```
 
 #### 3. CORS Issues with B2C
@@ -409,10 +409,10 @@ curl -I "https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/B2C_1_signupsign
 ./test-b2c-authentication.sh production taktconnect.com --cors --verbose
 
 # Update backend CORS configuration to include B2C domain
-# Add https://taktmate.b2clogin.com to allowed origins
+# Add https://taktmate.ciamlogin.com to allowed origins
 
 # Test CORS preflight requests
-curl -H "Origin: https://taktmate.b2clogin.com" \
+curl -H "Origin: https://taktmate.ciamlogin.com" \
      -H "Access-Control-Request-Method: GET" \
      -X OPTIONS https://app.taktconnect.com
 ```
@@ -527,7 +527,7 @@ backup_b2c_configuration
 # Monitor B2C endpoint response times
 monitor_b2c_performance() {
   local policy="B2C_1_signupsignin1"
-  local discovery_url="https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/$policy/v2.0/.well-known/openid_configuration"
+  local discovery_url="https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/$policy/v2.0/.well-known/openid_configuration"
   
   local response_time=$(curl -w "%{time_total}" -o /dev/null -s "$discovery_url")
   local response_time_ms=$(echo "$response_time * 1000" | bc | cut -d'.' -f1)

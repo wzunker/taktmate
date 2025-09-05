@@ -51,8 +51,8 @@ const LandingPage = () => {
     <>
       <SEOHelmet 
         title="TaktMate - AI-Powered CSV Data Analysis | Transform Spreadsheets into Conversations"
-        description="Upload CSV files and chat with your data using GPT-4. Get instant insights, discover patterns, and make data-driven decisions. Secure, enterprise-ready, with Azure AD B2C authentication."
-        keywords="CSV analysis, AI data analysis, GPT-4, business intelligence, data chat, spreadsheet analysis, data insights, Azure AD B2C, secure data platform"
+        description="Upload CSV files and chat with your data using GPT-4. Get instant insights, discover patterns, and make data-driven decisions. Secure, enterprise-ready, with Microsoft Entra External ID authentication."
+        keywords="CSV analysis, AI data analysis, GPT-4, business intelligence, data chat, spreadsheet analysis, data insights, Microsoft Entra External ID, secure data platform"
         url="https://taktmate.com/"
       />
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -223,7 +223,7 @@ const LandingPage = () => {
                   <svg className="h-4 w-4 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>Azure AD B2C authentication</span>
+                  <span>Microsoft Entra External ID authentication</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <svg className="h-4 w-4 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -804,7 +804,7 @@ const LandingPage = () => {
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center">
             <p className="text-gray-400 text-sm">
-              © 2024 TaktMate. All rights reserved. Powered by Azure AD B2C and OpenAI GPT-4.
+              © 2024 TaktMate. All rights reserved. Powered by Microsoft Entra External ID and OpenAI GPT-4.
             </p>
           </div>
         </div>

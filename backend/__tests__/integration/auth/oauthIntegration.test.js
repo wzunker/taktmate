@@ -1,5 +1,5 @@
 // Integration tests for OAuth and Social Login Integration
-// Tests Azure AD B2C OAuth flows with Google and Microsoft accounts
+// Tests Microsoft Entra External ID OAuth flows with Google and Microsoft accounts
 
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
@@ -40,7 +40,7 @@ describe('OAuth Integration Tests', () => {
     }
   });
 
-  describe('Azure AD B2C OAuth Configuration', () => {
+  describe('Microsoft Entra External ID OAuth Configuration', () => {
     test('should provide OAuth configuration endpoints', async () => {
       const response = await request(app)
         .get('/auth/config')
@@ -60,7 +60,7 @@ describe('OAuth Integration Tests', () => {
 
       expect(response.body).toHaveProperty('jwksUri');
       expect(response.body.jwksUri).toContain('https://');
-      expect(response.body.jwksUri).toContain('.b2clogin.com');
+      expect(response.body.jwksUri).toContain('.ciamlogin.com');
     });
 
     test('should provide metadata endpoint information', async () => {
@@ -138,7 +138,7 @@ describe('OAuth Integration Tests', () => {
       // Simulate OAuth callback with ID token
       const idToken = global.testUtils.generateTestAzureToken({
         aud: process.env.AZURE_AD_B2C_CLIENT_ID,
-        iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+        iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         nonce: 'test-nonce-123',
         c_hash: 'test-code-hash'
       });
@@ -211,9 +211,9 @@ describe('OAuth Integration Tests', () => {
 
   describe('Social Login Integration', () => {
     test('should handle Google OAuth tokens', async () => {
-      // Simulate token from Google identity provider through Azure AD B2C
+      // Simulate token from Google identity provider through Microsoft Entra External ID
       const googleToken = global.testUtils.generateTestAzureToken({
-        iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+        iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         idp: 'google.com',
         emails: ['user@gmail.com'],
         name: 'Google User',
@@ -238,9 +238,9 @@ describe('OAuth Integration Tests', () => {
     });
 
     test('should handle Microsoft OAuth tokens', async () => {
-      // Simulate token from Microsoft identity provider through Azure AD B2C
+      // Simulate token from Microsoft identity provider through Microsoft Entra External ID
       const microsoftToken = global.testUtils.generateTestAzureToken({
-        iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+        iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         idp: 'live.com',
         emails: ['user@outlook.com'],
         name: 'Microsoft User',
@@ -265,9 +265,9 @@ describe('OAuth Integration Tests', () => {
     });
 
     test('should handle local account tokens', async () => {
-      // Simulate token from local account (email/password) through Azure AD B2C
+      // Simulate token from local account (email/password) through Microsoft Entra External ID
       const localToken = global.testUtils.generateTestAzureToken({
-        iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+        iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         emails: ['local@example.com'],
         name: 'Local User',
         signInNames: ['local@example.com'],
@@ -585,7 +585,7 @@ describe('OAuth Integration Tests', () => {
 
     test('should handle missing required claims in tokens', async () => {
       const incompleteToken = jwt.sign({
-        iss: `https://test-tenant.b2clogin.com/test-tenant-id/v2.0/`,
+        iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         aud: process.env.AZURE_AD_B2C_CLIENT_ID,
         // Missing required claims like 'sub', 'exp', etc.
         iat: Math.floor(Date.now() / 1000)

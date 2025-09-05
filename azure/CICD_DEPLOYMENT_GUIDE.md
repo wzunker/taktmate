@@ -112,7 +112,7 @@ AZURE_CREDENTIALS='{
 AZURE_SUBSCRIPTION_ID=your-azure-subscription-id
 AZURE_ADMIN_OBJECT_ID=your-admin-object-id
 
-# Azure AD B2C Configuration
+# Microsoft Entra External ID Configuration
 B2C_APP_ID_PROD=your-production-b2c-app-id
 B2C_APP_ID_STAGING=your-staging-b2c-app-id
 B2C_CLIENT_ID=your-b2c-client-id
@@ -122,10 +122,10 @@ B2C_CLIENT_SECRET=your-b2c-client-secret
 OPENAI_API_KEY=your-openai-api-key
 
 # Frontend Environment Variables
-REACT_APP_AZURE_AD_B2C_CLIENT_ID_PROD=your-prod-client-id
-REACT_APP_AZURE_AD_B2C_AUTHORITY_PROD=your-prod-authority
-REACT_APP_AZURE_AD_B2C_CLIENT_ID_STAGING=your-staging-client-id
-REACT_APP_AZURE_AD_B2C_AUTHORITY_STAGING=your-staging-authority
+REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID_PROD=your-prod-client-id
+REACT_APP_ENTRA_EXTERNAL_ID_AUTHORITY_PROD=your-prod-authority
+REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID_STAGING=your-staging-client-id
+REACT_APP_ENTRA_EXTERNAL_ID_AUTHORITY_STAGING=your-staging-authority
 
 # Azure Static Web Apps
 AZURE_STATIC_WEB_APPS_API_TOKEN=your-static-web-apps-token

@@ -6,7 +6,7 @@
  * user-friendly error messages.
  */
 
-const { config: azureConfig } = require('../config/azureAdB2C');
+const { config: azureConfig } = require('../config/entraExternalId');
 
 /**
  * Error types and their corresponding HTTP status codes

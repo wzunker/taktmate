@@ -16,7 +16,7 @@
 
 const appInsights = require('applicationinsights');
 const os = require('os');
-const { config: azureConfig } = require('./azureAdB2C');
+const { config: azureConfig } = require('./entraExternalId');
 
 /**
  * Application Insights Configuration

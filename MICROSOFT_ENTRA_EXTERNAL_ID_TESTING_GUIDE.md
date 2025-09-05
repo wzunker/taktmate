@@ -1,10 +1,10 @@
-# Azure AD B2C Testing Guide for TaktMate
+# Microsoft Entra External ID Testing Guide for TaktMate
 
-This document provides comprehensive testing procedures for Azure AD B2C integration in the TaktMate application.
+This document provides comprehensive testing procedures for Microsoft Entra External ID integration in the TaktMate application.
 
 ## Overview
 
-Testing Azure AD B2C integration involves multiple layers:
+Testing Microsoft Entra External ID integration involves multiple layers:
 1. **Configuration Testing** - Verify all settings are correct
 2. **Connectivity Testing** - Ensure endpoints are accessible
 3. **User Flow Testing** - Test authentication scenarios
@@ -43,7 +43,7 @@ npm run validate:app
 
 ### 1. Configuration Testing
 
-**Purpose**: Verify all Azure AD B2C configuration is correct.
+**Purpose**: Verify all Microsoft Entra External ID configuration is correct.
 
 **Command**: `npm run test:config`
 
@@ -70,7 +70,7 @@ npm run validate:app
 
 ### 2. Connectivity Testing
 
-**Purpose**: Verify Azure AD B2C endpoints are accessible.
+**Purpose**: Verify Microsoft Entra External ID endpoints are accessible.
 
 **Command**: `npm run test:connectivity`
 
@@ -91,7 +91,7 @@ npm run validate:app
 **Troubleshooting**:
 - Check internet connectivity
 - Verify tenant name and policy names
-- Ensure Azure AD B2C tenant is active
+- Ensure Microsoft Entra External ID tenant is active
 
 ### 3. JWT Token Claims Testing
 
@@ -175,7 +175,7 @@ npm run validate:app
 ### 1. Azure Portal User Flow Testing
 
 **Steps**:
-1. Go to Azure AD B2C > User flows
+1. Go to Microsoft Entra External ID > User flows
 2. Select `B2C_1_signupsignin1`
 3. Click "Run user flow"
 4. Select your TaktMate application
@@ -445,7 +445,7 @@ Create automated tests for continuous validation:
 
 ```javascript
 // Example test structure
-describe('Azure AD B2C Integration', () => {
+describe('Microsoft Entra External ID Integration', () => {
   describe('Configuration', () => {
     test('should validate configuration correctly', () => {
       // Test implementation
@@ -519,7 +519,7 @@ describe('Azure AD B2C Integration', () => {
 ### Getting Help
 
 1. **Review Documentation**
-   - Check `AZURE_AD_B2C_SETUP.md` for setup instructions
+   - Check `ENTRA_EXTERNAL_ID_SETUP.md` for setup instructions
    - Review `AZURE_APP_REGISTRATION_GUIDE.md` for registration details
 
 2. **Run Diagnostic Tools**
@@ -533,7 +533,7 @@ describe('Azure AD B2C Integration', () => {
 
 4. **Consult Logs**
    - Review application logs for errors
-   - Check Azure AD B2C audit logs
+   - Check Microsoft Entra External ID audit logs
    - Monitor Application Insights (if configured)
 
 ## Test Results Documentation

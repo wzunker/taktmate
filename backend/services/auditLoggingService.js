@@ -4,7 +4,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const crypto = require('crypto');
-const { config: azureConfig } = require('../config/azureAdB2C');
+const { config: azureConfig } = require('../config/entraExternalId');
 
 /**
  * Audit Logging Service

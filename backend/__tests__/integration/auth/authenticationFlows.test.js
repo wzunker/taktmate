@@ -1,5 +1,5 @@
 // Integration tests for Complete Authentication Flows
-// Tests end-to-end authentication processes including Azure AD B2C integration,
+// Tests end-to-end authentication processes including Microsoft Entra External ID integration,
 // token management, session handling, and protected endpoint access
 
 const request = require('supertest');
@@ -55,7 +55,7 @@ describe('Authentication Flows Integration Tests', () => {
       expect(response.body).toHaveProperty('timestamp');
     });
 
-    test('should access Azure AD B2C health endpoint', async () => {
+    test('should access Microsoft Entra External ID health endpoint', async () => {
       const response = await request(app)
         .get('/health/azure-ad-b2c')
         .expect(200);
@@ -132,7 +132,7 @@ describe('Authentication Flows Integration Tests', () => {
       expect(Array.isArray(response.body.files)).toBe(true);
     });
 
-    test('should accept requests with valid Azure AD B2C token', async () => {
+    test('should accept requests with valid Microsoft Entra External ID token', async () => {
       const azureToken = global.testUtils.generateTestAzureToken();
 
       const response = await request(app)
@@ -152,7 +152,7 @@ describe('Authentication Flows Integration Tests', () => {
         exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60 // 7 days
       });
 
-      // Mock the Azure AD B2C token refresh endpoint
+      // Mock the Microsoft Entra External ID token refresh endpoint
       const mockFetch = jest.fn().mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({

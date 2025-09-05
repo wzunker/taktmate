@@ -33,7 +33,7 @@ This guide provides comprehensive instructions for deploying the TaktMate fronte
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    Backend API (Azure App Service)          │
-│                    Azure AD B2C Authentication              │
+│                    Microsoft Entra External ID Authentication              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -279,7 +279,7 @@ az staticwebapp hostname show \
 ## 🔒 Security Configuration
 
 ### Authentication Integration
-Static Web Apps integrates with Azure AD B2C:
+Static Web Apps integrates with Microsoft Entra External ID:
 
 1. **Configure Redirect URLs**
    ```
@@ -287,8 +287,8 @@ Static Web Apps integrates with Azure AD B2C:
    Staging: https://staging.taktmate.com
    ```
 
-2. **Update Azure AD B2C Settings**
-   - Add redirect URLs in Azure AD B2C app registration
+2. **Update Microsoft Entra External ID Settings**
+   - Add redirect URLs in Microsoft Entra External ID app registration
    - Configure logout URLs
    - Update CORS settings
 
@@ -297,10 +297,10 @@ Static Web Apps integrates with Azure AD B2C:
 default-src 'self';
 script-src 'self' 'unsafe-inline' 'unsafe-eval' 
   https://login.microsoftonline.com 
-  https://*.b2clogin.com;
+  https://*.ciamlogin.com;
 connect-src 'self' 
   https://login.microsoftonline.com 
-  https://*.b2clogin.com 
+  https://*.ciamlogin.com 
   https://your-backend-api.azurewebsites.net;
 ```
 
@@ -387,7 +387,7 @@ openssl s_client -connect app.taktmate.com:443 -servername app.taktmate.com
 #### Production
 ```bash
 REACT_APP_AZURE_AD_B2C_CLIENT_ID=prod-client-id
-REACT_APP_AZURE_AD_B2C_AUTHORITY=https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin
+REACT_APP_AZURE_AD_B2C_AUTHORITY=https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin
 REACT_APP_API_BASE_URL=https://taktmate-api-prod.azurewebsites.net
 REACT_APP_REDIRECT_URI=https://app.taktmate.com
 ```
@@ -395,7 +395,7 @@ REACT_APP_REDIRECT_URI=https://app.taktmate.com
 #### Staging
 ```bash
 REACT_APP_AZURE_AD_B2C_CLIENT_ID=staging-client-id
-REACT_APP_AZURE_AD_B2C_AUTHORITY=https://taktmate-staging.b2clogin.com/taktmate-staging.onmicrosoft.com/B2C_1_signupsignin
+REACT_APP_AZURE_AD_B2C_AUTHORITY=https://taktmate-staging.ciamlogin.com/taktmate-staging.onmicrosoft.com/B2C_1_signupsignin
 REACT_APP_API_BASE_URL=https://taktmate-api-staging.azurewebsites.net
 REACT_APP_REDIRECT_URI=https://staging.taktmate.com
 ```
@@ -495,7 +495,7 @@ az staticwebapp secrets list --name taktmate-frontend-prod
 - [ ] Tests passing
 - [ ] Build successful
 - [ ] Environment variables configured
-- [ ] Azure AD B2C settings updated
+- [ ] Microsoft Entra External ID settings updated
 
 ### Deployment
 - [ ] ARM template validated
@@ -508,7 +508,7 @@ az staticwebapp secrets list --name taktmate-frontend-prod
 - [ ] Custom domain configured
 - [ ] SSL certificate verified
 - [ ] DNS records updated
-- [ ] Azure AD B2C redirect URLs updated
+- [ ] Microsoft Entra External ID redirect URLs updated
 - [ ] Application functionality tested
 - [ ] Performance metrics baseline
 - [ ] Monitoring alerts configured

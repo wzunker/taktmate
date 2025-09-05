@@ -1,7 +1,7 @@
 /**
- * JWT Token Validation Middleware for Azure AD B2C
+ * JWT Token Validation Middleware for Microsoft Entra External ID
  * 
- * This middleware validates JWT tokens issued by Azure AD B2C,
+ * This middleware validates JWT tokens issued by Microsoft Entra External ID,
  * extracts user profile information, and provides authentication
  * for protected API endpoints.
  */
@@ -14,7 +14,7 @@ const {
   getIssuerUrl, 
   extractUserProfile,
   isFeatureEnabled 
-} = require('../config/azureAdB2C');
+} = require('../config/entraExternalId');
 const { JWTErrorHandler, createAuthError, asyncHandler } = require('../utils/errorHandler');
 
 // Import Application Insights telemetry (optional)

@@ -1,10 +1,10 @@
-# Azure AD B2C Setup Guide for TaktMate
+# Microsoft Entra External ID Setup Guide for TaktMate
 
-This guide provides step-by-step instructions for setting up Azure Active Directory B2C (Azure AD B2C) for the TaktMate CSV chat application.
+This guide provides step-by-step instructions for setting up Microsoft Entra External ID for the TaktMate CSV chat application.
 
 ## Overview
 
-Azure AD B2C will handle:
+Microsoft Entra External ID will handle:
 - User registration and sign-in
 - Google and Microsoft OAuth integration
 - Email/password authentication
@@ -18,7 +18,7 @@ Azure AD B2C will handle:
 - Domain ownership for app.taktconnect.com (for production)
 - Access to Azure portal (portal.azure.com)
 
-## Step 1: Create Azure AD B2C Tenant
+## Step 1: Create Microsoft Entra External ID Tenant
 
 ### 1.1 Create the Tenant
 
@@ -26,13 +26,13 @@ Azure AD B2C will handle:
    - Go to [portal.azure.com](https://portal.azure.com)
    - Sign in with your Azure account
 
-2. **Create Azure AD B2C Resource**
+2. **Create Microsoft Entra External ID Resource**
    - Click "Create a resource"
    - Search for "Azure Active Directory B2C"
    - Click "Create"
 
 3. **Choose Creation Option**
-   - Select "Create a new Azure AD B2C Tenant"
+   - Select "Create a new Microsoft Entra External ID Tenant"
    - Click "Create"
 
 4. **Configure Tenant Settings**
@@ -57,14 +57,14 @@ Azure AD B2C will handle:
 
 2. **Verify Tenant Access**
    - Confirm you're in the correct tenant: `taktmate.onmicrosoft.com`
-   - The portal should show "Azure AD B2C" services
+   - The portal should show "Microsoft Entra External ID" services
 
 ## Step 2: Configure Basic B2C Settings
 
 ### 2.1 Set Up Identity Providers
 
 1. **Navigate to Identity Providers**
-   - In Azure AD B2C, go to "Identity providers"
+   - In Microsoft Entra External ID, go to "Identity providers"
    - You'll see "Local Account" is already configured
 
 2. **Add Google Identity Provider**
@@ -94,7 +94,7 @@ Azure AD B2C will handle:
 ### 2.2 Configure User Attributes
 
 1. **Navigate to User Attributes**
-   - In Azure AD B2C, go to "User attributes"
+   - In Microsoft Entra External ID, go to "User attributes"
    - Review built-in attributes
 
 2. **Add Custom Attributes**
@@ -134,16 +134,16 @@ Create the following environment variables for your application:
 
 ### Development Environment (.env.development)
 ```bash
-# Azure AD B2C Configuration
-AZURE_AD_B2C_TENANT_NAME=taktmate
-AZURE_AD_B2C_TENANT_ID=your-tenant-id-guid
-AZURE_AD_B2C_CLIENT_ID=your-app-client-id
-AZURE_AD_B2C_CLIENT_SECRET=your-app-client-secret
-AZURE_AD_B2C_DOMAIN=taktmate.b2clogin.com
-AZURE_AD_B2C_SIGN_UP_SIGN_IN_POLICY=B2C_1_signupsignin1
-AZURE_AD_B2C_REDIRECT_URI=http://localhost:3000/auth/callback
-AZURE_AD_B2C_POST_LOGOUT_REDIRECT_URI=http://localhost:3000
-AZURE_AD_B2C_SCOPE=openid profile email
+# Microsoft Entra External ID Configuration
+ENTRA_EXTERNAL_ID_TENANT_NAME=taktmate
+ENTRA_EXTERNAL_ID_TENANT_ID=your-tenant-id-guid
+ENTRA_EXTERNAL_ID_CLIENT_ID=your-app-client-id
+ENTRA_EXTERNAL_ID_CLIENT_SECRET=your-app-client-secret
+ENTRA_EXTERNAL_ID_DOMAIN=taktmate.ciamlogin.com
+ENTRA_EXTERNAL_ID_SIGN_UP_SIGN_IN_POLICY=B2C_1_signupsignin1
+ENTRA_EXTERNAL_ID_REDIRECT_URI=http://localhost:3000/auth/callback
+ENTRA_EXTERNAL_ID_POST_LOGOUT_REDIRECT_URI=http://localhost:3000
+ENTRA_EXTERNAL_ID_SCOPE=openid profile email
 
 # Backend Configuration
 BACKEND_URL=http://localhost:3001
@@ -152,16 +152,16 @@ FRONTEND_URL=http://localhost:3000
 
 ### Production Environment (.env.production)
 ```bash
-# Azure AD B2C Configuration
-AZURE_AD_B2C_TENANT_NAME=taktmate
-AZURE_AD_B2C_TENANT_ID=your-tenant-id-guid
-AZURE_AD_B2C_CLIENT_ID=your-app-client-id
-AZURE_AD_B2C_CLIENT_SECRET=your-app-client-secret
-AZURE_AD_B2C_DOMAIN=taktmate.b2clogin.com
-AZURE_AD_B2C_SIGN_UP_SIGN_IN_POLICY=B2C_1_signupsignin1
-AZURE_AD_B2C_REDIRECT_URI=https://app.taktconnect.com/auth/callback
-AZURE_AD_B2C_POST_LOGOUT_REDIRECT_URI=https://app.taktconnect.com
-AZURE_AD_B2C_SCOPE=openid profile email
+# Microsoft Entra External ID Configuration
+ENTRA_EXTERNAL_ID_TENANT_NAME=taktmate
+ENTRA_EXTERNAL_ID_TENANT_ID=your-tenant-id-guid
+ENTRA_EXTERNAL_ID_CLIENT_ID=your-app-client-id
+ENTRA_EXTERNAL_ID_CLIENT_SECRET=your-app-client-secret
+ENTRA_EXTERNAL_ID_DOMAIN=taktmate.ciamlogin.com
+ENTRA_EXTERNAL_ID_SIGN_UP_SIGN_IN_POLICY=B2C_1_signupsignin1
+ENTRA_EXTERNAL_ID_REDIRECT_URI=https://app.taktconnect.com/auth/callback
+ENTRA_EXTERNAL_ID_POST_LOGOUT_REDIRECT_URI=https://app.taktconnect.com
+ENTRA_EXTERNAL_ID_SCOPE=openid profile email
 
 # Backend Configuration
 BACKEND_URL=https://api-taktmate.azurewebsites.net
@@ -184,11 +184,11 @@ FRONTEND_URL=https://app.taktconnect.com
    - Go to "APIs & Services" > "Credentials"
    - Click "Create Credentials" > "OAuth 2.0 Client ID"
    - **Application type**: Web application
-   - **Name**: TaktMate Azure AD B2C
+   - **Name**: TaktMate Microsoft Entra External ID
    - **Authorized redirect URIs**: 
-     - `https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/oauth2/authresp`
+     - `https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/oauth2/authresp`
    - Click "Create"
-   - **Save the Client ID and Client Secret** for Azure AD B2C configuration
+   - **Save the Client ID and Client Secret** for Microsoft Entra External ID configuration
 
 ### 4.2 Microsoft OAuth Setup
 
@@ -200,17 +200,17 @@ FRONTEND_URL=https://app.taktconnect.com
    - Click "New registration"
    - **Name**: TaktMate B2C Microsoft Auth
    - **Supported account types**: Accounts in any organizational directory and personal Microsoft accounts
-   - **Redirect URI**: Web - `https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/oauth2/authresp`
+   - **Redirect URI**: Web - `https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/oauth2/authresp`
    - Click "Register"
 
 3. **Configure Application**
-   - **Save the Application (client) ID** for Azure AD B2C
+   - **Save the Application (client) ID** for Microsoft Entra External ID
    - Go to "Certificates & secrets"
    - Click "New client secret"
    - **Description**: B2C Integration Secret
    - **Expires**: 24 months
    - Click "Add"
-   - **Save the secret value** for Azure AD B2C configuration
+   - **Save the secret value** for Microsoft Entra External ID configuration
 
 ## Step 5: Create User Flows (Task 1.2)
 
@@ -219,7 +219,7 @@ User flows define the authentication experience for your users. We'll create a c
 ### 5.1 Create Sign-up and Sign-in User Flow
 
 1. **Navigate to User Flows**
-   - In Azure AD B2C, go to "User flows"
+   - In Microsoft Entra External ID, go to "User flows"
    - Click "New user flow"
 
 2. **Select Flow Type**
@@ -371,7 +371,7 @@ After completing this step, you should have:
 Before proceeding to the next task, verify:
 
 ### Task 1.1 Checklist:
-- [x] Azure AD B2C tenant created successfully
+- [x] Microsoft Entra External ID tenant created successfully
 - [x] Tenant domain: `taktmate.onmicrosoft.com`
 - [x] Custom attributes added: Company, Role
 - [x] Google OAuth credentials obtained
@@ -395,12 +395,12 @@ While user flows provide basic functionality, custom policies offer more control
 ### 7.1 Enable Custom Policy Framework
 
 1. **Enable Identity Experience Framework**
-   - In Azure AD B2C, go to "Identity Experience Framework"
+   - In Microsoft Entra External ID, go to "Identity Experience Framework"
    - If not enabled, follow the setup wizard
    - This creates the necessary applications for custom policies
 
 2. **Download Starter Pack**
-   - Download the Azure AD B2C Custom Policy Starter Pack from Microsoft
+   - Download the Microsoft Entra External ID Custom Policy Starter Pack from Microsoft
    - Extract to a local directory for editing
    - We'll use the "SocialAndLocalAccounts" starter pack
 
@@ -693,7 +693,7 @@ If custom policies are too complex, enhance the existing user flow:
 Before proceeding to the next task, verify:
 
 ### Task 1.1 Checklist:
-- [x] Azure AD B2C tenant created successfully
+- [x] Microsoft Entra External ID tenant created successfully
 - [x] Tenant domain: `taktmate.onmicrosoft.com`
 - [x] Custom attributes added: Company, Role
 - [x] Google OAuth credentials obtained
@@ -719,14 +719,14 @@ Before proceeding to the next task, verify:
 - [ ] Custom policy tested with all authentication methods
 - [ ] Validation rules tested (field requirements, character limits)
 
-## Step 9: Register TaktMate Application in Azure AD B2C (Task 1.4)
+## Step 9: Register TaktMate Application in Microsoft Entra External ID (Task 1.4)
 
-The application registration configures Azure AD B2C to recognize and authenticate the TaktMate application with proper redirect URLs and security settings.
+The application registration configures Microsoft Entra External ID to recognize and authenticate the TaktMate application with proper redirect URLs and security settings.
 
 ### 9.1 Create Application Registration
 
 1. **Navigate to App Registrations**
-   - In Azure AD B2C, go to "App registrations"
+   - In Microsoft Entra External ID, go to "App registrations"
    - Click "New registration"
 
 2. **Configure Basic Application Settings**
@@ -777,7 +777,7 @@ The application registration configures Azure AD B2C to recognize and authentica
 
 3. **Save Client Secret**
    - **Copy the secret value immediately** (it won't be shown again)
-   - Save this for environment variables as `AZURE_AD_B2C_CLIENT_SECRET`
+   - Save this for environment variables as `ENTRA_EXTERNAL_ID_CLIENT_SECRET`
 
 ### 9.4 Configure API Permissions
 
@@ -817,7 +817,7 @@ The application registration configures Azure AD B2C to recognize and authentica
 
 ### 9.6 Configure Application for User Flows
 
-1. **Return to Azure AD B2C User Flows**
+1. **Return to Microsoft Entra External ID User Flows**
    - Go to "User flows"
    - Select your `B2C_1_signupsignin1` user flow
 
@@ -854,18 +854,18 @@ The application registration configures Azure AD B2C to recognize and authentica
 Update your environment variables with the application registration details:
 
 ```bash
-# Azure AD B2C Application Registration
-AZURE_AD_B2C_TENANT_ID=your-directory-tenant-id-here
-AZURE_AD_B2C_CLIENT_ID=your-application-client-id-here
-AZURE_AD_B2C_CLIENT_SECRET=your-client-secret-here
+# Microsoft Entra External ID Application Registration
+ENTRA_EXTERNAL_ID_TENANT_ID=your-directory-tenant-id-here
+ENTRA_EXTERNAL_ID_CLIENT_ID=your-application-client-id-here
+ENTRA_EXTERNAL_ID_CLIENT_SECRET=your-client-secret-here
 
 # Development URLs
-AZURE_AD_B2C_REDIRECT_URI=http://localhost:3000/auth/callback
-AZURE_AD_B2C_POST_LOGOUT_REDIRECT_URI=http://localhost:3000
+ENTRA_EXTERNAL_ID_REDIRECT_URI=http://localhost:3000/auth/callback
+ENTRA_EXTERNAL_ID_POST_LOGOUT_REDIRECT_URI=http://localhost:3000
 
 # Production URLs (when deploying)
-# AZURE_AD_B2C_REDIRECT_URI=https://app.taktconnect.com/auth/callback
-# AZURE_AD_B2C_POST_LOGOUT_REDIRECT_URI=https://app.taktconnect.com
+# ENTRA_EXTERNAL_ID_REDIRECT_URI=https://app.taktconnect.com/auth/callback
+# ENTRA_EXTERNAL_ID_POST_LOGOUT_REDIRECT_URI=https://app.taktconnect.com
 ```
 
 ### 9.9 Security Considerations
@@ -902,7 +902,7 @@ After completing this step, you should have:
 Before proceeding to the next task, verify:
 
 ### Task 1.1 Checklist:
-- [x] Azure AD B2C tenant created successfully
+- [x] Microsoft Entra External ID tenant created successfully
 - [x] Tenant domain: `taktmate.onmicrosoft.com`
 - [x] Custom attributes added: Company, Role
 - [x] Google OAuth credentials obtained
@@ -929,7 +929,7 @@ Before proceeding to the next task, verify:
 - [x] Validation rules tested (field requirements, character limits)
 
 ### Task 1.4 Checklist:
-- [ ] Application registered in Azure AD B2C (`TaktMate CSV Chat Application`)
+- [ ] Application registered in Microsoft Entra External ID (`TaktMate CSV Chat Application`)
 - [ ] Client ID and Client Secret obtained and configured
 - [ ] Redirect URIs configured for development and production
 - [ ] API permissions granted (openid, profile, email, offline_access)
@@ -941,9 +941,9 @@ Before proceeding to the next task, verify:
 
 JWT token claims configuration ensures that all required user profile information is included in authentication tokens and properly validated by the application.
 
-### 11.1 Understanding Azure AD B2C JWT Token Structure
+### 11.1 Understanding Microsoft Entra External ID JWT Token Structure
 
-Azure AD B2C issues JWT tokens with the following structure:
+Microsoft Entra External ID issues JWT tokens with the following structure:
 
 ```json
 {
@@ -955,7 +955,7 @@ Azure AD B2C issues JWT tokens with the following structure:
   "exp": 1704067200,
   "nbf": 1704063600,
   "ver": "1.0",
-  "iss": "https://taktmate.b2clogin.com/12345678-1234-1234-1234-123456789012/v2.0/",
+  "iss": "https://taktmate.ciamlogin.com/12345678-1234-1234-1234-123456789012/v2.0/",
   "sub": "12345678-1234-1234-1234-123456789012",
   "aud": "your-client-id",
   "nonce": "defaultNonce",
@@ -974,7 +974,7 @@ Azure AD B2C issues JWT tokens with the following structure:
 ### 11.2 Configure User Flow Claims
 
 1. **Access User Flow Configuration**
-   - Go to Azure AD B2C > User flows
+   - Go to Microsoft Entra External ID > User flows
    - Select `B2C_1_signupsignin1`
    - Go to "Application claims"
 
@@ -1016,12 +1016,12 @@ If using custom policies, ensure the RelyingParty section includes all required 
 
 ### 11.4 JWT Token Validation Configuration
 
-The application needs to validate JWT tokens from Azure AD B2C. Here's the validation configuration:
+The application needs to validate JWT tokens from Microsoft Entra External ID. Here's the validation configuration:
 
 #### Required Validation Parameters:
-- **Issuer**: `https://taktmate.b2clogin.com/{tenant-id}/v2.0/`
+- **Issuer**: `https://taktmate.ciamlogin.com/{tenant-id}/v2.0/`
 - **Audience**: Your application client ID
-- **JWKS URI**: `https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin1/discovery/v2.0/keys`
+- **JWKS URI**: `https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/B2C_1_signupsignin1/discovery/v2.0/keys`
 - **Algorithm**: RS256
 - **Clock Tolerance**: 300 seconds (5 minutes)
 
@@ -1071,7 +1071,7 @@ const userProfile = {
 The backend application should validate tokens using these steps:
 
 1. **Fetch JWKS Keys**
-   - Retrieve public keys from Azure AD B2C JWKS endpoint
+   - Retrieve public keys from Microsoft Entra External ID JWKS endpoint
    - Cache keys and refresh periodically
    - Validate token signature using appropriate key
 
@@ -1092,7 +1092,7 @@ The backend application should validate tokens using these steps:
 #### Valid Token Claims Example:
 ```json
 {
-  "iss": "https://taktmate.b2clogin.com/12345678-1234-1234-1234-123456789012/v2.0/",
+  "iss": "https://taktmate.ciamlogin.com/12345678-1234-1234-1234-123456789012/v2.0/",
   "aud": "your-client-id",
   "sub": "user-object-id",
   "emails": ["john.doe@techcorp.com"],
@@ -1121,7 +1121,7 @@ The backend application should validate tokens using these steps:
   "role": "Software Engineer",
   "emailVerified": true,
   "identityProvider": "local",
-  "issuer": "https://taktmate.b2clogin.com/12345678-1234-1234-1234-123456789012/v2.0/",
+  "issuer": "https://taktmate.ciamlogin.com/12345678-1234-1234-1234-123456789012/v2.0/",
   "audience": "your-client-id",
   "issuedAt": 1704063600,
   "expiresAt": 1704067200
@@ -1158,7 +1158,7 @@ Implement proper error handling for common token validation scenarios:
 ### 11.9 Testing JWT Token Claims
 
 1. **Generate Test Token**
-   - Use Azure AD B2C user flow test feature
+   - Use Microsoft Entra External ID user flow test feature
    - Complete authentication process
    - Copy JWT token from callback
 
@@ -1193,15 +1193,15 @@ Implement proper error handling for common token validation scenarios:
 - **Track authentication success rates**
 - **Alert on unusual authentication patterns**
 
-## Step 12: Test Azure AD B2C User Flows and Token Generation (Task 1.6)
+## Step 12: Test Microsoft Entra External ID User Flows and Token Generation (Task 1.6)
 
-Comprehensive testing of Azure AD B2C user flows ensures that authentication works correctly and tokens contain all required claims.
+Comprehensive testing of Microsoft Entra External ID user flows ensures that authentication works correctly and tokens contain all required claims.
 
 ### 12.1 User Flow Testing Prerequisites
 
 Before testing user flows, ensure you have completed:
 
-1. **Azure AD B2C Tenant Setup** (Task 1.1)
+1. **Microsoft Entra External ID Tenant Setup** (Task 1.1)
    - Tenant created and configured
    - Custom attributes defined
    - Identity providers configured
@@ -1227,7 +1227,7 @@ Before testing user flows, ensure you have completed:
 #### Method 1: Azure Portal User Flow Test
 
 1. **Access User Flow Test Feature**
-   - Go to Azure AD B2C > User flows
+   - Go to Microsoft Entra External ID > User flows
    - Select `B2C_1_signupsignin1`
    - Click "Run user flow"
 
@@ -1247,7 +1247,7 @@ Generate and test user flow URLs directly:
 
 ```javascript
 // Sign-up/Sign-in URL
-https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/oauth2/v2.0/authorize?
+https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/oauth2/v2.0/authorize?
   p=B2C_1_signupsignin1
   &client_id=your-client-id
   &nonce=defaultNonce
@@ -1257,7 +1257,7 @@ https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/oauth2/v2.0/authorize?
   &prompt=login
 
 // Password Reset URL
-https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/oauth2/v2.0/authorize?
+https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/oauth2/v2.0/authorize?
   p=B2C_1_passwordreset1
   &client_id=your-client-id
   &nonce=defaultNonce
@@ -1266,7 +1266,7 @@ https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/oauth2/v2.0/authorize?
   &response_type=id_token
 
 // Profile Edit URL
-https://taktmate.b2clogin.com/taktmate.onmicrosoft.com/oauth2/v2.0/authorize?
+https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/oauth2/v2.0/authorize?
   p=B2C_1_profileedit1
   &client_id=your-client-id
   &nonce=defaultNonce
@@ -1396,7 +1396,7 @@ For each authentication scenario, verify the JWT token contains:
 **Standard Claims:**
 ```json
 {
-  "iss": "https://taktmate.b2clogin.com/{tenant-id}/v2.0/",
+  "iss": "https://taktmate.ciamlogin.com/{tenant-id}/v2.0/",
   "aud": "your-client-id",
   "sub": "user-object-id",
   "exp": 1704067200,
@@ -1601,7 +1601,7 @@ Create automated tests for continuous validation:
 
 ```javascript
 // Example automated test
-describe('Azure AD B2C User Flow Tests', () => {
+describe('Microsoft Entra External ID User Flow Tests', () => {
   test('should complete sign-up flow successfully', async () => {
     // Test implementation
   });
@@ -1618,7 +1618,7 @@ describe('Azure AD B2C User Flow Tests', () => {
 
 #### CI/CD Integration
 
-Include Azure AD B2C testing in deployment pipeline:
+Include Microsoft Entra External ID testing in deployment pipeline:
 
 1. **Pre-deployment Testing**
    - Validate configuration
@@ -1687,7 +1687,7 @@ Before proceeding to the next task, verify:
 ## Next Steps
 
 After completing user flow and token generation testing:
-1. Task 1.7: Document Azure AD B2C configuration and setup process
+1. Task 1.7: Document Microsoft Entra External ID configuration and setup process
 
 ## Troubleshooting
 
@@ -1710,12 +1710,12 @@ After completing user flow and token generation testing:
 
 ### Support Resources
 
-- [Azure AD B2C Documentation](https://docs.microsoft.com/en-us/azure/active-directory-b2c/)
+- [Microsoft Entra External ID Documentation](https://docs.microsoft.com/en-us/azure/active-directory-b2c/)
 - [Google OAuth Setup Guide](https://developers.google.com/identity/protocols/oauth2)
 - [Microsoft Identity Platform](https://docs.microsoft.com/en-us/azure/active-directory/develop/)
 
 ---
 
 **Created for TaktMate Online Hosting Project**  
-**Task 1.1: Azure AD B2C Tenant Setup**  
+**Task 1.1: Microsoft Entra External ID Tenant Setup**  
 **Last Updated**: $(date)

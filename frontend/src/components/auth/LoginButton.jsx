@@ -90,7 +90,7 @@ const LoginButton = ({
         onClick={handleSignIn}
         disabled={isDisabled}
         className={getButtonClasses()}
-        aria-label="Sign in with Azure AD B2C"
+        aria-label="Sign in with Microsoft Entra External ID"
       >
         {isSigningIn ? (
           <>

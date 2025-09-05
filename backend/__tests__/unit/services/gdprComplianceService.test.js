@@ -4,8 +4,8 @@
 const { GDPRComplianceService } = require('../../../services/gdprComplianceService');
 
 // Mock dependencies
-jest.mock('../../../services/azureB2CApiService');
-const { AzureB2CApiService } = require('../../../services/azureB2CApiService');
+jest.mock('../../../services/entraExternalIdApiService');
+const { EntraExternalIdApiService } = require('../../../services/entraExternalIdApiService');
 
 jest.mock('applicationinsights', () => ({
   telemetry: {
@@ -17,7 +17,7 @@ jest.mock('applicationinsights', () => ({
 describe('GDPRComplianceService', () => {
   let gdprService;
   let mockAppInsights;
-  let mockAzureB2CApiService;
+  let mockEntraExternalIdApiService;
 
   beforeEach(() => {
     mockAppInsights = {
@@ -27,7 +27,7 @@ describe('GDPRComplianceService', () => {
       }
     };
 
-    mockAzureB2CApiService = {
+    mockEntraExternalIdApiService = {
       initialize: jest.fn().mockResolvedValue(true),
       exportUserData: jest.fn().mockResolvedValue({
         profile: { id: 'test-user', name: 'Test User' },
@@ -42,7 +42,7 @@ describe('GDPRComplianceService', () => {
       })
     };
 
-    AzureB2CApiService.mockImplementation(() => mockAzureB2CApiService);
+    EntraExternalIdApiService.mockImplementation(() => mockEntraExternalIdApiService);
 
     gdprService = new GDPRComplianceService(mockAppInsights);
   });
@@ -72,7 +72,7 @@ describe('GDPRComplianceService', () => {
     test('should initialize Azure B2C API service during setup', async () => {
       await gdprService.initialize();
       
-      expect(mockAzureB2CApiService.initialize).toHaveBeenCalled();
+      expect(mockEntraExternalIdApiService.initialize).toHaveBeenCalled();
     });
   });
 
@@ -243,7 +243,7 @@ describe('GDPRComplianceService', () => {
       const result = await gdprService.exportUserData(userId, 'json');
       
       expect(result.data.azureB2CData).toBeDefined();
-      expect(mockAzureB2CApiService.exportUserData).toHaveBeenCalledWith(userId);
+      expect(mockEntraExternalIdApiService.exportUserData).toHaveBeenCalledWith(userId);
     });
 
     test('should handle export request tracking', async () => {
@@ -443,7 +443,7 @@ describe('GDPRComplianceService', () => {
       expect(status.consentManagement).toBeDefined();
       expect(status.dataRetention).toBeDefined();
       expect(status.azureB2CCapabilities).toBeDefined();
-      expect(status.azureB2CApiService).toBeDefined();
+      expect(status.entraExternalIdApiService).toBeDefined();
     });
 
     test('should track GDPR metrics', async () => {
@@ -498,7 +498,7 @@ describe('GDPRComplianceService', () => {
 
   describe('Error Handling', () => {
     test('should handle Azure B2C API service errors gracefully', async () => {
-      mockAzureB2CApiService.exportUserData.mockRejectedValue(new Error('API Error'));
+      mockEntraExternalIdApiService.exportUserData.mockRejectedValue(new Error('API Error'));
       
       await gdprService.initialize();
       const result = await gdprService.exportUserData('test-user-123', 'json');

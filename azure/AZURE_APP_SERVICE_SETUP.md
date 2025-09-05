@@ -33,7 +33,7 @@ This guide provides comprehensive instructions for deploying the TaktMate backen
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │          Application Insights + Log Analytics               │
-│          Azure AD B2C + OpenAI Integration                 │
+│          Microsoft Entra External ID + OpenAI Integration                 │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -47,7 +47,7 @@ This guide provides comprehensive instructions for deploying the TaktMate backen
 - **Git**: For repository management
 
 ### Required Services
-- **Azure AD B2C**: Authentication provider
+- **Microsoft Entra External ID**: Authentication provider
 - **OpenAI**: API access for chat functionality
 - **GitHub**: Repository hosting and CI/CD
 
@@ -206,7 +206,7 @@ ENABLE_ORYX_BUILD=true
 - **Connection String**: Automatically configured
 - **Instrumentation Key**: Available in app settings
 - **Telemetry**: Custom telemetry from backend code
-- **Dependencies**: OpenAI API and Azure AD B2C tracking
+- **Dependencies**: OpenAI API and Microsoft Entra External ID tracking
 
 #### Custom Telemetry
 ```javascript
@@ -244,7 +244,7 @@ appInsights.telemetry.trackCSVParsing(parsingData);
 
 #### Production
 ```bash
-# Azure AD B2C Configuration
+# Microsoft Entra External ID Configuration
 AZURE_AD_B2C_TENANT_NAME=taktmate.onmicrosoft.com
 AZURE_AD_B2C_CLIENT_ID=production-client-id
 AZURE_AD_B2C_CLIENT_SECRET=production-client-secret
@@ -263,7 +263,7 @@ APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=...
 
 #### Staging
 ```bash
-# Azure AD B2C Configuration
+# Microsoft Entra External ID Configuration
 AZURE_AD_B2C_TENANT_NAME=taktmate-staging.onmicrosoft.com
 AZURE_AD_B2C_CLIENT_ID=staging-client-id
 AZURE_AD_B2C_CLIENT_SECRET=staging-client-secret
@@ -312,7 +312,7 @@ const corsOptions = {
 
 ### Application Insights Metrics
 - **Request Performance**: Response times and throughput
-- **Dependency Tracking**: OpenAI API and Azure AD B2C calls
+- **Dependency Tracking**: OpenAI API and Microsoft Entra External ID calls
 - **Custom Events**: File uploads, chat interactions, CSV processing
 - **Error Tracking**: Exceptions and failed requests
 - **User Analytics**: Session tracking and user flows
@@ -488,7 +488,7 @@ const pool = new Pool({
 - [ ] Code review completed
 - [ ] Tests passing locally and in CI
 - [ ] Environment variables configured
-- [ ] Azure AD B2C settings updated
+- [ ] Microsoft Entra External ID settings updated
 - [ ] OpenAI API keys configured
 - [ ] Custom domain DNS configured
 

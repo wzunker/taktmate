@@ -1,11 +1,11 @@
-# Azure AD B2C Integration for TaktMate
+# Microsoft Entra External ID Integration for TaktMate
 
-This directory contains all Azure AD B2C authentication setup and configuration files for the TaktMate CSV chat application.
+This directory contains all Microsoft Entra External ID authentication setup and configuration files for the TaktMate CSV chat application.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Azure subscription with Azure AD B2C access
+- Azure subscription with Microsoft Entra External ID access
 - Node.js 18+ and npm
 - Domain name (recommended: `app.taktconnect.com`)
 
@@ -16,7 +16,7 @@ npm install
 
 # 2. Configure environment variables
 cp backend/env.example backend/.env
-# Edit .env with your Azure AD B2C settings
+# Edit .env with your Microsoft Entra External ID settings
 
 # 3. Run configuration tests
 npm run test:config
@@ -29,9 +29,9 @@ npm run test:all
 
 | Document | Purpose | When to Use |
 |----------|---------|-------------|
-| **[AZURE_AD_B2C_COMPLETE_SETUP_GUIDE.md](AZURE_AD_B2C_COMPLETE_SETUP_GUIDE.md)** | Complete setup from scratch | Initial setup and configuration |
-| **[AZURE_AD_B2C_SETUP.md](AZURE_AD_B2C_SETUP.md)** | Detailed technical reference | Development and troubleshooting |
-| **[AZURE_AD_B2C_TESTING_GUIDE.md](AZURE_AD_B2C_TESTING_GUIDE.md)** | Testing procedures | Validation and quality assurance |
+| **[ENTRA_EXTERNAL_ID_COMPLETE_SETUP_GUIDE.md](ENTRA_EXTERNAL_ID_COMPLETE_SETUP_GUIDE.md)** | Complete setup from scratch | Initial setup and configuration |
+| **[ENTRA_EXTERNAL_ID_SETUP.md](ENTRA_EXTERNAL_ID_SETUP.md)** | Detailed technical reference | Development and troubleshooting |
+| **[ENTRA_EXTERNAL_ID_TESTING_GUIDE.md](ENTRA_EXTERNAL_ID_TESTING_GUIDE.md)** | Testing procedures | Validation and quality assurance |
 | **[AZURE_APP_REGISTRATION_GUIDE.md](AZURE_APP_REGISTRATION_GUIDE.md)** | Application registration | App setup and configuration |
 
 ## 🛠️ Configuration Files
@@ -70,7 +70,7 @@ npm run generate:policies    # Generate custom policy XML files
 ## 🏗️ Architecture Overview
 
 ```
-Frontend (React)     Azure AD B2C Tenant     Backend (Node.js)
+Frontend (React)     Microsoft Entra External ID Tenant     Backend (Node.js)
 ┌─────────────────┐  ┌──────────────────┐    ┌─────────────────┐
 │ • Authentication│◄─┤ • User Flows     │───►│ • JWT Validation│
 │ • Protected     │  │ • Custom Policies│    │ • User Profile  │
@@ -105,16 +105,16 @@ Frontend (React)     Azure AD B2C Tenant     Backend (Node.js)
 
 ### Required Environment Variables
 ```env
-# Azure AD B2C Tenant
-AZURE_AD_B2C_TENANT_NAME=taktmate
-AZURE_AD_B2C_TENANT_ID=your-tenant-id
-AZURE_AD_B2C_CLIENT_ID=your-client-id
-AZURE_AD_B2C_CLIENT_SECRET=your-client-secret
+# Microsoft Entra External ID Tenant
+ENTRA_EXTERNAL_ID_TENANT_NAME=taktmate
+ENTRA_EXTERNAL_ID_TENANT_ID=your-tenant-id
+ENTRA_EXTERNAL_ID_CLIENT_ID=your-client-id
+ENTRA_EXTERNAL_ID_CLIENT_SECRET=your-client-secret
 
 # User Flow Policies
-AZURE_AD_B2C_SIGNUP_SIGNIN_POLICY=B2C_1_signupsignin1
-AZURE_AD_B2C_PASSWORD_RESET_POLICY=B2C_1_passwordreset1
-AZURE_AD_B2C_PROFILE_EDIT_POLICY=B2C_1_profileedit1
+ENTRA_EXTERNAL_ID_SIGNUP_SIGNIN_POLICY=B2C_1_signupsignin1
+ENTRA_EXTERNAL_ID_PASSWORD_RESET_POLICY=B2C_1_passwordreset1
+ENTRA_EXTERNAL_ID_PROFILE_EDIT_POLICY=B2C_1_profileedit1
 
 # Application URLs
 FRONTEND_URL=https://app.taktconnect.com
@@ -130,18 +130,18 @@ BACKEND_URL=https://api.taktconnect.com
 
 ## 🚦 Setup Status
 
-### Task 1.0: Azure AD B2C Setup and Configuration
-- [x] **1.1** Create Azure AD B2C tenant and configure basic settings
+### Task 1.0: Microsoft Entra External ID Setup and Configuration
+- [x] **1.1** Create Microsoft Entra External ID tenant and configure basic settings
 - [x] **1.2** Set up user flows for sign-up and sign-in with Google, Microsoft, and email/password
 - [x] **1.3** Configure custom policies to collect additional user attributes (company, role)
-- [x] **1.4** Register TaktMate application in Azure AD B2C with proper redirect URLs
+- [x] **1.4** Register TaktMate application in Microsoft Entra External ID with proper redirect URLs
 - [x] **1.5** Configure JWT token claims to include user profile information
-- [x] **1.6** Test Azure AD B2C user flows and token generation
-- [x] **1.7** Document Azure AD B2C configuration and setup process
+- [x] **1.6** Test Microsoft Entra External ID user flows and token generation
+- [x] **1.7** Document Microsoft Entra External ID configuration and setup process
 
 ### Next Steps: Backend Integration
-- [ ] **2.1** Install and configure Azure AD B2C authentication dependencies
-- [ ] **2.2** Create Azure AD B2C configuration module with environment variables
+- [ ] **2.1** Install and configure Microsoft Entra External ID authentication dependencies
+- [ ] **2.2** Create Microsoft Entra External ID configuration module with environment variables
 - [ ] **2.3** Implement JWT token validation middleware for API protection
 - [ ] **2.4** Create authentication routes for login, logout, and user profile
 
@@ -150,9 +150,9 @@ BACKEND_URL=https://api.taktconnect.com
 ### 1. Initial Setup
 ```bash
 # Follow complete setup guide
-open AZURE_AD_B2C_COMPLETE_SETUP_GUIDE.md
+open ENTRA_EXTERNAL_ID_COMPLETE_SETUP_GUIDE.md
 
-# Configure Azure AD B2C tenant
+# Configure Microsoft Entra External ID tenant
 # Set up user flows and custom policies
 # Register application
 ```
@@ -162,7 +162,7 @@ open AZURE_AD_B2C_COMPLETE_SETUP_GUIDE.md
 # Copy environment template
 cp backend/env.example backend/.env
 
-# Update with your Azure AD B2C settings
+# Update with your Microsoft Entra External ID settings
 # Test configuration
 npm run test:config
 ```
@@ -207,7 +207,7 @@ npm run validate:app         # Check app registration
 ## 📖 Additional Resources
 
 ### Azure Documentation
-- [Azure AD B2C Overview](https://docs.microsoft.com/azure/active-directory-b2c/)
+- [Microsoft Entra External ID Overview](https://docs.microsoft.com/azure/active-directory-b2c/)
 - [User Flows](https://docs.microsoft.com/azure/active-directory-b2c/user-flow-overview)
 - [Custom Policies](https://docs.microsoft.com/azure/active-directory-b2c/custom-policy-overview)
 - [Application Registration](https://docs.microsoft.com/azure/active-directory-b2c/tutorial-register-applications)
@@ -220,7 +220,7 @@ npm run validate:app         # Check app registration
 
 ## 🤝 Contributing
 
-When making changes to Azure AD B2C configuration:
+When making changes to Microsoft Entra External ID configuration:
 
 1. **Update Documentation** - Keep all guides current
 2. **Test Changes** - Run full test suite
@@ -230,13 +230,13 @@ When making changes to Azure AD B2C configuration:
 
 ## 📞 Support
 
-For Azure AD B2C setup and configuration issues:
+For Microsoft Entra External ID setup and configuration issues:
 
 1. **Check Documentation** - Review setup guides and troubleshooting
 2. **Run Diagnostics** - Use testing scripts to identify issues  
-3. **Review Logs** - Check application and Azure AD B2C audit logs
+3. **Review Logs** - Check application and Microsoft Entra External ID audit logs
 4. **Test Configuration** - Use validation scripts to verify setup
 
 ---
 
-**Ready to get started?** Follow the [Complete Setup Guide](AZURE_AD_B2C_COMPLETE_SETUP_GUIDE.md) for step-by-step instructions.
+**Ready to get started?** Follow the [Complete Setup Guide](ENTRA_EXTERNAL_ID_COMPLETE_SETUP_GUIDE.md) for step-by-step instructions.

@@ -621,10 +621,10 @@ REACT_APP_REDIRECT_URI=https://app.taktconnect.com/auth/callback
 REACT_APP_POST_LOGOUT_REDIRECT_URI=https://app.taktconnect.com
 ```
 
-#### Azure AD B2C Configuration Update
+#### Microsoft Entra External ID Configuration Update
 ```bash
 # Update B2C redirect URLs (will be covered in Task 7.4)
-# Add custom domain URLs to Azure AD B2C application registration
+# Add custom domain URLs to Microsoft Entra External ID application registration
 # - https://app.taktconnect.com/auth/callback
 # - https://app.taktconnect.com
 ```

@@ -3,7 +3,7 @@
 
 const jwt = require('jsonwebtoken');
 const { TokenManagementService } = require('../../middleware/tokenManagement');
-const { config } = require('../../config/azureAdB2C');
+const { config } = require('../../config/entraExternalId');
 
 // Mock external dependencies
 jest.mock('../../config/applicationInsights', () => ({
@@ -67,7 +67,7 @@ describe('Token Validation Security Tests', () => {
     test('should validate JWT token structure components', async () => {
       const validToken = global.testUtils.generateTestJWT({
         sub: 'test-user',
-        iss: 'https://test-tenant.b2clogin.com/test-tenant-id/v2.0/',
+        iss: 'https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/',
         aud: config.clientId
       });
 
@@ -95,7 +95,7 @@ describe('Token Validation Security Tests', () => {
     test('should reject tokens with invalid signatures', async () => {
       const tokenWithWrongSignature = jwt.sign({
         sub: 'test-user',
-        iss: 'https://test-tenant.b2clogin.com/test-tenant-id/v2.0/',
+        iss: 'https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/',
         aud: config.clientId,
         exp: Math.floor(Date.now() / 1000) + 3600
       }, 'wrong-secret');
@@ -122,7 +122,7 @@ describe('Token Validation Security Tests', () => {
     test('should validate signature with correct secret', async () => {
       const validToken = global.testUtils.generateTestJWT({
         sub: 'test-user',
-        iss: 'https://test-tenant.b2clogin.com/test-tenant-id/v2.0/',
+        iss: 'https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/',
         aud: config.clientId
       });
 
@@ -186,7 +186,7 @@ describe('Token Validation Security Tests', () => {
     test('should validate required claims are present', async () => {
       const tokenMissingClaims = global.testUtils.generateTestJWT({
         // Missing 'sub' claim
-        iss: 'https://test-tenant.b2clogin.com/test-tenant-id/v2.0/',
+        iss: 'https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/',
         exp: Math.floor(Date.now() / 1000) + 3600
       });
 
@@ -212,7 +212,7 @@ describe('Token Validation Security Tests', () => {
     test('should validate audience claim', async () => {
       const tokenWrongAudience = global.testUtils.generateTestJWT({
         sub: 'test-user',
-        iss: 'https://test-tenant.b2clogin.com/test-tenant-id/v2.0/',
+        iss: 'https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/',
         aud: 'wrong-client-id'
       });
 
@@ -224,7 +224,7 @@ describe('Token Validation Security Tests', () => {
     test('should validate custom claims when specified', async () => {
       const token = global.testUtils.generateTestJWT({
         sub: 'test-user',
-        iss: 'https://test-tenant.b2clogin.com/test-tenant-id/v2.0/',
+        iss: 'https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/',
         aud: config.clientId,
         role: 'user'
       });
@@ -247,7 +247,7 @@ describe('Token Validation Security Tests', () => {
       const token = global.testUtils.generateTestJWT({
         sub: 'test-user',
         jti: 'unique-token-id-123', // JWT ID for replay detection
-        iss: 'https://test-tenant.b2clogin.com/test-tenant-id/v2.0/',
+        iss: 'https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/',
         aud: config.clientId
       });
 
@@ -268,7 +268,7 @@ describe('Token Validation Security Tests', () => {
     test('should handle tokens without JTI when replay protection enabled', async () => {
       const tokenWithoutJti = global.testUtils.generateTestJWT({
         sub: 'test-user',
-        iss: 'https://test-tenant.b2clogin.com/test-tenant-id/v2.0/',
+        iss: 'https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/',
         aud: config.clientId
       });
 
@@ -284,7 +284,7 @@ describe('Token Validation Security Tests', () => {
     test('should reject oversized tokens', async () => {
       const largePayload = {
         sub: 'test-user',
-        iss: 'https://test-tenant.b2clogin.com/test-tenant-id/v2.0/',
+        iss: 'https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/',
         aud: config.clientId,
         largeData: 'x'.repeat(10000) // Very large claim
       };
@@ -300,7 +300,7 @@ describe('Token Validation Security Tests', () => {
     test('should sanitize and validate claim values', async () => {
       const tokenWithMaliciousData = global.testUtils.generateTestJWT({
         sub: 'test-user',
-        iss: 'https://test-tenant.b2clogin.com/test-tenant-id/v2.0/',
+        iss: 'https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/',
         aud: config.clientId,
         name: '<script>alert("xss")</script>',
         email: 'user@domain.com"; DROP TABLE users; --'
@@ -319,7 +319,7 @@ describe('Token Validation Security Tests', () => {
     test('should handle encrypted token storage', async () => {
       const token = global.testUtils.generateTestJWT({
         sub: 'test-user',
-        iss: 'https://test-tenant.b2clogin.com/test-tenant-id/v2.0/',
+        iss: 'https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/',
         aud: config.clientId
       });
 
@@ -336,7 +336,7 @@ describe('Token Validation Security Tests', () => {
     test('should reject tampered encrypted tokens', async () => {
       const token = global.testUtils.generateTestJWT({
         sub: 'test-user',
-        iss: 'https://test-tenant.b2clogin.com/test-tenant-id/v2.0/',
+        iss: 'https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/',
         aud: config.clientId
       });
 
@@ -356,7 +356,7 @@ describe('Token Validation Security Tests', () => {
     test('should implement rate limiting for token validation', async () => {
       const token = global.testUtils.generateTestJWT({
         sub: 'test-user',
-        iss: 'https://test-tenant.b2clogin.com/test-tenant-id/v2.0/',
+        iss: 'https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/',
         aud: config.clientId
       });
 
@@ -386,7 +386,7 @@ describe('Token Validation Security Tests', () => {
       for (let i = 0; i < 10; i++) {
         suspiciousTokens.push(global.testUtils.generateTestJWT({
           sub: `attacker-${i}`,
-          iss: 'https://test-tenant.b2clogin.com/test-tenant-id/v2.0/',
+          iss: 'https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/',
           aud: config.clientId
         }));
       }
@@ -414,7 +414,7 @@ describe('Token Validation Security Tests', () => {
     test('should not leak sensitive information in error messages', async () => {
       const sensitiveToken = global.testUtils.generateTestJWT({
         sub: 'test-user',
-        iss: 'https://test-tenant.b2clogin.com/test-tenant-id/v2.0/',
+        iss: 'https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/',
         aud: config.clientId,
         secret_data: 'sensitive-information-123'
       });
@@ -449,14 +449,14 @@ describe('Token Validation Security Tests', () => {
     test('should validate tenant-specific tokens', async () => {
       const tenant1Token = global.testUtils.generateTestJWT({
         sub: 'test-user',
-        iss: 'https://tenant1.b2clogin.com/tenant1-id/v2.0/',
+        iss: 'https://tenant1.ciamlogin.com/tenant1-id/v2.0/',
         aud: config.clientId,
         tid: 'tenant1-id'
       });
 
       const tenant2Token = global.testUtils.generateTestJWT({
         sub: 'test-user',
-        iss: 'https://tenant2.b2clogin.com/tenant2-id/v2.0/',
+        iss: 'https://tenant2.ciamlogin.com/tenant2-id/v2.0/',
         aud: config.clientId,
         tid: 'tenant2-id'
       });
@@ -478,7 +478,7 @@ describe('Token Validation Security Tests', () => {
     test('should prevent tenant confusion attacks', async () => {
       const confusedToken = global.testUtils.generateTestJWT({
         sub: 'test-user',
-        iss: 'https://legitimate-tenant.b2clogin.com/legit-id/v2.0/',
+        iss: 'https://legitimate-tenant.ciamlogin.com/legit-id/v2.0/',
         aud: config.clientId,
         tid: 'malicious-tenant-id' // Tenant ID doesn't match issuer
       });

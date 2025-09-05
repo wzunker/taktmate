@@ -2,8 +2,8 @@
 // Leverages Azure AD B2C's built-in GDPR compliance features and extends them for application-specific needs
 
 const axios = require('axios');
-const { config: azureConfig } = require('../config/azureAdB2C');
-const { AzureB2CApiService } = require('./azureB2CApiService');
+const { config: azureConfig } = require('../config/entraExternalId');
+const { EntraExternalIdApiService } = require('./entraExternalIdApiService');
 
 /**
  * GDPR Compliance Service
@@ -14,7 +14,7 @@ class GDPRComplianceService {
         this.appInsights = appInsights;
         
         // Initialize Azure AD B2C API service
-        this.azureB2CApiService = new AzureB2CApiService(appInsights);
+        this.entraExternalIdApiService = new EntraExternalIdApiService(appInsights);
         
         // GDPR compliance configuration
         this.config = {
@@ -113,7 +113,7 @@ class GDPRComplianceService {
     async initialize() {
         try {
             // Initialize Azure AD B2C API service
-            await this.azureB2CApiService.initialize();
+            await this.entraExternalIdApiService.initialize();
             
             // Verify Azure AD B2C GDPR capabilities
             await this.verifyAzureB2CGDPRCapabilities();
@@ -463,7 +463,7 @@ class GDPRComplianceService {
             console.log(`📥 Retrieving Azure AD B2C data for user ${userId}`);
             
             // Use the Azure B2C API service to get comprehensive user data
-            const azureUserData = await this.azureB2CApiService.exportUserData(userId);
+            const azureUserData = await this.entraExternalIdApiService.exportUserData(userId);
             
             // Transform the data into a structured format for GDPR export
             const structuredData = {
@@ -929,7 +929,7 @@ class GDPRComplianceService {
                 rightToObject: this.config.enableRightToObject
             },
             
-            azureB2CApiService: this.azureB2CApiService ? this.azureB2CApiService.getStatistics() : {
+            entraExternalIdApiService: this.entraExternalIdApiService ? this.entraExternalIdApiService.getStatistics() : {
                 error: 'Azure B2C API Service not initialized'
             }
         };

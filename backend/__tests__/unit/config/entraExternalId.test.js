@@ -1,10 +1,10 @@
-// Unit tests for Azure AD B2C Configuration
+// Unit tests for Microsoft Entra External ID Configuration
 // Tests configuration loading, validation, and utility functions
 
-const azureConfig = require('../../../config/azureAdB2C');
+const azureConfig = require('../../../config/entraExternalId');
 const config = azureConfig.config;
 
-describe('Azure AD B2C Configuration', () => {
+describe('Microsoft Entra External ID Configuration', () => {
   describe('Configuration Loading', () => {
     test('should load all required configuration properties', () => {
       expect(config).toBeDefined();
@@ -210,7 +210,7 @@ describe('Azure AD B2C Configuration', () => {
       const authorityUrl = azureConfig.getAuthorityUrl();
       
       // Authority URLs should work with different tenant name formats
-      expect(authorityUrl).toContain('.b2clogin.com');
+      expect(authorityUrl).toContain('.ciamlogin.com');
       expect(authorityUrl).not.toContain('..'); // No double dots
       expect(authorityUrl.replace('https://', '')).not.toContain('//'); // No double slashes except after protocol
     });

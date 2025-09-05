@@ -1,7 +1,7 @@
 /**
- * Authentication Routes for Azure AD B2C Integration
+ * Authentication Routes for Microsoft Entra External ID Integration
  * 
- * This module provides authentication endpoints for Azure AD B2C integration,
+ * This module provides authentication endpoints for Microsoft Entra External ID integration,
  * including login URL generation, user profile management, and authentication status.
  */
 
@@ -18,7 +18,7 @@ const {
   getConfigurationStatus,
   isFeatureEnabled,
   logConfigurationSummary
-} = require('../config/azureAdB2C');
+} = require('../config/entraExternalId');
 
 const { 
   jwtAuthMiddleware, 
@@ -124,7 +124,7 @@ router.get('/config', authRateLimit, (req, res) => {
       config: {
         tenant: {
           name: config.tenantName,
-          domain: `${config.tenantName}.b2clogin.com`,
+          domain: `${config.tenantName}.ciamlogin.com`,
           id: config.tenantId ? config.tenantId.substring(0, 8) + '...' : null // Partial for security
         },
         application: {
@@ -681,9 +681,9 @@ router.get('/jwks-stats', authRateLimit, (req, res) => {
         responseTime: duration
       },
       endpoints: {
-        jwksUri: `https://${config.tenantName}.b2clogin.com/${config.tenantId}/discovery/v2.0/keys?p=${config.signUpSignInPolicy}`,
-        issuer: `https://${config.tenantName}.b2clogin.com/${config.tenantId}/v2.0/`,
-        metadata: `https://${config.tenantName}.b2clogin.com/${config.tenantName}.onmicrosoft.com/${config.signUpSignInPolicy}/v2.0/.well-known/openid_configuration`
+        jwksUri: `https://${config.tenantName}.ciamlogin.com/${config.tenantId}/discovery/v2.0/keys?p=${config.signUpSignInPolicy}`,
+        issuer: `https://${config.tenantName}.ciamlogin.com/${config.tenantId}/v2.0/`,
+        metadata: `https://${config.tenantName}.ciamlogin.com/${config.tenantName}.onmicrosoft.com/${config.signUpSignInPolicy}/v2.0/.well-known/openid_configuration`
       }
     });
 

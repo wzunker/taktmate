@@ -11,7 +11,7 @@ import { Helmet } from 'react-helmet-async';
 const SEOHelmet = ({
   title = "TaktMate - AI-Powered CSV Data Analysis | Chat with Your Data",
   description = "Transform your CSV files into intelligent conversations. Upload data, ask questions in plain English, get instant insights powered by GPT-4. Secure, fast, and enterprise-ready.",
-  keywords = "CSV analysis, AI data analysis, GPT-4, data insights, business intelligence, spreadsheet analysis, data chat, Azure AD B2C, secure data analysis",
+  keywords = "CSV analysis, AI data analysis, GPT-4, data insights, business intelligence, spreadsheet analysis, data chat, Microsoft Entra External ID, secure data analysis",
   image = "/og-image.png",
   url = "https://taktmate.com/",
   type = "website",
@@ -45,7 +45,7 @@ const SEOHelmet = ({
       "AI-powered data insights",
       "Natural language querying",
       "GPT-4 integration",
-      "Azure AD B2C authentication",
+      "Microsoft Entra External ID authentication",
       "Enterprise-grade security"
     ]
   };
@@ -127,7 +127,7 @@ export const SEOConfigs = {
   
   login: {
     title: "Sign In - TaktMate | AI-Powered CSV Analysis",
-    description: "Sign in to TaktMate to access your secure AI-powered CSV analysis platform. Enterprise-grade authentication with Azure AD B2C.",
+    description: "Sign in to TaktMate to access your secure AI-powered CSV analysis platform. Enterprise-grade authentication with Microsoft Entra External ID.",
     url: "https://taktmate.com/login",
     noIndex: true, // Don't index login pages
     structuredData: {
@@ -182,7 +182,7 @@ export const SEOConfigs = {
             "@type": "ListItem",
             "position": 3,
             "name": "Enterprise Security",
-            "description": "Azure AD B2C authentication and encryption"
+            "description": "Microsoft Entra External ID authentication and encryption"
           }
         ]
       }

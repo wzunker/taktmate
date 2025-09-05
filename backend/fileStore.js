@@ -5,7 +5,7 @@
  * access control, file management, and integration with Azure AD B2C authentication.
  */
 
-const { config } = require('./config/azureAdB2C');
+const { config } = require('./config/entraExternalId');
 
 // Import Application Insights telemetry (optional)
 let telemetry = null;

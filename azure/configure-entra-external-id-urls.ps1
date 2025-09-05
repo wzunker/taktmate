@@ -1,5 +1,5 @@
-# PowerShell script for Azure AD B2C Redirect URL Configuration
-# Usage: .\configure-b2c-urls.ps1 -Environment "production" -TenantName "taktmate" -AppId "app-id" -FrontendUrl "https://app.taktmate.com" -BackendUrl "https://api.taktmate.com"
+# PowerShell script for Microsoft Entra External ID Redirect URL Configuration
+# Usage: .\configure-entra-external-id-urls.ps1 -Environment "production" -TenantName "taktmate" -AppId "app-id" -FrontendUrl "https://app.taktmate.com" -BackendUrl "https://api.taktmate.com"
 
 param(
     [Parameter(Mandatory=$true)]
@@ -42,7 +42,7 @@ function Write-ColoredOutput {
     Write-Host "[$Type] $Message" -ForegroundColor $color
 }
 
-Write-ColoredOutput "Configuring Azure AD B2C redirect URLs for $Environment environment" -Type "Info"
+Write-ColoredOutput "Configuring Microsoft Entra External ID redirect URLs for $Environment environment" -Type "Info"
 Write-ColoredOutput "Tenant: $TenantName.onmicrosoft.com" -Type "Info"
 Write-ColoredOutput "App ID: $AppId" -Type "Info"
 Write-ColoredOutput "Frontend URL: $FrontendUrl" -Type "Info"
@@ -212,7 +212,7 @@ $webConfig = @{
 } | ConvertTo-Json -Depth 10
 
 # Update the application
-Write-ColoredOutput "Updating Azure AD B2C application configuration..." -Type "Info"
+Write-ColoredOutput "Updating Microsoft Entra External ID application configuration..." -Type "Info"
 
 $updateResult = az ad app update --id $AppId --web $webConfig --output none
 if ($LASTEXITCODE -eq 0) {
@@ -303,7 +303,7 @@ switch ($Environment) {
         Write-Host "5. Production-specific recommendations:"
         Write-Host "   - Verify SSL certificates are valid"
         Write-Host "   - Test from different browsers and devices"
-        Write-Host "   - Monitor authentication logs in Azure AD B2C"
+        Write-Host "   - Monitor authentication logs in Microsoft Entra External ID"
         Write-Host "   - Set up alerts for authentication failures"
     }
     "staging" {
@@ -320,4 +320,4 @@ switch ($Environment) {
     }
 }
 
-Write-ColoredOutput "Azure AD B2C redirect URL configuration completed for $Environment environment!" -Type "Success"
+Write-ColoredOutput "Microsoft Entra External ID redirect URL configuration completed for $Environment environment!" -Type "Success"

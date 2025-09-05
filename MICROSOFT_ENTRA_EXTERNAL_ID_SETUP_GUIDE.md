@@ -1,12 +1,12 @@
-# Complete Azure AD B2C Setup Guide for TaktMate
+# Complete Microsoft Entra External ID Setup Guide for TaktMate
 
-This comprehensive guide provides step-by-step instructions for setting up Azure AD B2C authentication for the TaktMate application, from initial tenant creation through production deployment.
+This comprehensive guide provides step-by-step instructions for setting up Microsoft Entra External ID authentication for the TaktMate application, from initial tenant creation through production deployment.
 
 ## Table of Contents
 
 1. [Overview](#overview)
 2. [Prerequisites](#prerequisites)
-3. [Phase 1: Azure AD B2C Tenant Setup](#phase-1-azure-ad-b2c-tenant-setup)
+3. [Phase 1: Microsoft Entra External ID Tenant Setup](#phase-1-microsoft-entra-external-id-tenant-setup)
 4. [Phase 2: User Flows Configuration](#phase-2-user-flows-configuration)
 5. [Phase 3: Custom Policies Setup](#phase-3-custom-policies-setup)
 6. [Phase 4: Application Registration](#phase-4-application-registration)
@@ -22,7 +22,7 @@ This comprehensive guide provides step-by-step instructions for setting up Azure
 ### What This Guide Covers
 
 This guide provides complete setup instructions for:
-- **Azure AD B2C Tenant Creation** with custom attributes and identity providers
+- **Microsoft Entra External ID Tenant Creation** with custom attributes and identity providers
 - **User Flow Configuration** for sign-up, sign-in, password reset, and profile editing
 - **Custom Policy Implementation** for enhanced attribute collection
 - **Application Registration** with proper redirect URIs and API permissions
@@ -34,7 +34,7 @@ This guide provides complete setup instructions for:
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   React App     │    │   Azure AD B2C   │    │  Node.js API   │
+│   React App     │    │   Microsoft Entra External ID   │    │  Node.js API   │
 │  (Frontend)     │◄──►│     Tenant       │◄──►│   (Backend)     │
 │                 │    │                  │    │                 │
 │ • Authentication│    │ • User Flows     │    │ • JWT Validation│
@@ -47,9 +47,9 @@ This guide provides complete setup instructions for:
 ### Authentication Flow
 
 1. **User Access**: User navigates to TaktMate application
-2. **Authentication Required**: Application redirects to Azure AD B2C
+2. **Authentication Required**: Application redirects to Microsoft Entra External ID
 3. **User Authentication**: User completes sign-up/sign-in process
-4. **Token Issuance**: Azure AD B2C issues JWT token with user claims
+4. **Token Issuance**: Microsoft Entra External ID issues JWT token with user claims
 5. **Application Access**: User gains access to protected application features
 6. **API Protection**: Backend validates JWT tokens for API access
 
@@ -57,14 +57,14 @@ This guide provides complete setup instructions for:
 
 ### Required Resources
 
-- **Azure Subscription** with Azure AD B2C service access
+- **Azure Subscription** with Microsoft Entra External ID service access
 - **Domain Name** (recommended: `app.taktconnect.com`)
 - **Development Environment** with Node.js 18+ and npm
 - **Email Service** for notifications (optional: SendGrid integration)
 
 ### Required Permissions
 
-- **Azure AD B2C Administrator** role in target subscription
+- **Microsoft Entra External ID Administrator** role in target subscription
 - **Application Developer** permissions for app registration
 - **Global Administrator** permissions for custom policies (if used)
 
@@ -75,9 +75,9 @@ This guide provides complete setup instructions for:
 - **Git**: For version control and deployment
 - **HTTPS**: Required for all redirect URIs and production deployment
 
-## Phase 1: Azure AD B2C Tenant Setup
+## Phase 1: Microsoft Entra External ID Tenant Setup
 
-### Step 1.1: Create Azure AD B2C Tenant
+### Step 1.1: Create Microsoft Entra External ID Tenant
 
 1. **Navigate to Azure Portal**
    - Go to https://portal.azure.com
@@ -103,7 +103,7 @@ This guide provides complete setup instructions for:
 ### Step 1.2: Configure Tenant Settings
 
 1. **Access Tenant Settings**
-   - In Azure AD B2C tenant, go to "Tenant settings"
+   - In Microsoft Entra External ID tenant, go to "Tenant settings"
    - Review and configure basic settings
 
 2. **Configure Custom Domain (Optional)**
@@ -118,7 +118,7 @@ This guide provides complete setup instructions for:
 ### Step 1.3: Create Custom Attributes
 
 1. **Navigate to User Attributes**
-   - Go to Azure AD B2C > "User attributes"
+   - Go to Microsoft Entra External ID > "User attributes"
    - Click "Add"
 
 2. **Create Company Attribute**
@@ -157,7 +157,7 @@ This guide provides complete setup instructions for:
    - Enable Google+ API
    - Create OAuth 2.0 credentials
 
-2. **Configure in Azure AD B2C**
+2. **Configure in Microsoft Entra External ID**
    - Go to "Identity providers" > "Add"
    - Select "Google"
    - **Client ID**: From Google OAuth application
@@ -173,7 +173,7 @@ This guide provides complete setup instructions for:
    - Click "New registration"
    - Configure redirect URIs
 
-2. **Configure in Azure AD B2C**
+2. **Configure in Microsoft Entra External ID**
    - Go to "Identity providers" > "Add"
    - Select "Microsoft Account"
    - **Client ID**: From Microsoft app registration
@@ -438,7 +438,7 @@ Expected JWT token payload:
   "exp": 1704067200,
   "nbf": 1704063600,
   "ver": "1.0",
-  "iss": "https://taktmate.b2clogin.com/{tenant-id}/v2.0/",
+  "iss": "https://taktmate.ciamlogin.com/{tenant-id}/v2.0/",
   "sub": "{user-object-id}",
   "aud": "{client-id}",
   "emails": ["user@example.com"],
@@ -484,7 +484,7 @@ npm run test:jwt-claims structure
 # Run complete end-to-end test suite
 npm run test:e2e
 
-# Test connectivity to Azure AD B2C endpoints
+# Test connectivity to Microsoft Entra External ID endpoints
 npm run test:connectivity
 
 # Run performance benchmarks
@@ -521,14 +521,14 @@ npm run test:performance
 
 2. **Update Production Variables**
    ```env
-   # Azure AD B2C Configuration
-   AZURE_AD_B2C_TENANT_NAME=taktmate
-   AZURE_AD_B2C_TENANT_ID=your-tenant-id
-   AZURE_AD_B2C_CLIENT_ID=your-production-client-id
-   AZURE_AD_B2C_CLIENT_SECRET=your-production-client-secret
-   AZURE_AD_B2C_SIGNUP_SIGNIN_POLICY=B2C_1_signupsignin1
-   AZURE_AD_B2C_PASSWORD_RESET_POLICY=B2C_1_passwordreset1
-   AZURE_AD_B2C_PROFILE_EDIT_POLICY=B2C_1_profileedit1
+   # Microsoft Entra External ID Configuration
+   ENTRA_EXTERNAL_ID_TENANT_NAME=taktmate
+   ENTRA_EXTERNAL_ID_TENANT_ID=your-tenant-id
+   ENTRA_EXTERNAL_ID_CLIENT_ID=your-production-client-id
+   ENTRA_EXTERNAL_ID_CLIENT_SECRET=your-production-client-secret
+   ENTRA_EXTERNAL_ID_SIGNUP_SIGNIN_POLICY=B2C_1_signupsignin1
+   ENTRA_EXTERNAL_ID_PASSWORD_RESET_POLICY=B2C_1_passwordreset1
+   ENTRA_EXTERNAL_ID_PROFILE_EDIT_POLICY=B2C_1_profileedit1
    
    # Application URLs
    FRONTEND_URL=https://app.taktconnect.com
@@ -597,13 +597,13 @@ npm run test:performance
 
 | Variable | Description | Required | Example |
 |----------|-------------|----------|---------|
-| `AZURE_AD_B2C_TENANT_NAME` | B2C tenant name | Yes | `taktmate` |
-| `AZURE_AD_B2C_TENANT_ID` | B2C tenant ID (GUID) | Yes | `12345678-1234-1234-1234-123456789012` |
-| `AZURE_AD_B2C_CLIENT_ID` | Application client ID | Yes | `87654321-4321-4321-4321-210987654321` |
-| `AZURE_AD_B2C_CLIENT_SECRET` | Application client secret | Yes | `your-client-secret` |
-| `AZURE_AD_B2C_SIGNUP_SIGNIN_POLICY` | Sign-up/sign-in user flow | Yes | `B2C_1_signupsignin1` |
-| `AZURE_AD_B2C_PASSWORD_RESET_POLICY` | Password reset user flow | No | `B2C_1_passwordreset1` |
-| `AZURE_AD_B2C_PROFILE_EDIT_POLICY` | Profile edit user flow | No | `B2C_1_profileedit1` |
+| `ENTRA_EXTERNAL_ID_TENANT_NAME` | B2C tenant name | Yes | `taktmate` |
+| `ENTRA_EXTERNAL_ID_TENANT_ID` | B2C tenant ID (GUID) | Yes | `12345678-1234-1234-1234-123456789012` |
+| `ENTRA_EXTERNAL_ID_CLIENT_ID` | Application client ID | Yes | `87654321-4321-4321-4321-210987654321` |
+| `ENTRA_EXTERNAL_ID_CLIENT_SECRET` | Application client secret | Yes | `your-client-secret` |
+| `ENTRA_EXTERNAL_ID_SIGNUP_SIGNIN_POLICY` | Sign-up/sign-in user flow | Yes | `B2C_1_signupsignin1` |
+| `ENTRA_EXTERNAL_ID_PASSWORD_RESET_POLICY` | Password reset user flow | No | `B2C_1_passwordreset1` |
+| `ENTRA_EXTERNAL_ID_PROFILE_EDIT_POLICY` | Profile edit user flow | No | `B2C_1_profileedit1` |
 | `JWT_VALIDATE_ISSUER` | Enable issuer validation | No | `true` |
 | `JWT_VALIDATE_AUDIENCE` | Enable audience validation | No | `true` |
 | `JWT_CLOCK_TOLERANCE` | Clock tolerance in seconds | No | `300` |
@@ -724,7 +724,7 @@ console.log('Login URL:', generateLoginUrl('https://jwt.ms'));
 
 1. **Review Documentation**
    - Check this guide for setup procedures
-   - Review `AZURE_AD_B2C_TESTING_GUIDE.md` for testing procedures
+   - Review `ENTRA_EXTERNAL_ID_TESTING_GUIDE.md` for testing procedures
    - Consult `AZURE_APP_REGISTRATION_GUIDE.md` for app registration
 
 2. **Run Diagnostic Scripts**
@@ -835,7 +835,7 @@ console.log('Login URL:', generateLoginUrl('https://jwt.ms'));
 
 ## Summary
 
-This complete setup guide provides comprehensive instructions for implementing Azure AD B2C authentication in the TaktMate application. The setup includes:
+This complete setup guide provides comprehensive instructions for implementing Microsoft Entra External ID authentication in the TaktMate application. The setup includes:
 
 ✅ **Complete tenant configuration** with custom attributes and identity providers
 ✅ **User flow setup** for all authentication scenarios
@@ -856,8 +856,8 @@ This complete setup guide provides comprehensive instructions for implementing A
 
 ### Support Resources
 
-- **Azure AD B2C Documentation**: https://docs.microsoft.com/azure/active-directory-b2c/
-- **TaktMate Testing Guide**: `AZURE_AD_B2C_TESTING_GUIDE.md`
+- **Microsoft Entra External ID Documentation**: https://docs.microsoft.com/azure/active-directory-b2c/
+- **TaktMate Testing Guide**: `ENTRA_EXTERNAL_ID_TESTING_GUIDE.md`
 - **Application Registration Guide**: `AZURE_APP_REGISTRATION_GUIDE.md`
 - **Configuration Scripts**: `backend/scripts/` directory
 - **Testing Utilities**: Run `npm run test:all` for comprehensive validation

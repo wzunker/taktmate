@@ -144,7 +144,7 @@ class RateLimitSecurityService {
                         "'self'", 
                         "'unsafe-inline'", // Required for React development
                         "https://login.microsoftonline.com",
-                        "https://*.b2clogin.com"
+                        "https://*.ciamlogin.com"
                     ],
                     styleSrc: [
                         "'self'", 
@@ -164,7 +164,7 @@ class RateLimitSecurityService {
                     ],
                     connectSrc: [
                         "'self'",
-                        "https://*.b2clogin.com",
+                        "https://*.ciamlogin.com",
                         "https://*.openai.com",
                         "https://*.applicationinsights.azure.com",
                         "wss://localhost:*", // WebSocket for development
@@ -172,7 +172,7 @@ class RateLimitSecurityService {
                     ].filter(Boolean),
                     frameSrc: [
                         "'self'",
-                        "https://*.b2clogin.com"
+                        "https://*.ciamlogin.com"
                     ],
                     objectSrc: ["'none'"],
                     mediaSrc: ["'self'"],

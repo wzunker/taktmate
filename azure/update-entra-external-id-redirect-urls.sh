@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# TaktMate Azure AD B2C Redirect URL Management Script
+# TaktMate Microsoft Entra External ID Redirect URL Management Script
 # Usage: ./update-b2c-redirect-urls.sh [environment] [domain] [options]
 # Example: ./update-b2c-redirect-urls.sh production taktconnect.com --update --validate
 
@@ -43,7 +43,7 @@ print_step() {
 
 # Function to show usage
 show_usage() {
-    echo "TaktMate Azure AD B2C Redirect URL Management"
+    echo "TaktMate Microsoft Entra External ID Redirect URL Management"
     echo ""
     echo "Usage: $0 [environment] [domain] [options]"
     echo ""
@@ -155,7 +155,7 @@ LOG_DIR="$SCRIPT_DIR/logs"
 # Create directories if needed
 mkdir -p "$BACKUP_DIR" "$LOG_DIR"
 
-# Azure AD B2C Configuration (these would be set as environment variables in practice)
+# Microsoft Entra External ID Configuration (these would be set as environment variables in practice)
 # Note: These are placeholder values - actual values would be configured in environment
 B2C_TENANT_NAME="${B2C_TENANT_NAME:-taktmate}"
 B2C_TENANT_ID="${B2C_TENANT_ID:-your-tenant-id}"
@@ -247,7 +247,7 @@ backup_b2c_config() {
         return 0
     fi
     
-    print_step "Backing up Azure AD B2C application configuration"
+    print_step "Backing up Microsoft Entra External ID application configuration"
     
     local backup_timestamp=$(date +%Y%m%d-%H%M%S)
     local backup_file="$BACKUP_DIR/b2c-config-backup-${ENVIRONMENT}-${backup_timestamp}.json"
@@ -288,7 +288,7 @@ get_current_redirect_urls() {
 update_b2c_redirect_urls() {
     local env="$1"
     
-    print_step "Updating Azure AD B2C redirect URLs for $env environment"
+    print_step "Updating Microsoft Entra External ID redirect URLs for $env environment"
     
     if [ -z "$B2C_CLIENT_ID" ] || [ "$B2C_CLIENT_ID" = "your-client-id" ]; then
         print_error "B2C_CLIENT_ID not configured. Please set the environment variable."
@@ -395,7 +395,7 @@ update_b2c_redirect_urls() {
 validate_b2c_config() {
     local env="$1"
     
-    print_step "Validating Azure AD B2C redirect URL configuration for $env"
+    print_step "Validating Microsoft Entra External ID redirect URL configuration for $env"
     
     if [ -z "$B2C_CLIENT_ID" ] || [ "$B2C_CLIENT_ID" = "your-client-id" ]; then
         print_error "B2C_CLIENT_ID not configured. Cannot validate configuration."
@@ -492,7 +492,7 @@ validate_b2c_config() {
 test_b2c_auth_flow() {
     local env="$1"
     
-    print_step "Testing Azure AD B2C authentication flow for $env"
+    print_step "Testing Microsoft Entra External ID authentication flow for $env"
     
     if [ "$DRY_RUN" = true ]; then
         print_status "[DRY-RUN] Would test B2C authentication flow for $env environment"
@@ -561,7 +561,7 @@ restore_b2c_config() {
         return 0
     fi
     
-    print_step "Restoring Azure AD B2C configuration from backup"
+    print_step "Restoring Microsoft Entra External ID configuration from backup"
     
     # Find the most recent backup file
     local latest_backup=$(ls -t "$BACKUP_DIR"/b2c-config-backup-*.json 2>/dev/null | head -1)

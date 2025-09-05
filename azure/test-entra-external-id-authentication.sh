@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# TaktMate Azure AD B2C Authentication Testing Script
+# TaktMate Microsoft Entra External ID Authentication Testing Script
 # Usage: ./test-b2c-authentication.sh [environment] [domain] [options]
 # Example: ./test-b2c-authentication.sh production taktconnect.com --comprehensive --report
 
@@ -43,7 +43,7 @@ print_step() {
 
 # Function to show usage
 show_usage() {
-    echo "TaktMate Azure AD B2C Authentication Testing"
+    echo "TaktMate Microsoft Entra External ID Authentication Testing"
     echo ""
     echo "Usage: $0 [environment] [domain] [options]"
     echo ""
@@ -167,7 +167,7 @@ if [ "$REPORT" = true ]; then
     mkdir -p "$REPORT_DIR"
 fi
 
-# Azure AD B2C Configuration (would be set as environment variables)
+# Microsoft Entra External ID Configuration (would be set as environment variables)
 B2C_TENANT_NAME="${B2C_TENANT_NAME:-taktmate}"
 B2C_TENANT_ID="${B2C_TENANT_ID:-your-tenant-id}"
 B2C_CLIENT_ID="${B2C_CLIENT_ID:-your-client-id}"
@@ -233,7 +233,7 @@ get_environment_config() {
 test_b2c_endpoints() {
     local env="$1"
     
-    print_step "Testing Azure AD B2C endpoint accessibility for $env"
+    print_step "Testing Microsoft Entra External ID endpoint accessibility for $env"
     
     # Test B2C discovery endpoints for each policy
     local policies=("$B2C_SIGNUP_SIGNIN_POLICY" "$B2C_EDIT_PROFILE_POLICY" "$B2C_RESET_PASSWORD_POLICY")
@@ -292,7 +292,7 @@ test_b2c_endpoints() {
 test_b2c_policies() {
     local env="$1"
     
-    print_step "Testing Azure AD B2C policy configurations for $env"
+    print_step "Testing Microsoft Entra External ID policy configurations for $env"
     
     # Get environment configuration
     local config_lines=($(get_environment_config "$env"))

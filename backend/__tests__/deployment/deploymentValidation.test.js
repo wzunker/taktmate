@@ -91,7 +91,7 @@ describe('Deployment Pipeline Validation', () => {
       const requiredFiles = [
         'index.js',
         'package.json',
-        'config/azureAdB2C.js',
+        'config/entraExternalId.js',
         'services/gdprComplianceService.js',
         'services/auditLoggingService.js',
         'middleware/jwtAuth.js'
@@ -368,7 +368,7 @@ describe('Deployment Pipeline Validation', () => {
       expect(config.logLevel).toBeDefined();
     });
 
-    test('should validate Azure AD B2C configuration', async () => {
+    test('should validate Microsoft Entra External ID configuration', async () => {
       const azureConfig = {
         tenantId: process.env.AZURE_AD_B2C_TENANT_ID,
         clientId: process.env.AZURE_AD_B2C_CLIENT_ID,
@@ -376,7 +376,7 @@ describe('Deployment Pipeline Validation', () => {
         hasClientSecret: !!process.env.AZURE_AD_B2C_CLIENT_SECRET
       };
 
-      console.log(`Azure AD B2C Configuration:`);
+      console.log(`Microsoft Entra External ID Configuration:`);
       console.log(`  Tenant ID: ${azureConfig.tenantId ? '✅ Set' : '❌ Missing'}`);
       console.log(`  Client ID: ${azureConfig.clientId ? '✅ Set' : '❌ Missing'}`);
       console.log(`  Policy Name: ${azureConfig.policyName ? '✅ Set' : '❌ Missing'}`);

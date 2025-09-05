@@ -361,7 +361,7 @@ configure_services() {
     
     # Configure B2C URLs
     print_step "Configuring Azure AD B2C URLs"
-    if execute_command "$SCRIPT_DIR/configure-b2c-urls.sh $ENVIRONMENT $TENANT_NAME \$B2C_APP_ID $FRONTEND_URL $BACKEND_URL" "B2C URL configuration"; then
+    if execute_command "$SCRIPT_DIR/configure-entra-external-id-urls.sh $ENVIRONMENT $TENANT_NAME \$B2C_APP_ID $FRONTEND_URL $BACKEND_URL" "B2C URL configuration"; then
         print_success "B2C URLs configured successfully"
     else
         print_error "B2C URL configuration failed"
@@ -517,7 +517,7 @@ run_validation() {
     
     # Test B2C configuration
     print_step "Validating B2C configuration"
-    if execute_command "$SCRIPT_DIR/test-b2c-urls.sh $ENVIRONMENT $TENANT_NAME \$B2C_APP_ID $FRONTEND_URL" "B2C validation"; then
+    if execute_command "$SCRIPT_DIR/test-entra-external-id-urls.sh $ENVIRONMENT $TENANT_NAME \$B2C_APP_ID $FRONTEND_URL" "B2C validation"; then
         print_success "B2C configuration validation passed"
     else
         print_error "B2C configuration validation failed"

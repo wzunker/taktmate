@@ -24,14 +24,14 @@ function configureSecurityHeaders() {
         scriptSrc: ["'self'"],
         connectSrc: [
           "'self'",
-          "https://*.b2clogin.com",
+          "https://*.ciamlogin.com",
           "https://*.openai.azure.com",
           "https://login.microsoftonline.com",
           "https://accounts.google.com"
         ],
         frameSrc: [
           "'self'",
-          "https://*.b2clogin.com",
+          "https://*.ciamlogin.com",
           "https://login.microsoftonline.com",
           "https://accounts.google.com"
         ]

@@ -64,7 +64,7 @@
     "X-XSS-Protection": "1; mode=block",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://login.microsoftonline.com https://*.b2clogin.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://login.microsoftonline.com https://*.b2clogin.com https://api.openai.com https://*.applicationinsights.azure.com; frame-src https://login.microsoftonline.com https://*.b2clogin.com;"
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://login.microsoftonline.com https://*.ciamlogin.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://login.microsoftonline.com https://*.ciamlogin.com https://api.openai.com https://*.applicationinsights.azure.com; frame-src https://login.microsoftonline.com https://*.ciamlogin.com;"
   },
   "responseOverrides": {
     "401": {
@@ -91,14 +91,14 @@
     "apiRuntime": "node:18"
   },
   "environmentVariables": [
-    "REACT_APP_AZURE_AD_B2C_CLIENT_ID",
-    "REACT_APP_AZURE_AD_B2C_AUTHORITY",
-    "REACT_APP_AZURE_AD_B2C_KNOWN_AUTHORITY",
-    "REACT_APP_AZURE_AD_B2C_TENANT_NAME",
-    "REACT_APP_AZURE_AD_B2C_SCOPE",
-    "REACT_APP_AZURE_AD_B2C_SIGNUP_SIGNIN_POLICY",
-    "REACT_APP_AZURE_AD_B2C_EDIT_PROFILE_POLICY",
-    "REACT_APP_AZURE_AD_B2C_RESET_PASSWORD_POLICY",
+    "REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID",
+    "REACT_APP_ENTRA_EXTERNAL_ID_AUTHORITY",
+    "REACT_APP_ENTRA_EXTERNAL_ID_KNOWN_AUTHORITY",
+    "REACT_APP_ENTRA_EXTERNAL_ID_TENANT_NAME",
+    "REACT_APP_ENTRA_EXTERNAL_ID_SCOPE",
+    "REACT_APP_ENTRA_EXTERNAL_ID_SIGNUP_SIGNIN_POLICY",
+    "REACT_APP_ENTRA_EXTERNAL_ID_EDIT_PROFILE_POLICY",
+    "REACT_APP_ENTRA_EXTERNAL_ID_RESET_PASSWORD_POLICY",
     "REACT_APP_API_BASE_URL",
     "REACT_APP_REDIRECT_URI",
     "REACT_APP_POST_LOGOUT_REDIRECT_URI"
