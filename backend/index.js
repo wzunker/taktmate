@@ -305,6 +305,16 @@ app.get('/health', optionalJwtAuthMiddleware(), (req, res) => {
   res.json(healthStatus);
 });
 
+// API health endpoint for Azure deployment validation
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'TaktMate Backend API',
+    version: '1.0.0'
+  });
+});
+
 // Enhanced test endpoint with authentication info
 app.get('/test', optionalJwtAuthMiddleware(), (req, res) => {
   const testResponse = {
