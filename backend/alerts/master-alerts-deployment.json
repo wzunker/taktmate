@@ -1,0 +1,201 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "applicationInsightsName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Application Insights instance"
+      }
+    },
+    "alertNamePrefix": {
+      "type": "string",
+      "defaultValue": "TaktMate",
+      "metadata": {
+        "description": "Prefix for alert names"
+      }
+    },
+    "emailRecipients": {
+      "type": "array",
+      "defaultValue": [
+        {
+          "name": "DevOps Team",
+          "emailAddress": "devops@taktmate.com"
+        },
+        {
+          "name": "Engineering Team",
+          "emailAddress": "engineering@taktmate.com"
+        }
+      ],
+      "metadata": {
+        "description": "Array of email recipients for alerts"
+      }
+    },
+    "smsRecipients": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Array of SMS recipients for critical alerts"
+      }
+    },
+    "webhookUrl": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Webhook URL for Slack/Teams integration (optional)"
+      }
+    },
+    "enableCriticalAlerts": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable critical error alerts"
+      }
+    },
+    "enablePerformanceAlerts": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable performance monitoring alerts"
+      }
+    },
+    "enableBusinessAlerts": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable business and availability alerts"
+      }
+    }
+  },
+  "variables": {
+    "actionGroupName": "[concat(parameters('alertNamePrefix'), '-Alerts')]",
+    "templatesBaseUrl": "https://raw.githubusercontent.com/your-repo/taktmate/main/backend/alerts/"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2021-04-01",
+      "name": "actionGroupsDeployment",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('templatesBaseUrl'), 'action-groups.json')]"
+        },
+        "parameters": {
+          "actionGroupName": {
+            "value": "[variables('actionGroupName')]"
+          },
+          "emailRecipients": {
+            "value": "[parameters('emailRecipients')]"
+          },
+          "smsRecipients": {
+            "value": "[parameters('smsRecipients')]"
+          },
+          "webhookUrl": {
+            "value": "[parameters('webhookUrl')]"
+          }
+        }
+      }
+    },
+    {
+      "condition": "[parameters('enableCriticalAlerts')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2021-04-01",
+      "name": "criticalErrorAlertsDeployment",
+      "dependsOn": [
+        "actionGroupsDeployment"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('templatesBaseUrl'), 'critical-error-alerts.json')]"
+        },
+        "parameters": {
+          "applicationInsightsName": {
+            "value": "[parameters('applicationInsightsName')]"
+          },
+          "actionGroupResourceId": {
+            "value": "[reference('actionGroupsDeployment').outputs.criticalActionGroupResourceId.value]"
+          },
+          "alertNamePrefix": {
+            "value": "[parameters('alertNamePrefix')]"
+          }
+        }
+      }
+    },
+    {
+      "condition": "[parameters('enablePerformanceAlerts')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2021-04-01",
+      "name": "performanceAlertsDeployment",
+      "dependsOn": [
+        "actionGroupsDeployment"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('templatesBaseUrl'), 'performance-alerts.json')]"
+        },
+        "parameters": {
+          "applicationInsightsName": {
+            "value": "[parameters('applicationInsightsName')]"
+          },
+          "actionGroupResourceId": {
+            "value": "[reference('actionGroupsDeployment').outputs.actionGroupResourceId.value]"
+          },
+          "alertNamePrefix": {
+            "value": "[parameters('alertNamePrefix')]"
+          }
+        }
+      }
+    },
+    {
+      "condition": "[parameters('enableBusinessAlerts')]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2021-04-01",
+      "name": "businessAlertsDeployment",
+      "dependsOn": [
+        "actionGroupsDeployment"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(variables('templatesBaseUrl'), 'availability-business-alerts.json')]"
+        },
+        "parameters": {
+          "applicationInsightsName": {
+            "value": "[parameters('applicationInsightsName')]"
+          },
+          "actionGroupResourceId": {
+            "value": "[reference('actionGroupsDeployment').outputs.businessActionGroupResourceId.value]"
+          },
+          "alertNamePrefix": {
+            "value": "[parameters('alertNamePrefix')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "actionGroupResourceId": {
+      "type": "string",
+      "value": "[reference('actionGroupsDeployment').outputs.actionGroupResourceId.value]"
+    },
+    "criticalActionGroupResourceId": {
+      "type": "string",
+      "value": "[reference('actionGroupsDeployment').outputs.criticalActionGroupResourceId.value]"
+    },
+    "businessActionGroupResourceId": {
+      "type": "string",
+      "value": "[reference('actionGroupsDeployment').outputs.businessActionGroupResourceId.value]"
+    },
+    "deployedAlerts": {
+      "type": "object",
+      "value": {
+        "criticalAlerts": "[if(parameters('enableCriticalAlerts'), reference('criticalErrorAlertsDeployment').outputs.alertRuleIds.value, createArray())]",
+        "performanceAlerts": "[if(parameters('enablePerformanceAlerts'), reference('performanceAlertsDeployment').outputs.alertRuleIds.value, createArray())]",
+        "businessAlerts": "[if(parameters('enableBusinessAlerts'), reference('businessAlertsDeployment').outputs.alertRuleIds.value, createArray())]"
+      }
+    }
+  }
+}

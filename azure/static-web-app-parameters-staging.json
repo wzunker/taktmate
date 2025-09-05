@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "staticWebAppName": {
+      "value": "taktmate-frontend-staging"
+    },
+    "location": {
+      "value": "East US 2"
+    },
+    "repositoryUrl": {
+      "value": "https://github.com/your-org/taktmate"
+    },
+    "branch": {
+      "value": "develop"
+    },
+    "appLocation": {
+      "value": "/frontend"
+    },
+    "outputLocation": {
+      "value": "build"
+    },
+    "customDomainName": {
+      "value": "staging.taktmate.com"
+    },
+    "environment": {
+      "value": "Staging"
+    }
+  }
+}

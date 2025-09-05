@@ -1,0 +1,312 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "dashboardName": {
+      "type": "string",
+      "defaultValue": "TaktMate - Error Monitoring",
+      "metadata": {
+        "description": "Name of the error monitoring dashboard"
+      }
+    },
+    "applicationInsightsResourceId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the Application Insights instance"
+      }
+    }
+  },
+  "variables": {
+    "dashboardId": "[guid(resourceGroup().id, parameters('dashboardName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Portal/dashboards",
+      "apiVersion": "2015-08-01-preview",
+      "name": "[variables('dashboardId')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "hidden-title": "[parameters('dashboardName')]"
+      },
+      "properties": {
+        "lenses": {
+          "0": {
+            "order": 0,
+            "parts": {
+              "0": {
+                "position": {
+                  "x": 0,
+                  "y": 0,
+                  "colSpan": 6,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Error Rate Trends\nlet timeRange = 24h;\nrequests\n| where timestamp > ago(timeRange)\n| summarize \n    TotalRequests = count(),\n    ErrorRequests = countif(success == false)\n    by bin(timestamp, 1h)\n| extend ErrorRate = round((todouble(ErrorRequests) / todouble(TotalRequests)) * 100, 2)\n| order by timestamp asc\n| render timechart with (title='Error Rate Trends (%)', xtitle='Time', ytitle='Error Rate %')",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Error Rate Trends",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "1": {
+                "position": {
+                  "x": 6,
+                  "y": 0,
+                  "colSpan": 6,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Error Distribution by Category\ncustomEvents\n| where timestamp > ago(24h) and name == 'ErrorOccurred'\n| extend \n    category = tostring(customDimensions.category),\n    severity = tostring(customDimensions.severity)\n| summarize ErrorCount = count() by category, severity\n| order by ErrorCount desc\n| render columnchart with (title='Error Distribution by Category and Severity')",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Error Distribution by Category",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "2": {
+                "position": {
+                  "x": 0,
+                  "y": 3,
+                  "colSpan": 4,
+                  "rowSpan": 4
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Top Errors by Frequency\nexceptions\n| where timestamp > ago(24h)\n| summarize \n    ErrorCount = count(),\n    UniqueUsers = dcount(tostring(customDimensions.userId)),\n    LastOccurrence = max(timestamp)\n    by type, outerMessage\n| order by ErrorCount desc\n| take 15\n| project \n    ErrorType = type,\n    Message = outerMessage,\n    Count = ErrorCount,\n    Users = UniqueUsers,\n    LastSeen = LastOccurrence",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Top Errors by Frequency",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "3": {
+                "position": {
+                  "x": 4,
+                  "y": 3,
+                  "colSpan": 4,
+                  "rowSpan": 4
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Authentication Errors Analysis\ncustomEvents\n| where timestamp > ago(24h) and name == 'AuthenticationError'\n| extend \n    errorType = tostring(customDimensions.errorType),\n    authProvider = tostring(customDimensions.authProvider),\n    userId = tostring(customDimensions.userId)\n| summarize \n    ErrorCount = count(),\n    UniqueUsers = dcount(userId),\n    LastOccurrence = max(timestamp)\n    by errorType, authProvider\n| order by ErrorCount desc\n| project \n    ErrorType = errorType,\n    Provider = authProvider,\n    Count = ErrorCount,\n    Users = UniqueUsers,\n    LastSeen = LastOccurrence",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Authentication Errors",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "4": {
+                "position": {
+                  "x": 8,
+                  "y": 3,
+                  "colSpan": 4,
+                  "rowSpan": 4
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// External Service Errors\ncustomEvents\n| where timestamp > ago(24h) and name == 'ExternalServiceError'\n| extend \n    serviceName = tostring(customDimensions.serviceName),\n    operation = tostring(customDimensions.operation),\n    statusCode = tostring(customDimensions.statusCode)\n| summarize \n    ErrorCount = count(),\n    AvgDuration = avg(todouble(customMeasurements.duration)),\n    LastOccurrence = max(timestamp)\n    by serviceName, operation, statusCode\n| order by ErrorCount desc\n| project \n    Service = serviceName,\n    Operation = operation,\n    StatusCode = statusCode,\n    Count = ErrorCount,\n    AvgDuration = round(AvgDuration, 0),\n    LastSeen = LastOccurrence",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "External Service Errors",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "5": {
+                "position": {
+                  "x": 0,
+                  "y": 7,
+                  "colSpan": 6,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Error Impact on Users\ncustomEvents\n| where timestamp > ago(24h) and name == 'ErrorOccurred'\n| extend \n    userId = tostring(customDimensions.userId),\n    component = tostring(customDimensions.component),\n    severity = tostring(customDimensions.severity)\n| where isnotempty(userId) and userId != 'anonymous'\n| summarize \n    ErrorCount = count(),\n    Components = make_set(component),\n    Severities = make_set(severity),\n    FirstError = min(timestamp),\n    LastError = max(timestamp)\n    by userId\n| order by ErrorCount desc\n| take 20\n| project \n    UserId = userId,\n    Errors = ErrorCount,\n    AffectedComponents = strcat_array(Components, ', '),\n    ErrorSeverities = strcat_array(Severities, ', '),\n    FirstError,\n    LastError",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Error Impact on Users",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "6": {
+                "position": {
+                  "x": 6,
+                  "y": 7,
+                  "colSpan": 6,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Critical Errors and Unhandled Exceptions\nunion\n    (customEvents | where timestamp > ago(24h) and name == 'UnhandledException'),\n    (customEvents | where timestamp > ago(24h) and name == 'ErrorOccurred' and tostring(customDimensions.severity) == 'critical')\n| extend \n    errorType = tostring(customDimensions.errorType),\n    errorMessage = tostring(customDimensions.errorMessage),\n    component = tostring(customDimensions.component),\n    userId = tostring(customDimensions.userId)\n| project \n    Timestamp = timestamp,\n    EventType = name,\n    ErrorType = errorType,\n    Message = errorMessage,\n    Component = component,\n    UserId = userId\n| order by Timestamp desc\n| take 25",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Critical Errors & Unhandled Exceptions",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "7": {
+                "position": {
+                  "x": 0,
+                  "y": 10,
+                  "colSpan": 4,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Validation Errors by Field\ncustomEvents\n| where timestamp > ago(24h) and name == 'ValidationError'\n| extend \n    fieldName = tostring(customDimensions.fieldName),\n    validationType = tostring(customDimensions.validationType),\n    expectedType = tostring(customDimensions.expectedType)\n| summarize \n    ErrorCount = count(),\n    ValidationTypes = make_set(validationType),\n    ExpectedTypes = make_set(expectedType)\n    by fieldName\n| order by ErrorCount desc\n| take 15\n| project \n    Field = fieldName,\n    Errors = ErrorCount,\n    ValidationTypes = strcat_array(ValidationTypes, ', '),\n    ExpectedTypes = strcat_array(ExpectedTypes, ', ')",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Validation Errors by Field",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "8": {
+                "position": {
+                  "x": 4,
+                  "y": 10,
+                  "colSpan": 4,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Error Resolution Time Analysis\nexceptions\n| where timestamp > ago(7d)\n| extend errorKey = strcat(type, '|', outerMessage)\n| summarize \n    FirstOccurrence = min(timestamp),\n    LastOccurrence = max(timestamp),\n    TotalOccurrences = count()\n    by errorKey, type, outerMessage\n| extend \n    ErrorDuration = LastOccurrence - FirstOccurrence,\n    IsResolved = LastOccurrence < ago(2h)\n| where TotalOccurrences > 1\n| project \n    ErrorType = type,\n    Message = outerMessage,\n    FirstSeen = FirstOccurrence,\n    LastSeen = LastOccurrence,\n    Duration = ErrorDuration,\n    Occurrences = TotalOccurrences,\n    Resolved = IsResolved\n| order by Duration desc\n| take 15",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Error Resolution Time Analysis",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "9": {
+                "position": {
+                  "x": 8,
+                  "y": 10,
+                  "colSpan": 4,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Error Correlation Analysis\ncustomEvents\n| where timestamp > ago(24h) and name == 'ErrorOccurred'\n| extend \n    correlationId = tostring(customDimensions.correlationId),\n    sessionId = tostring(customDimensions.sessionId),\n    component = tostring(customDimensions.component),\n    errorType = tostring(customDimensions.errorType)\n| where isnotempty(correlationId) and correlationId != 'unknown'\n| summarize \n    ErrorCount = count(),\n    Components = make_set(component),\n    ErrorTypes = make_set(errorType),\n    TimeSpan = max(timestamp) - min(timestamp)\n    by correlationId\n| where ErrorCount > 1\n| order by ErrorCount desc\n| take 15\n| project \n    CorrelationId = correlationId,\n    Errors = ErrorCount,\n    Components = strcat_array(Components, ', '),\n    ErrorTypes = strcat_array(ErrorTypes, ', '),\n    TimeSpan",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Error Correlation Analysis",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+# TaktMate Frontend Environment Configuration
+# Copy this file to frontend/.env.local and update with your actual values
+
+# =============================================================================
+# MICROSOFT ENTRA EXTERNAL ID CONFIGURATION
+# =============================================================================
+
+# Microsoft Entra External ID Client ID (Application ID from Azure Portal)
+REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID=your-client-id-here
+
+# Microsoft Entra External ID Tenant Name
+REACT_APP_ENTRA_EXTERNAL_ID_TENANT_NAME=your-tenant-name
+
+# Microsoft Entra External ID Authority URL (Sign-up/Sign-in policy)
+REACT_APP_ENTRA_EXTERNAL_ID_AUTHORITY=https://your-tenant.ciamlogin.com/your-tenant.onmicrosoft.com/B2C_1_signupsignin
+
+# Microsoft Entra External ID Known Authority (Domain)
+REACT_APP_ENTRA_EXTERNAL_ID_KNOWN_AUTHORITY=your-tenant.ciamlogin.com
+
+# Microsoft Entra External ID Scope for API access
+REACT_APP_ENTRA_EXTERNAL_ID_SCOPE=https://your-tenant.onmicrosoft.com/taktmate-api/access_as_user
+
+# =============================================================================
+# MICROSOFT ENTRA EXTERNAL ID POLICY CONFIGURATION
+# =============================================================================
+
+# Sign-up/Sign-in Policy Name
+REACT_APP_ENTRA_EXTERNAL_ID_SIGNUP_SIGNIN_POLICY=B2C_1_signupsignin
+
+# Profile Editing Policy Name
+REACT_APP_ENTRA_EXTERNAL_ID_EDIT_PROFILE_POLICY=B2C_1_profileediting
+
+# Password Reset Policy Name
+REACT_APP_ENTRA_EXTERNAL_ID_RESET_PASSWORD_POLICY=B2C_1_passwordreset
+
+# =============================================================================
+# APPLICATION CONFIGURATION
+# =============================================================================
+
+# API Base URL (Backend server)
+REACT_APP_API_BASE_URL=http://localhost:3001
+
+# Redirect URIs
+REACT_APP_REDIRECT_URI=http://localhost:3000
+REACT_APP_POST_LOGOUT_REDIRECT_URI=http://localhost:3000
+
+# =============================================================================
+# DEVELOPMENT CONFIGURATION
+# =============================================================================
+
+# Enable development mode logging
+REACT_APP_DEBUG_MODE=true
+
+# Enable detailed error reporting
+REACT_APP_DETAILED_ERRORS=true
+
+# =============================================================================
+# PRODUCTION CONFIGURATION EXAMPLE
+# =============================================================================
+
+# For production deployment, update these values:
+# REACT_APP_API_BASE_URL=https://your-api-domain.com
+# REACT_APP_REDIRECT_URI=https://your-frontend-domain.com
+# REACT_APP_POST_LOGOUT_REDIRECT_URI=https://your-frontend-domain.com
+# REACT_APP_DEBUG_MODE=false
+# REACT_APP_DETAILED_ERRORS=false
+
+# =============================================================================
+# SECURITY NOTES
+# =============================================================================
+
+# 1. Never commit actual credentials to version control
+# 2. Use different configurations for development, staging, and production
+# 3. Ensure redirect URIs are registered in Microsoft Entra External ID
+# 4. Validate all environment variables in your application
+# 5. Use HTTPS in production environments
+
+# =============================================================================
+# MICROSOFT ENTRA EXTERNAL ID SETUP CHECKLIST
+# =============================================================================
+
+# Before using these configurations, ensure you have:
+# □ Created a Microsoft Entra External ID tenant
+# □ Registered an application in Microsoft Entra External ID
+# □ Configured redirect URIs in the application registration
+# □ Created user flows for sign-up/sign-in, profile editing, and password reset
+# □ configured API permissions and scopes
+# □ Set up custom attributes if needed
+# □ Configured branding and customization
+# □ Tested the authentication flows

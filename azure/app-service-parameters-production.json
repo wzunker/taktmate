@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appServiceName": {
+      "value": "taktmate-api-prod"
+    },
+    "appServicePlanName": {
+      "value": "taktmate-api-plan-prod"
+    },
+    "environment": {
+      "value": "Production"
+    },
+    "skuName": {
+      "value": "P1v3"
+    },
+    "skuCapacity": {
+      "value": 2
+    },
+    "nodeVersion": {
+      "value": "18-lts"
+    },
+    "applicationInsightsName": {
+      "value": "taktmate-insights-prod"
+    },
+    "logAnalyticsWorkspaceName": {
+      "value": "taktmate-logs-prod"
+    },
+    "enableAutoScale": {
+      "value": true
+    },
+    "repositoryUrl": {
+      "value": "https://github.com/your-org/taktmate"
+    },
+    "branch": {
+      "value": "main"
+    },
+    "customDomainName": {
+      "value": "api.taktmate.com"
+    }
+  }
+}

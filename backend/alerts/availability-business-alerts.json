@@ -1,0 +1,265 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "applicationInsightsName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Application Insights instance"
+      }
+    },
+    "actionGroupResourceId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the action group for notifications"
+      }
+    },
+    "alertNamePrefix": {
+      "type": "string",
+      "defaultValue": "TaktMate",
+      "metadata": {
+        "description": "Prefix for alert names"
+      }
+    }
+  },
+  "variables": {
+    "applicationInsightsResourceId": "[resourceId('Microsoft.Insights/components', parameters('applicationInsightsName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('alertNamePrefix'), ' - Application Unavailable')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[concat(parameters('alertNamePrefix'), ' - Application Unavailable')]",
+        "description": "Alert when no requests received for 10 minutes during business hours",
+        "severity": 1,
+        "enabled": true,
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT10M",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "let businessHours = requests\n| where timestamp > ago(10m)\n| extend Hour = datetime_part('hour', timestamp)\n| where Hour >= 6 and Hour <= 22 // Business hours 6 AM to 10 PM\n| count;\nlet allRequests = requests\n| where timestamp > ago(10m)\n| count;\nunion businessHours, allRequests\n| summarize \n    BusinessHourRequests = max(Count),\n    TotalRequests = max(Count1)\n| where BusinessHourRequests == 0 and TotalRequests == 0",
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            "[parameters('actionGroupResourceId')]"
+          ]
+        },
+        "scopes": [
+          "[variables('applicationInsightsResourceId')]"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('alertNamePrefix'), ' - Service Availability Drop')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[concat(parameters('alertNamePrefix'), ' - Service Availability Drop')]",
+        "description": "Alert when service availability drops below 95%",
+        "severity": 2,
+        "enabled": true,
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT15M",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "requests\n| where timestamp > ago(15m)\n| summarize \n    TotalRequests = count(),\n    SuccessfulRequests = countif(success == true)\n| extend Availability = (todouble(SuccessfulRequests) / todouble(TotalRequests)) * 100\n| where Availability < 95 and TotalRequests > 10",
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 2,
+                "minFailingPeriodsToAlert": 2
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            "[parameters('actionGroupResourceId')]"
+          ]
+        },
+        "scopes": [
+          "[variables('applicationInsightsResourceId')]"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('alertNamePrefix'), ' - CSV Processing Failures')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[concat(parameters('alertNamePrefix'), ' - CSV Processing Failures')]",
+        "description": "Alert when CSV processing failure rate is high",
+        "severity": 2,
+        "enabled": true,
+        "evaluationFrequency": "PT10M",
+        "windowSize": "PT30M",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "customEvents\n| where timestamp > ago(30m)\n| where name == 'CSVFileUpload'\n| extend success = tostring(customDimensions.success) == 'true'\n| summarize \n    TotalUploads = count(),\n    SuccessfulUploads = countif(success)\n| extend FailureRate = (todouble(TotalUploads - SuccessfulUploads) / todouble(TotalUploads)) * 100\n| where FailureRate > 20 and TotalUploads > 5", // More than 20% failure rate with at least 5 uploads
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            "[parameters('actionGroupResourceId')]"
+          ]
+        },
+        "scopes": [
+          "[variables('applicationInsightsResourceId')]"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('alertNamePrefix'), ' - Chat Service Degradation')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[concat(parameters('alertNamePrefix'), ' - Chat Service Degradation')]",
+        "description": "Alert when chat service success rate drops significantly",
+        "severity": 2,
+        "enabled": true,
+        "evaluationFrequency": "PT10M",
+        "windowSize": "PT30M",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "customEvents\n| where timestamp > ago(30m)\n| where name == 'CSVChatInteraction'\n| extend success = tostring(customDimensions.success) == 'true'\n| summarize \n    TotalChats = count(),\n    SuccessfulChats = countif(success)\n| extend SuccessRate = (todouble(SuccessfulChats) / todouble(TotalChats)) * 100\n| where SuccessRate < 80 and TotalChats > 5", // Less than 80% success rate with at least 5 chats
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            "[parameters('actionGroupResourceId')]"
+          ]
+        },
+        "scopes": [
+          "[variables('applicationInsightsResourceId')]"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('alertNamePrefix'), ' - User Activity Drop')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[concat(parameters('alertNamePrefix'), ' - User Activity Drop')]",
+        "description": "Alert when user activity drops significantly compared to baseline",
+        "severity": 3,
+        "enabled": true,
+        "evaluationFrequency": "PT30M",
+        "windowSize": "PT2H",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "let baseline = customEvents\n| where timestamp between (ago(7d) .. ago(1d))\n| where name in ('FileUpload', 'ChatInteraction', 'FileAccess')\n| extend userId = tostring(customDimensions.userId)\n| where isnotempty(userId) and userId != 'anonymous'\n| summarize BaselineDAU = dcount(userId) / 6; // Average daily active users over 6 days\nlet current = customEvents\n| where timestamp > ago(2h)\n| where name in ('FileUpload', 'ChatInteraction', 'FileAccess')\n| extend userId = tostring(customDimensions.userId)\n| where isnotempty(userId) and userId != 'anonymous'\n| summarize CurrentActiveUsers = dcount(userId);\nunion baseline, current\n| summarize \n    BaselineAvg = max(BaselineDAU),\n    CurrentUsers = max(CurrentActiveUsers)\n| extend ExpectedUsers = BaselineAvg / 12 // Expected users in 2 hours (assuming even distribution)\n| where CurrentUsers < (ExpectedUsers * 0.3) and BaselineAvg > 5", // Less than 30% of expected and baseline > 5 users
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            "[parameters('actionGroupResourceId')]"
+          ]
+        },
+        "scopes": [
+          "[variables('applicationInsightsResourceId')]"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('alertNamePrefix'), ' - Data Processing Volume Drop')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[concat(parameters('alertNamePrefix'), ' - Data Processing Volume Drop')]",
+        "description": "Alert when data processing volume drops significantly",
+        "severity": 3,
+        "enabled": true,
+        "evaluationFrequency": "PT1H",
+        "windowSize": "PT4H",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "let baseline = customEvents\n| where timestamp between (ago(7d) .. ago(1d))\n| where name == 'CSVFileUpload'\n| extend fileSize = todouble(customMeasurements.fileSize)\n| summarize BaselineVolume = sum(fileSize) / 6; // Average daily volume over 6 days\nlet current = customEvents\n| where timestamp > ago(4h)\n| where name == 'CSVFileUpload'\n| extend fileSize = todouble(customMeasurements.fileSize)\n| summarize CurrentVolume = sum(fileSize);\nunion baseline, current\n| summarize \n    BaselineAvg = max(BaselineVolume),\n    CurrentVolume = max(CurrentVolume)\n| extend ExpectedVolume = BaselineAvg / 6 // Expected volume in 4 hours (assuming even distribution)\n| where CurrentVolume < (ExpectedVolume * 0.2) and BaselineAvg > 1048576", // Less than 20% of expected and baseline > 1MB
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            "[parameters('actionGroupResourceId')]"
+          ]
+        },
+        "scopes": [
+          "[variables('applicationInsightsResourceId')]"
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "alertRuleIds": {
+      "type": "array",
+      "value": [
+        "[resourceId('Microsoft.Insights/scheduledQueryRules', concat(parameters('alertNamePrefix'), ' - Application Unavailable'))]",
+        "[resourceId('Microsoft.Insights/scheduledQueryRules', concat(parameters('alertNamePrefix'), ' - Service Availability Drop'))]",
+        "[resourceId('Microsoft.Insights/scheduledQueryRules', concat(parameters('alertNamePrefix'), ' - CSV Processing Failures'))]",
+        "[resourceId('Microsoft.Insights/scheduledQueryRules', concat(parameters('alertNamePrefix'), ' - Chat Service Degradation'))]",
+        "[resourceId('Microsoft.Insights/scheduledQueryRules', concat(parameters('alertNamePrefix'), ' - User Activity Drop'))]",
+        "[resourceId('Microsoft.Insights/scheduledQueryRules', concat(parameters('alertNamePrefix'), ' - Data Processing Volume Drop'))]"
+      ]
+    }
+  }
+}

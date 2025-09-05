@@ -1,6 +1,6 @@
-# TaktMate MVP - CSV Chat with AI Evaluation Framework
+# TaktMate - CSV Chat with Microsoft Entra External ID Authentication
 
-A comprehensive web application that allows users to upload CSV files and chat with their data using Azure OpenAI's GPT-4.1, complete with an advanced evaluation framework for testing AI performance across multiple domains.
+A comprehensive web application that allows users to upload CSV files and chat with their data using Azure OpenAI's GPT-4.1, featuring enterprise-grade authentication through Microsoft Entra External ID and an advanced evaluation framework for testing AI performance across multiple domains.
 
 ## Features
 
@@ -11,6 +11,14 @@ A comprehensive web application that allows users to upload CSV files and chat w
 - 🎨 **Modern UI**: Clean, responsive interface built with React and TailwindCSS
 - ⚡ **Real-time**: Instant responses and file processing
 - 🔍 **Debug Mode**: Environment-based prompt debugging for development
+
+### Enterprise Authentication (Microsoft Entra External ID)
+- 🔐 **User Authentication**: Sign-up and sign-in with multiple identity providers
+- 🌐 **Social Login**: Google and Microsoft OAuth integration
+- 👤 **User Profiles**: Collect company, role, and industry information
+- 🔑 **JWT Token Validation**: Enterprise-grade security with RS256 signatures
+- 🛡️ **Protected Routes**: Role-based access control and API protection
+- 📧 **Password Management**: Self-service password reset and profile editing
 
 ### Advanced Evaluation System
 - 🧪 **Multi-Domain Testing**: 5 diverse datasets (Sports, Astronomy, HR, Inventory, Transportation)
@@ -29,10 +37,12 @@ A comprehensive web application that allows users to upload CSV files and chat w
 ### Backend
 - Node.js with Express.js
 - Azure OpenAI GPT-4.1 integration
+- Microsoft Entra External ID authentication integration
+- JWT token validation middleware
 - Multer for file uploads
 - csv-parser for CSV processing
 - Environment-based debug logging
-- CORS enabled
+- CORS enabled with authentication support
 
 ### Evaluation Framework
 - Advanced similarity matching (Jaro-Winkler distance)
@@ -46,6 +56,8 @@ A comprehensive web application that allows users to upload CSV files and chat w
 - Node.js 16+ and npm
 - Azure OpenAI API key and endpoint
 - Access to GPT-4.1 deployment
+- Azure subscription with Microsoft Entra External ID access
+- Domain name (recommended: `app.taktconnect.com`)
 
 ## Quick Start
 
@@ -59,7 +71,18 @@ cd mvp-gpt5
 npm run install-all
 ```
 
-### 2. Start the Application
+### 2. Configure Microsoft Entra External ID Authentication
+
+```bash
+# Copy environment template
+cp backend/env.example backend/.env
+
+# Edit .env with your Microsoft Entra External ID settings
+# Follow the complete setup guide
+open MICROSOFT_ENTRA_EXTERNAL_ID_SETUP_GUIDE.md
+```
+
+### 3. Start the Application
 
 ```bash
 # Start both backend and frontend
@@ -70,7 +93,17 @@ The application will start automatically:
 - Backend: http://localhost:3001
 - Frontend: http://localhost:3000 (opens in browser)
 
-### 3. Run Evaluations (Optional)
+### 4. Test Microsoft Entra External ID Integration
+
+```bash
+# Test authentication configuration
+npm run test:config
+
+# Run comprehensive authentication tests
+npm run test:all
+```
+
+### 5. Run Evaluations (Optional)
 
 ```bash
 # Run all evaluations
@@ -103,10 +136,26 @@ module.exports = {
 
 Create `backend/.env` for custom configuration:
 ```env
+# Azure OpenAI Configuration
 OPENAI_API_KEY=your-azure-openai-api-key
 DEBUG_PROMPTS=true
 PORT=3001
+
+# Microsoft Entra External ID Configuration
+ENTRA_EXTERNAL_ID_TENANT_NAME=taktmate
+ENTRA_EXTERNAL_ID_TENANT_ID=your-tenant-id
+ENTRA_EXTERNAL_ID_CLIENT_ID=your-client-id
+ENTRA_EXTERNAL_ID_CLIENT_SECRET=your-client-secret
+ENTRA_EXTERNAL_ID_SIGNUP_SIGNIN_POLICY=B2C_1_signupsignin1
+ENTRA_EXTERNAL_ID_PASSWORD_RESET_POLICY=B2C_1_passwordreset1
+ENTRA_EXTERNAL_ID_PROFILE_EDIT_POLICY=B2C_1_profileedit1
+
+# Application URLs
+FRONTEND_URL=https://app.taktconnect.com
+BACKEND_URL=https://api.taktconnect.com
 ```
+
+See `backend/env.example` for complete configuration template.
 
 ## Debug Mode
 
@@ -448,3 +497,66 @@ This application uses Azure OpenAI GPT-4.1 with:
 - Comprehensive error handling
 
 For Azure OpenAI setup, see `AZURE_SETUP.md`.
+
+## Microsoft Entra External ID Authentication
+
+TaktMate includes enterprise-grade authentication powered by Microsoft Entra External ID. This provides:
+
+- **Multiple Authentication Methods**: Email/password, Google OAuth, Microsoft OAuth
+- **User Profile Management**: Company, role, and industry information collection
+- **Enterprise Security**: JWT token validation with RS256 signatures
+- **Self-Service Features**: Password reset and profile editing
+
+### Authentication Setup
+
+1. **Complete Setup Guide**: Follow `MICROSOFT_ENTRA_EXTERNAL_ID_SETUP_GUIDE.md` for step-by-step tenant setup
+2. **Quick Reference**: Use `MICROSOFT_ENTRA_EXTERNAL_ID_README.md` for development workflow
+3. **Testing Guide**: Follow `MICROSOFT_ENTRA_EXTERNAL_ID_TESTING_GUIDE.md` for validation procedures
+4. **Application Registration**: Use `AZURE_APP_REGISTRATION_GUIDE.md` for app configuration
+
+### Authentication Commands
+
+```bash
+# Complete authentication test suite
+npm run test:all
+
+# Individual test categories
+npm run test:config          # Configuration validation
+npm run test:user-flows      # User flow testing
+npm run test:jwt-claims      # JWT token validation
+npm run test:e2e             # End-to-end testing
+npm run test:connectivity    # Endpoint connectivity
+npm run test:performance     # Performance benchmarks
+
+# Validation utilities
+npm run validate:app         # Application registration validation
+npm run generate:policies    # Generate custom policy XML files
+```
+
+### Authentication Architecture
+
+```
+Frontend (React)     Microsoft Entra External ID Tenant     Backend (Node.js)
+┌─────────────────┐  ┌──────────────────┐    ┌─────────────────┐
+│ • Authentication│◄─┤ • User Flows     │───►│ • JWT Validation│
+│ • Protected     │  │ • Custom Policies│    │ • User Profile  │
+│   Routes        │  │ • Identity       │    │ • Protected     │
+│ • User Profile  │  │   Providers      │    │   Endpoints     │
+└─────────────────┘  └──────────────────┘    └─────────────────┘
+```
+
+### User Experience
+
+1. **Landing Page**: User accesses TaktMate application
+2. **Authentication**: Redirect to Microsoft Entra External ID for sign-up/sign-in
+3. **Profile Collection**: Company, role, and industry information gathered
+4. **Token Issuance**: JWT token with user claims returned to application
+5. **Protected Access**: User gains access to CSV upload and chat features
+
+### Security Features
+
+- ✅ **JWT Token Validation**: RS256 signature verification with JWKS key rotation
+- ✅ **Token Expiration**: Configurable token lifetimes with refresh capabilities
+- ✅ **Role-Based Access**: Flexible authorization middleware for API protection
+- ✅ **Audit Logging**: Comprehensive security monitoring and error tracking
+- ✅ **HTTPS Enforcement**: Secure token transmission and redirect handling

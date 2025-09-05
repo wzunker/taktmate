@@ -1,0 +1,115 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "actionGroupName": {
+      "type": "string",
+      "defaultValue": "TaktMate-Alerts",
+      "metadata": {
+        "description": "Name of the action group"
+      }
+    },
+    "emailRecipients": {
+      "type": "array",
+      "defaultValue": [
+        {
+          "name": "DevOps Team",
+          "emailAddress": "devops@taktmate.com"
+        },
+        {
+          "name": "Engineering Team",
+          "emailAddress": "engineering@taktmate.com"
+        }
+      ],
+      "metadata": {
+        "description": "Array of email recipients for alerts"
+      }
+    },
+    "smsRecipients": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Array of SMS recipients for critical alerts"
+      }
+    },
+    "webhookUrl": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Webhook URL for Slack/Teams integration (optional)"
+      }
+    },
+    "logicAppResourceId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Resource ID of Logic App for automated responses (optional)"
+      }
+    }
+  },
+  "variables": {
+    "emailActions": "[if(greater(length(parameters('emailRecipients')), 0), parameters('emailRecipients'), createArray())]",
+    "smsActions": "[if(greater(length(parameters('smsRecipients')), 0), parameters('smsRecipients'), createArray())]",
+    "hasWebhook": "[not(empty(parameters('webhookUrl')))]",
+    "hasLogicApp": "[not(empty(parameters('logicAppResourceId')))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Insights/actionGroups",
+      "apiVersion": "2023-01-01",
+      "name": "[parameters('actionGroupName')]",
+      "location": "Global",
+      "properties": {
+        "groupShortName": "[take(parameters('actionGroupName'), 12)]",
+        "enabled": true,
+        "emailReceivers": "[if(greater(length(variables('emailActions')), 0), variables('emailActions'), createArray())]",
+        "smsReceivers": "[if(greater(length(variables('smsActions')), 0), variables('smsActions'), createArray())]",
+        "webhookReceivers": "[if(variables('hasWebhook'), createArray(createObject('name', 'Webhook', 'serviceUri', parameters('webhookUrl'), 'useCommonAlertSchema', true())), createArray())]",
+        "logicAppReceivers": "[if(variables('hasLogicApp'), createArray(createObject('name', 'LogicApp', 'resourceId', parameters('logicAppResourceId'), 'callbackUrl', '', 'useCommonAlertSchema', true())), createArray())]"
+      }
+    },
+    {
+      "type": "Microsoft.Insights/actionGroups",
+      "apiVersion": "2023-01-01",
+      "name": "[concat(parameters('actionGroupName'), '-Critical')]",
+      "location": "Global",
+      "properties": {
+        "groupShortName": "[take(concat(parameters('actionGroupName'), '-Crit'), 12)]",
+        "enabled": true,
+        "emailReceivers": "[if(greater(length(variables('emailActions')), 0), variables('emailActions'), createArray())]",
+        "smsReceivers": "[if(greater(length(variables('smsActions')), 0), variables('smsActions'), createArray())]",
+        "webhookReceivers": "[if(variables('hasWebhook'), createArray(createObject('name', 'CriticalWebhook', 'serviceUri', parameters('webhookUrl'), 'useCommonAlertSchema', true())), createArray())]",
+        "logicAppReceivers": "[if(variables('hasLogicApp'), createArray(createObject('name', 'CriticalLogicApp', 'resourceId', parameters('logicAppResourceId'), 'callbackUrl', '', 'useCommonAlertSchema', true())), createArray())]",
+        "voiceReceivers": []
+      }
+    },
+    {
+      "type": "Microsoft.Insights/actionGroups",
+      "apiVersion": "2023-01-01",
+      "name": "[concat(parameters('actionGroupName'), '-Business')]",
+      "location": "Global",
+      "properties": {
+        "groupShortName": "[take(concat(parameters('actionGroupName'), '-Biz'), 12)]",
+        "enabled": true,
+        "emailReceivers": "[if(greater(length(variables('emailActions')), 0), take(variables('emailActions'), 1), createArray())]",
+        "smsReceivers": [],
+        "webhookReceivers": "[if(variables('hasWebhook'), createArray(createObject('name', 'BusinessWebhook', 'serviceUri', parameters('webhookUrl'), 'useCommonAlertSchema', true())), createArray())]",
+        "logicAppReceivers": "[if(variables('hasLogicApp'), createArray(createObject('name', 'BusinessLogicApp', 'resourceId', parameters('logicAppResourceId'), 'callbackUrl', '', 'useCommonAlertSchema', true())), createArray())]"
+      }
+    }
+  ],
+  "outputs": {
+    "actionGroupResourceId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Insights/actionGroups', parameters('actionGroupName'))]"
+    },
+    "criticalActionGroupResourceId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Insights/actionGroups', concat(parameters('actionGroupName'), '-Critical'))]"
+    },
+    "businessActionGroupResourceId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Insights/actionGroups', concat(parameters('actionGroupName'), '-Business'))]"
+    }
+  }
+}

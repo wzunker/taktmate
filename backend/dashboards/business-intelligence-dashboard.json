@@ -1,0 +1,312 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "dashboardName": {
+      "type": "string",
+      "defaultValue": "TaktMate - Business Intelligence",
+      "metadata": {
+        "description": "Name of the business intelligence dashboard"
+      }
+    },
+    "applicationInsightsResourceId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the Application Insights instance"
+      }
+    }
+  },
+  "variables": {
+    "dashboardId": "[guid(resourceGroup().id, parameters('dashboardName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Portal/dashboards",
+      "apiVersion": "2015-08-01-preview",
+      "name": "[variables('dashboardId')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "hidden-title": "[parameters('dashboardName')]"
+      },
+      "properties": {
+        "lenses": {
+          "0": {
+            "order": 0,
+            "parts": {
+              "0": {
+                "position": {
+                  "x": 0,
+                  "y": 0,
+                  "colSpan": 4,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// User Activity Overview\ncustomEvents\n| where timestamp > ago(7d)\n| where name in ('FileUpload', 'ChatInteraction', 'FileAccess')\n| extend userId = tostring(customDimensions.userId)\n| where isnotempty(userId) and userId != 'anonymous'\n| summarize \n    TotalUsers = dcount(userId),\n    DailyActiveUsers = dcountif(userId, timestamp > ago(1d)),\n    WeeklyActiveUsers = dcountif(userId, timestamp > ago(7d)),\n    TotalSessions = dcount(strcat(userId, '_', tostring(customDimensions.sessionId))),\n    TotalInteractions = count()\n| project \n    TotalUsers,\n    DAU = DailyActiveUsers,\n    WAU = WeeklyActiveUsers,\n    Sessions = TotalSessions,\n    Interactions = TotalInteractions",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "User Activity Overview",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "1": {
+                "position": {
+                  "x": 4,
+                  "y": 0,
+                  "colSpan": 4,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// CSV Processing Business Metrics\ncustomEvents\n| where timestamp > ago(7d) and name == 'CSVFileUpload'\n| extend \n    fileSize = todouble(customMeasurements.fileSize),\n    rowCount = todouble(customMeasurements.rowCount),\n    userId = tostring(customDimensions.userId)\n| summarize \n    FilesProcessed = count(),\n    UniqueUsers = dcount(userId),\n    TotalDataProcessedMB = round(sum(fileSize) / 1024 / 1024, 2),\n    TotalRowsProcessed = sum(rowCount),\n    AvgFileSize = round(avg(fileSize) / 1024 / 1024, 2),\n    AvgRowsPerFile = round(avg(rowCount), 0)\n| project \n    FilesProcessed,\n    UniqueUsers,\n    TotalDataMB = TotalDataProcessedMB,\n    TotalRows = TotalRowsProcessed,\n    AvgFileSizeMB = AvgFileSize,\n    AvgRowsPerFile",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "CSV Processing Metrics (7 days)",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "2": {
+                "position": {
+                  "x": 8,
+                  "y": 0,
+                  "colSpan": 4,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Chat Interaction Analytics\ncustomEvents\n| where timestamp > ago(7d) and name == 'CSVChatInteraction'\n| extend \n    userId = tostring(customDimensions.userId),\n    messageLength = todouble(customMeasurements.messageLength),\n    responseTime = todouble(customMeasurements.responseTime),\n    success = tostring(customDimensions.success) == 'true'\n| summarize \n    TotalChats = count(),\n    UniqueUsers = dcount(userId),\n    SuccessfulChats = countif(success),\n    AvgMessageLength = round(avg(messageLength), 0),\n    AvgResponseTime = round(avg(responseTime), 0),\n    P95ResponseTime = round(percentile(responseTime, 95), 0)\n| extend SuccessRate = round((todouble(SuccessfulChats) / todouble(TotalChats)) * 100, 2)\n| project \n    TotalChats,\n    UniqueUsers,\n    SuccessfulChats,\n    SuccessRate,\n    AvgMsgLength = AvgMessageLength,\n    AvgResponseMs = AvgResponseTime,\n    P95ResponseMs = P95ResponseTime",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Chat Analytics (7 days)",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "3": {
+                "position": {
+                  "x": 0,
+                  "y": 3,
+                  "colSpan": 6,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Daily User Engagement Trends\ncustomEvents\n| where timestamp > ago(30d)\n| where name in ('FileUpload', 'ChatInteraction', 'FileAccess')\n| extend userId = tostring(customDimensions.userId)\n| where isnotempty(userId) and userId != 'anonymous'\n| summarize \n    ActiveUsers = dcount(userId),\n    FileUploads = countif(name == 'FileUpload'),\n    ChatInteractions = countif(name == 'ChatInteraction'),\n    FileAccesses = countif(name == 'FileAccess')\n    by bin(timestamp, 1d)\n| order by timestamp asc\n| render timechart with (title='Daily User Engagement Trends', xtitle='Date', ytitle='Count')",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Daily User Engagement Trends",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "4": {
+                "position": {
+                  "x": 6,
+                  "y": 3,
+                  "colSpan": 6,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// User Behavior Patterns\ncustomEvents\n| where timestamp > ago(7d)\n| where name in ('FileUpload', 'ChatInteraction', 'FileAccess')\n| extend userId = tostring(customDimensions.userId)\n| where isnotempty(userId) and userId != 'anonymous'\n| summarize \n    FileUploads = countif(name == 'FileUpload'),\n    ChatInteractions = countif(name == 'ChatInteraction'),\n    FileAccesses = countif(name == 'FileAccess'),\n    FirstActivity = min(timestamp),\n    LastActivity = max(timestamp),\n    SessionCount = dcount(tostring(customDimensions.sessionId))\n    by userId\n| extend \n    TotalActivities = FileUploads + ChatInteractions + FileAccesses,\n    ActivitySpan = LastActivity - FirstActivity,\n    UserType = case(\n        FileUploads > 0 and ChatInteractions > 0, 'Active User',\n        FileUploads > 0 and ChatInteractions == 0, 'Upload Only',\n        FileUploads == 0 and ChatInteractions > 0, 'Chat Only',\n        'View Only'\n    )\n| summarize \n    UserCount = count(),\n    AvgFileUploads = round(avg(FileUploads), 1),\n    AvgChatInteractions = round(avg(ChatInteractions), 1),\n    AvgSessions = round(avg(SessionCount), 1)\n    by UserType\n| order by UserCount desc",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "User Behavior Patterns",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "5": {
+                "position": {
+                  "x": 0,
+                  "y": 6,
+                  "colSpan": 4,
+                  "rowSpan": 4
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Top Users by Activity\ncustomEvents\n| where timestamp > ago(7d)\n| where name in ('FileUpload', 'ChatInteraction', 'FileAccess')\n| extend \n    userId = tostring(customDimensions.userId),\n    userEmail = tostring(customDimensions.userEmail)\n| where isnotempty(userId) and userId != 'anonymous'\n| summarize \n    FileUploads = countif(name == 'FileUpload'),\n    ChatInteractions = countif(name == 'ChatInteraction'),\n    FileAccesses = countif(name == 'FileAccess'),\n    LastActivity = max(timestamp),\n    SessionCount = dcount(tostring(customDimensions.sessionId))\n    by userId, userEmail\n| extend TotalActivities = FileUploads + ChatInteractions + FileAccesses\n| order by TotalActivities desc\n| take 20\n| project \n    UserId = userId,\n    Email = userEmail,\n    TotalActivities,\n    FileUploads,\n    ChatInteractions,\n    FileAccesses,\n    Sessions = SessionCount,\n    LastSeen = LastActivity",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Top Users by Activity",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "6": {
+                "position": {
+                  "x": 4,
+                  "y": 6,
+                  "colSpan": 4,
+                  "rowSpan": 4
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// File Processing Efficiency\ncustomEvents\n| where timestamp > ago(7d) and name == 'CSVFileUpload'\n| extend \n    fileSize = todouble(customMeasurements.fileSize),\n    rowCount = todouble(customMeasurements.rowCount),\n    duration = todouble(customMeasurements.duration),\n    sizeCategory = tostring(customDimensions.sizeCategory),\n    success = tostring(customDimensions.success) == 'true'\n| summarize \n    FilesProcessed = count(),\n    SuccessfulFiles = countif(success),\n    AvgProcessingTime = avg(duration),\n    ProcessingRate = sum(rowCount) / sum(duration) * 1000, // rows per second\n    TotalDataProcessed = sum(fileSize)\n    by sizeCategory\n| extend \n    SuccessRate = round((todouble(SuccessfulFiles) / todouble(FilesProcessed)) * 100, 2),\n    AvgProcessingTimeMs = round(AvgProcessingTime, 0),\n    ProcessingRateRowsPerSec = round(ProcessingRate, 0),\n    TotalDataMB = round(TotalDataProcessed / 1024 / 1024, 2)\n| order by case(sizeCategory == 'small', 1, sizeCategory == 'medium', 2, sizeCategory == 'large', 3, 4)\n| project \n    SizeCategory = sizeCategory,\n    Files = FilesProcessed,\n    SuccessRate,\n    AvgTimeMs = AvgProcessingTimeMs,\n    RowsPerSec = ProcessingRateRowsPerSec,\n    DataMB = TotalDataMB",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "File Processing Efficiency",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "7": {
+                "position": {
+                  "x": 8,
+                  "y": 6,
+                  "colSpan": 4,
+                  "rowSpan": 4
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Chat Engagement Quality\ncustomEvents\n| where timestamp > ago(7d) and name == 'CSVChatInteraction'\n| extend \n    userId = tostring(customDimensions.userId),\n    messageLength = todouble(customMeasurements.messageLength),\n    responseTime = todouble(customMeasurements.responseTime),\n    complexityCategory = tostring(customDimensions.complexityCategory),\n    success = tostring(customDimensions.success) == 'true'\n| summarize \n    ChatCount = count(),\n    SuccessfulChats = countif(success),\n    AvgMessageLength = avg(messageLength),\n    AvgResponseTime = avg(responseTime),\n    UniqueUsers = dcount(userId)\n    by complexityCategory\n| extend \n    SuccessRate = round((todouble(SuccessfulChats) / todouble(ChatCount)) * 100, 2),\n    AvgMsgLength = round(AvgMessageLength, 0),\n    AvgResponseMs = round(AvgResponseTime, 0)\n| order by case(complexityCategory == 'simple', 1, complexityCategory == 'medium', 2, complexityCategory == 'complex', 3, 4)\n| project \n    Complexity = complexityCategory,\n    Chats = ChatCount,\n    Users = UniqueUsers,\n    SuccessRate,\n    AvgMsgLength,\n    AvgResponseMs",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Chat Engagement by Complexity",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "8": {
+                "position": {
+                  "x": 0,
+                  "y": 10,
+                  "colSpan": 6,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Business Value Metrics\nlet fileUploads = customEvents | where timestamp > ago(30d) and name == 'CSVFileUpload' | extend fileSize = todouble(customMeasurements.fileSize), rowCount = todouble(customMeasurements.rowCount);\nlet chatInteractions = customEvents | where timestamp > ago(30d) and name == 'CSVChatInteraction';\nlet userActivity = customEvents | where timestamp > ago(30d) and name in ('FileUpload', 'ChatInteraction') | extend userId = tostring(customDimensions.userId) | where isnotempty(userId) and userId != 'anonymous';\nunion\n    (fileUploads | summarize Value = round(sum(fileSize) / 1024 / 1024 / 1024, 2) | extend Metric = 'Total Data Processed (GB)', Category = 'Data Volume'),\n    (fileUploads | summarize Value = round(sum(rowCount) / 1000000, 2) | extend Metric = 'Total Rows Processed (Millions)', Category = 'Data Volume'),\n    (chatInteractions | summarize Value = count() | extend Metric = 'Total Chat Interactions', Category = 'User Engagement'),\n    (userActivity | summarize Value = dcount(tostring(customDimensions.userId)) | extend Metric = 'Monthly Active Users', Category = 'User Engagement'),\n    (fileUploads | summarize Value = count() | extend Metric = 'Files Processed', Category = 'Processing Volume'),\n    (userActivity | summarize Value = dcount(strcat(tostring(customDimensions.userId), '_', bin(timestamp, 1d))) | extend Metric = 'User-Days of Activity', Category = 'User Engagement')\n| order by Category, Metric",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Business Value Metrics (30 days)",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "9": {
+                "position": {
+                  "x": 6,
+                  "y": 10,
+                  "colSpan": 6,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// User Retention Analysis\nlet users_week1 = customEvents | where timestamp between (ago(14d) .. ago(7d)) | where name in ('FileUpload', 'ChatInteraction') | extend userId = tostring(customDimensions.userId) | where isnotempty(userId) and userId != 'anonymous' | distinct userId;\nlet users_week2 = customEvents | where timestamp > ago(7d) | where name in ('FileUpload', 'ChatInteraction') | extend userId = tostring(customDimensions.userId) | where isnotempty(userId) and userId != 'anonymous' | distinct userId;\nlet new_users = users_week2 | join kind=leftanti users_week1 on userId;\nlet retained_users = users_week2 | join kind=inner users_week1 on userId;\nlet churned_users = users_week1 | join kind=leftanti users_week2 on userId;\nunion\n    (users_week1 | summarize Count = count() | extend UserType = 'Week 1 Users'),\n    (users_week2 | summarize Count = count() | extend UserType = 'Week 2 Users'),\n    (new_users | summarize Count = count() | extend UserType = 'New Users'),\n    (retained_users | summarize Count = count() | extend UserType = 'Retained Users'),\n    (churned_users | summarize Count = count() | extend UserType = 'Churned Users')\n| extend RetentionRate = case(\n    UserType == 'Retained Users', round((Count / toscalar(users_week1 | count())) * 100, 1),\n    UserType == 'New Users', round((Count / toscalar(users_week2 | count())) * 100, 1),\n    0.0\n)\n| project UserType, Count, RetentionRate\n| order by case(UserType == 'Week 1 Users', 1, UserType == 'Week 2 Users', 2, UserType == 'Retained Users', 3, UserType == 'New Users', 4, 5)",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Weekly User Retention Analysis",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

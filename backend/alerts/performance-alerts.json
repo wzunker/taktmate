@@ -1,0 +1,265 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "applicationInsightsName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Application Insights instance"
+      }
+    },
+    "actionGroupResourceId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the action group for notifications"
+      }
+    },
+    "alertNamePrefix": {
+      "type": "string",
+      "defaultValue": "TaktMate",
+      "metadata": {
+        "description": "Prefix for alert names"
+      }
+    }
+  },
+  "variables": {
+    "applicationInsightsResourceId": "[resourceId('Microsoft.Insights/components', parameters('applicationInsightsName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('alertNamePrefix'), ' - High Response Time')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[concat(parameters('alertNamePrefix'), ' - High Response Time')]",
+        "description": "Alert when P95 response time exceeds 5 seconds",
+        "severity": 2,
+        "enabled": true,
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT10M",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "requests\n| where timestamp > ago(10m)\n| summarize P95ResponseTime = percentile(duration, 95)\n| where P95ResponseTime > 5000",
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 2,
+                "minFailingPeriodsToAlert": 2
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            "[parameters('actionGroupResourceId')]"
+          ]
+        },
+        "scopes": [
+          "[variables('applicationInsightsResourceId')]"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('alertNamePrefix'), ' - Low Throughput')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[concat(parameters('alertNamePrefix'), ' - Low Throughput')]",
+        "description": "Alert when request throughput drops significantly",
+        "severity": 3,
+        "enabled": true,
+        "evaluationFrequency": "PT10M",
+        "windowSize": "PT30M",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "let baseline = requests\n| where timestamp between (ago(7d) .. ago(1d))\n| summarize BaselineRPM = count() / (7 * 24 * 60); // Average requests per minute over 7 days\nlet current = requests\n| where timestamp > ago(30m)\n| summarize CurrentRPM = count() / 30.0;\nunion baseline, current\n| summarize \n    BaselineAvg = max(BaselineRPM),\n    CurrentRPM = max(CurrentRPM)\n| where CurrentRPM < (BaselineAvg * 0.3) and BaselineAvg > 1", // Less than 30% of baseline and baseline > 1 RPM
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            "[parameters('actionGroupResourceId')]"
+          ]
+        },
+        "scopes": [
+          "[variables('applicationInsightsResourceId')]"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('alertNamePrefix'), ' - High Memory Usage')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[concat(parameters('alertNamePrefix'), ' - High Memory Usage')]",
+        "description": "Alert when memory usage exceeds 85%",
+        "severity": 2,
+        "enabled": true,
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT15M",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "customEvents\n| where timestamp > ago(15m)\n| where name in ('SystemPerformance', 'ResourceUtilization')\n| extend \n    heapUsagePercent = todouble(customMeasurements.heapUsagePercent),\n    memoryUsagePercent = todouble(customMeasurements.memoryUsagePercent)\n| where isnotnull(heapUsagePercent) or isnotnull(memoryUsagePercent)\n| summarize \n    MaxHeapUsage = max(heapUsagePercent),\n    MaxMemoryUsage = max(memoryUsagePercent)\n| where MaxHeapUsage > 85 or MaxMemoryUsage > 85",
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 2,
+                "minFailingPeriodsToAlert": 2
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            "[parameters('actionGroupResourceId')]"
+          ]
+        },
+        "scopes": [
+          "[variables('applicationInsightsResourceId')]"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('alertNamePrefix'), ' - Slow CSV Processing')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[concat(parameters('alertNamePrefix'), ' - Slow CSV Processing')]",
+        "description": "Alert when CSV processing times are significantly higher than normal",
+        "severity": 3,
+        "enabled": true,
+        "evaluationFrequency": "PT10M",
+        "windowSize": "PT30M",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "let baseline = customEvents\n| where timestamp between (ago(7d) .. ago(1d))\n| where name == 'CSVFileUpload'\n| extend duration = todouble(customMeasurements.duration)\n| summarize BaselineP95 = percentile(duration, 95);\nlet current = customEvents\n| where timestamp > ago(30m)\n| where name == 'CSVFileUpload'\n| extend duration = todouble(customMeasurements.duration)\n| summarize CurrentP95 = percentile(duration, 95);\nunion baseline, current\n| summarize \n    BaselineP95 = max(BaselineP95),\n    CurrentP95 = max(CurrentP95)\n| where CurrentP95 > (BaselineP95 * 2) and CurrentP95 > 30000", // More than 2x baseline and > 30 seconds
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            "[parameters('actionGroupResourceId')]"
+          ]
+        },
+        "scopes": [
+          "[variables('applicationInsightsResourceId')]"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('alertNamePrefix'), ' - High CPU Load')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[concat(parameters('alertNamePrefix'), ' - High CPU Load')]",
+        "description": "Alert when CPU load average exceeds capacity",
+        "severity": 2,
+        "enabled": true,
+        "evaluationFrequency": "PT5M",
+        "windowSize": "PT15M",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "customEvents\n| where timestamp > ago(15m)\n| where name == 'ResourceUtilization'\n| extend \n    loadAverage1m = todouble(customMeasurements.loadAverage1m),\n    cpuCount = todouble(customMeasurements.cpuCount)\n| where isnotnull(loadAverage1m) and isnotnull(cpuCount)\n| extend CpuPressure = loadAverage1m / cpuCount\n| summarize MaxCpuPressure = max(CpuPressure)\n| where MaxCpuPressure > 0.9", // Load average > 90% of CPU count
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 2,
+                "minFailingPeriodsToAlert": 2
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            "[parameters('actionGroupResourceId')]"
+          ]
+        },
+        "scopes": [
+          "[variables('applicationInsightsResourceId')]"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Insights/scheduledQueryRules",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(parameters('alertNamePrefix'), ' - Dependency Performance Degradation')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "displayName": "[concat(parameters('alertNamePrefix'), ' - Dependency Performance Degradation')]",
+        "description": "Alert when external dependency response times degrade significantly",
+        "severity": 3,
+        "enabled": true,
+        "evaluationFrequency": "PT10M",
+        "windowSize": "PT30M",
+        "criteria": {
+          "allOf": [
+            {
+              "query": "let baseline = dependencies\n| where timestamp between (ago(7d) .. ago(1d))\n| summarize BaselineP95 = percentile(duration, 95) by target;\nlet current = dependencies\n| where timestamp > ago(30m)\n| summarize CurrentP95 = percentile(duration, 95) by target;\nbaseline\n| join current on target\n| extend DegradationRatio = CurrentP95 / BaselineP95\n| where DegradationRatio > 2 and CurrentP95 > 5000 // More than 2x slower and > 5 seconds\n| summarize DegradedServices = count()\n| where DegradedServices > 0",
+              "timeAggregation": "Count",
+              "dimensions": [],
+              "operator": "GreaterThan",
+              "threshold": 0,
+              "failingPeriods": {
+                "numberOfEvaluationPeriods": 1,
+                "minFailingPeriodsToAlert": 1
+              }
+            }
+          ]
+        },
+        "actions": {
+          "actionGroups": [
+            "[parameters('actionGroupResourceId')]"
+          ]
+        },
+        "scopes": [
+          "[variables('applicationInsightsResourceId')]"
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "alertRuleIds": {
+      "type": "array",
+      "value": [
+        "[resourceId('Microsoft.Insights/scheduledQueryRules', concat(parameters('alertNamePrefix'), ' - High Response Time'))]",
+        "[resourceId('Microsoft.Insights/scheduledQueryRules', concat(parameters('alertNamePrefix'), ' - Low Throughput'))]",
+        "[resourceId('Microsoft.Insights/scheduledQueryRules', concat(parameters('alertNamePrefix'), ' - High Memory Usage'))]",
+        "[resourceId('Microsoft.Insights/scheduledQueryRules', concat(parameters('alertNamePrefix'), ' - Slow CSV Processing'))]",
+        "[resourceId('Microsoft.Insights/scheduledQueryRules', concat(parameters('alertNamePrefix'), ' - High CPU Load'))]",
+        "[resourceId('Microsoft.Insights/scheduledQueryRules', concat(parameters('alertNamePrefix'), ' - Dependency Performance Degradation'))]"
+      ]
+    }
+  }
+}

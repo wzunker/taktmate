@@ -1,0 +1,19 @@
+# Robots.txt for TaktMate
+User-agent: *
+Allow: /
+
+# Optimize crawling
+Allow: /static/
+Allow: /manifest.json
+Allow: /favicon.ico
+
+# Disallow sensitive areas (when they exist)
+Disallow: /api/
+Disallow: /admin/
+Disallow: /private/
+
+# Sitemap location
+Sitemap: https://taktmate.com/sitemap.xml
+
+# Crawl delay (optional, helps with server load)
+Crawl-delay: 1

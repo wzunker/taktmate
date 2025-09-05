@@ -1,0 +1,143 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Creates an Azure Static Web App for TaktMate frontend deployment with production-ready configuration"
+  },
+  "parameters": {
+    "staticWebAppName": {
+      "type": "string",
+      "defaultValue": "taktmate-frontend",
+      "metadata": {
+        "description": "Name of the Static Web App"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "East US 2",
+      "allowedValues": [
+        "Central US",
+        "East US 2",
+        "East Asia", 
+        "West Europe",
+        "West US 2"
+      ],
+      "metadata": {
+        "description": "Location for the Static Web App"
+      }
+    },
+    "repositoryUrl": {
+      "type": "string",
+      "defaultValue": "https://github.com/your-org/taktmate",
+      "metadata": {
+        "description": "GitHub repository URL"
+      }
+    },
+    "branch": {
+      "type": "string",
+      "defaultValue": "main",
+      "metadata": {
+        "description": "GitHub branch to deploy from"
+      }
+    },
+    "appLocation": {
+      "type": "string",
+      "defaultValue": "/frontend",
+      "metadata": {
+        "description": "App source code path relative to repository root"
+      }
+    },
+    "outputLocation": {
+      "type": "string",
+      "defaultValue": "build",
+      "metadata": {
+        "description": "Built app content directory"
+      }
+    },
+    "customDomainName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Custom domain name (optional)"
+      }
+    },
+    "environment": {
+      "type": "string",
+      "defaultValue": "Production",
+      "allowedValues": [
+        "Development",
+        "Staging", 
+        "Production"
+      ],
+      "metadata": {
+        "description": "Environment type"
+      }
+    }
+  },
+  "variables": {
+    "staticWebAppSku": "[if(equals(parameters('environment'), 'Production'), 'Standard', 'Free')]",
+    "tags": {
+      "Environment": "[parameters('environment')]",
+      "Application": "TaktMate",
+      "Component": "Frontend",
+      "ManagedBy": "ARM Template"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/staticSites",
+      "apiVersion": "2022-03-01",
+      "name": "[parameters('staticWebAppName')]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "sku": {
+        "name": "[variables('staticWebAppSku')]",
+        "tier": "[variables('staticWebAppSku')]"
+      },
+      "properties": {
+        "repositoryUrl": "[parameters('repositoryUrl')]",
+        "branch": "[parameters('branch')]",
+        "buildProperties": {
+          "appLocation": "[parameters('appLocation')]",
+          "outputLocation": "[parameters('outputLocation')]"
+        },
+        "stagingEnvironmentPolicy": "Enabled",
+        "allowConfigFileUpdates": true,
+        "contentDistributionEndpoint": "",
+        "keyVaultReferenceIdentity": "SystemAssigned"
+      }
+    },
+    {
+      "type": "Microsoft.Web/staticSites/customDomains",
+      "apiVersion": "2022-03-01",
+      "name": "[concat(parameters('staticWebAppName'), '/', parameters('customDomainName'))]",
+      "condition": "[not(empty(parameters('customDomainName')))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/staticSites', parameters('staticWebAppName'))]"
+      ],
+      "properties": {
+        "domainName": "[parameters('customDomainName')]",
+        "validationMethod": "cname-delegation"
+      }
+    }
+  ],
+  "outputs": {
+    "staticWebAppDefaultDomain": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Web/staticSites', parameters('staticWebAppName'))).defaultHostname]"
+    },
+    "staticWebAppId": {
+      "type": "string", 
+      "value": "[resourceId('Microsoft.Web/staticSites', parameters('staticWebAppName'))]"
+    },
+    "deploymentToken": {
+      "type": "string",
+      "value": "[listSecrets(resourceId('Microsoft.Web/staticSites', parameters('staticWebAppName')), '2022-03-01').properties.apiKey]"
+    },
+    "customDomainStatus": {
+      "type": "string",
+      "condition": "[not(empty(parameters('customDomainName')))]",
+      "value": "[if(not(empty(parameters('customDomainName'))), reference(resourceId('Microsoft.Web/staticSites/customDomains', parameters('staticWebAppName'), parameters('customDomainName'))).status, 'No custom domain configured')]"
+    }
+  }
+}

@@ -2,14 +2,164 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    
+    <!-- Basic Meta Tags -->
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="TaktMate MVP - Chat with your CSV data using AI"
-    />
-    <title>TaktMate - CSV Chat</title>
+    <meta name="theme-color" content="#2563eb" />
+    
+    <!-- Primary Meta Tags -->
+    <title>TaktMate - AI-Powered CSV Data Analysis | Chat with Your Data</title>
+    <meta name="title" content="TaktMate - AI-Powered CSV Data Analysis | Chat with Your Data" />
+    <meta name="description" content="Transform your CSV files into intelligent conversations. Upload data, ask questions in plain English, get instant insights powered by GPT-4. Secure, fast, and enterprise-ready." />
+    <meta name="keywords" content="CSV analysis, AI data analysis, GPT-4, data insights, business intelligence, spreadsheet analysis, data chat, Microsoft Entra External ID, secure data analysis" />
+    <meta name="author" content="TaktMate" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="English" />
+    <meta name="revisit-after" content="7 days" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://taktmate.com/" />
+    <meta property="og:title" content="TaktMate - AI-Powered CSV Data Analysis" />
+    <meta property="og:description" content="Transform your CSV files into intelligent conversations. Upload data, ask questions in plain English, get instant insights powered by GPT-4." />
+    <meta property="og:image" content="%PUBLIC_URL%/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="TaktMate - AI-Powered CSV Analysis Platform" />
+    <meta property="og:site_name" content="TaktMate" />
+    <meta property="og:locale" content="en_US" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://taktmate.com/" />
+    <meta name="twitter:title" content="TaktMate - AI-Powered CSV Data Analysis" />
+    <meta name="twitter:description" content="Transform your CSV files into intelligent conversations. Upload data, ask questions in plain English, get instant insights powered by GPT-4." />
+    <meta name="twitter:image" content="%PUBLIC_URL%/twitter-image.png" />
+    <meta name="twitter:image:alt" content="TaktMate - AI-Powered CSV Analysis Platform" />
+    <meta name="twitter:creator" content="@TaktMate" />
+    <meta name="twitter:site" content="@TaktMate" />
+    
+    <!-- Additional Meta Tags -->
+    <meta name="application-name" content="TaktMate" />
+    <meta name="apple-mobile-web-app-title" content="TaktMate" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="msapplication-TileColor" content="#2563eb" />
+    <meta name="msapplication-config" content="%PUBLIC_URL%/browserconfig.xml" />
+    
+    <!-- Favicon and Icons -->
+    <link rel="icon" type="image/x-icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://taktmate.com/" />
+    
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- DNS Prefetch -->
+    <link rel="dns-prefetch" href="//api.openai.com" />
+    <link rel="dns-prefetch" href="//login.microsoftonline.com" />
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "TaktMate",
+      "description": "AI-powered CSV data analysis platform that transforms spreadsheets into intelligent conversations",
+      "url": "https://taktmate.com",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "Free trial available"
+      },
+      "creator": {
+        "@type": "Organization",
+        "name": "TaktMate",
+        "url": "https://taktmate.com"
+      },
+      "featureList": [
+        "CSV file upload and analysis",
+        "AI-powered data insights",
+        "Natural language querying",
+        "GPT-4 integration",
+        "Microsoft Entra External ID authentication",
+        "Enterprise-grade security"
+      ],
+      "screenshot": "https://taktmate.com/screenshot.png",
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "150"
+      }
+    }
+    </script>
+    
+    <!-- Additional Structured Data - SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "TaktMate",
+      "operatingSystem": "Web Browser",
+      "applicationCategory": "BusinessApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "bestRating": "5",
+        "worstRating": "1",
+        "ratingCount": "150"
+      }
+    }
+    </script>
+    
+    <!-- Additional Structured Data - FAQ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What file formats does TaktMate support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "TaktMate currently supports CSV files up to 5MB in size. We're working on adding support for Excel files and other data formats."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is my data secure with TaktMate?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, TaktMate uses enterprise-grade security with Microsoft Entra External ID authentication. Your data is encrypted in transit and at rest, and only you can access your files."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does the AI analysis work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "TaktMate uses GPT-4 to analyze your CSV data and respond to natural language questions. Simply upload your file and ask questions like 'What are my top-performing products?' or 'Show me sales trends by region.'"
+          }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

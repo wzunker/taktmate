@@ -1,0 +1,580 @@
+name: TaktMate Full-Stack Deployment
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+
+env:
+  NODE_VERSION: '18.x'
+  AZURE_RESOURCE_GROUP_PROD: 'taktmate-prod-rg'
+  AZURE_RESOURCE_GROUP_STAGING: 'taktmate-staging-rg'
+
+jobs:
+  # Determine deployment environment
+  setup:
+    runs-on: ubuntu-latest
+    name: Setup Deployment Environment
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+      should_deploy: ${{ steps.env.outputs.should_deploy }}
+      frontend_changed: ${{ steps.changes.outputs.frontend }}
+      backend_changed: ${{ steps.changes.outputs.backend }}
+      infrastructure_changed: ${{ steps.changes.outputs.infrastructure }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect file changes
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/azure-static-web-apps.yml'
+            backend:
+              - 'backend/**'
+              - '.github/workflows/azure-app-service.yml'
+            infrastructure:
+              - 'azure/**'
+              - '.github/workflows/deploy-full-stack.yml'
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "pull_request" && "${{ github.event.action }}" != "closed" ]]; then
+            echo "environment=preview" >> $GITHUB_OUTPUT
+            echo "should_deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "environment=none" >> $GITHUB_OUTPUT
+            echo "should_deploy=false" >> $GITHUB_OUTPUT
+          fi
+
+  # Comprehensive testing
+  test:
+    runs-on: ubuntu-latest
+    name: Run Tests
+    needs: setup
+    if: needs.setup.outputs.should_deploy == 'true'
+    strategy:
+      matrix:
+        test-suite: [frontend, backend, integration]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          if [[ "${{ matrix.test-suite }}" == "frontend" || "${{ matrix.test-suite }}" == "integration" ]]; then
+            cd frontend && npm ci
+          fi
+          if [[ "${{ matrix.test-suite }}" == "backend" || "${{ matrix.test-suite }}" == "integration" ]]; then
+            cd backend && npm ci
+          fi
+
+      - name: Run frontend tests
+        if: matrix.test-suite == 'frontend'
+        run: |
+          cd frontend
+          npm run test -- --coverage --watchAll=false
+          npm run build
+
+      - name: Run backend tests
+        if: matrix.test-suite == 'backend'
+        run: |
+          cd backend
+          npm test
+          npm run test:config
+          npm run test:jwt-middleware
+          npm run test:auth-routes
+          npm run test:user-service
+          npm run test:file-store
+          npm run test:csv-endpoints
+          npm run test:error-handling
+
+      - name: Run integration tests
+        if: matrix.test-suite == 'integration'
+        run: |
+          cd backend
+          npm run test:app-insights
+          npm run test:sdk-integration
+          npm run test:csv-telemetry
+          npm run test:performance-monitoring
+          npm run test:error-tracking
+          npm run test:key-vault
+          npm run test:key-vault-integration
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.test-suite }}
+          path: |
+            frontend/coverage/
+            backend/coverage/
+            backend/test-results/
+          retention-days: 7
+
+  # Security scanning
+  security:
+    runs-on: ubuntu-latest
+    name: Security Scan
+    needs: setup
+    if: needs.setup.outputs.should_deploy == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          cd frontend && npm ci
+          cd ../backend && npm ci
+
+      - name: Run security audit
+        run: |
+          cd frontend && npm audit --audit-level=high
+          cd ../backend && npm audit --audit-level=high
+
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          languages: javascript
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Deploy infrastructure
+  deploy-infrastructure:
+    runs-on: ubuntu-latest
+    name: Deploy Infrastructure
+    needs: [setup, test, security]
+    if: needs.setup.outputs.should_deploy == 'true' && needs.setup.outputs.infrastructure_changed == 'true'
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set environment variables
+        run: |
+          if [[ "${{ needs.setup.outputs.environment }}" == "production" ]]; then
+            echo "RESOURCE_GROUP=${{ env.AZURE_RESOURCE_GROUP_PROD }}" >> $GITHUB_ENV
+            echo "KEY_VAULT_NAME=taktmate-kv-prod" >> $GITHUB_ENV
+            echo "APP_SERVICE_NAME=taktmate-api-prod" >> $GITHUB_ENV
+            echo "STATIC_WEB_APP_NAME=taktmate-frontend-prod" >> $GITHUB_ENV
+          else
+            echo "RESOURCE_GROUP=${{ env.AZURE_RESOURCE_GROUP_STAGING }}" >> $GITHUB_ENV
+            echo "KEY_VAULT_NAME=taktmate-kv-staging" >> $GITHUB_ENV
+            echo "APP_SERVICE_NAME=taktmate-api-staging" >> $GITHUB_ENV
+            echo "STATIC_WEB_APP_NAME=taktmate-frontend-staging" >> $GITHUB_ENV
+          fi
+
+      - name: Deploy Key Vault
+        run: |
+          cd azure
+          chmod +x deploy-key-vault.sh
+          ./deploy-key-vault.sh ${{ needs.setup.outputs.environment }} ${{ env.RESOURCE_GROUP }} ${{ secrets.AZURE_SUBSCRIPTION_ID }} ${{ secrets.AZURE_ADMIN_OBJECT_ID }} ${{ env.APP_SERVICE_NAME }}
+
+      - name: Deploy App Service
+        run: |
+          cd azure
+          chmod +x deploy-app-service.sh
+          ./deploy-app-service.sh ${{ needs.setup.outputs.environment }} ${{ env.RESOURCE_GROUP }} ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Static Web App
+        run: |
+          cd azure
+          chmod +x deploy-static-web-app.sh
+          ./deploy-static-web-app.sh ${{ needs.setup.outputs.environment }} ${{ env.RESOURCE_GROUP }} ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Configure B2C URLs
+        run: |
+          cd azure
+          chmod +x configure-b2c-urls.sh
+          if [[ "${{ needs.setup.outputs.environment }}" == "production" ]]; then
+            ./configure-b2c-urls.sh production taktmate ${{ secrets.B2C_APP_ID_PROD }} https://app.taktmate.com https://api.taktmate.com
+          else
+            ./configure-b2c-urls.sh staging taktmate-staging ${{ secrets.B2C_APP_ID_STAGING }} https://staging.taktmate.com https://api-staging.taktmate.com
+          fi
+
+      - name: Update secrets
+        run: |
+          cd azure
+          chmod +x manage-secrets.sh
+          ./manage-secrets.sh set ${{ needs.setup.outputs.environment }} OpenAI-API-Key "${{ secrets.OPENAI_API_KEY }}"
+          ./manage-secrets.sh set ${{ needs.setup.outputs.environment }} Azure-AD-B2C-Client-ID "${{ secrets.B2C_CLIENT_ID }}"
+          ./manage-secrets.sh set ${{ needs.setup.outputs.environment }} Azure-AD-B2C-Client-Secret "${{ secrets.B2C_CLIENT_SECRET }}"
+
+  # Deploy backend
+  deploy-backend:
+    runs-on: ubuntu-latest
+    name: Deploy Backend
+    needs: [setup, test, security, deploy-infrastructure]
+    if: needs.setup.outputs.should_deploy == 'true' && (needs.setup.outputs.backend_changed == 'true' || needs.deploy-infrastructure.result == 'success')
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm ci --only=production
+
+      - name: Build application
+        run: |
+          cd backend
+          npm run build || echo "No build script found"
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set environment variables
+        run: |
+          if [[ "${{ needs.setup.outputs.environment }}" == "production" ]]; then
+            echo "APP_SERVICE_NAME=taktmate-api-prod" >> $GITHUB_ENV
+            echo "RESOURCE_GROUP=${{ env.AZURE_RESOURCE_GROUP_PROD }}" >> $GITHUB_ENV
+          else
+            echo "APP_SERVICE_NAME=taktmate-api-staging" >> $GITHUB_ENV
+            echo "RESOURCE_GROUP=${{ env.AZURE_RESOURCE_GROUP_STAGING }}" >> $GITHUB_ENV
+          fi
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.APP_SERVICE_NAME }}
+          package: backend
+
+      - name: Test deployment
+        run: |
+          sleep 30
+          APP_URL="https://${{ env.APP_SERVICE_NAME }}.azurewebsites.net"
+          curl -f "$APP_URL/api/health" || exit 1
+          echo "✅ Backend deployment successful: $APP_URL"
+
+      - name: Run post-deployment tests
+        run: |
+          cd azure
+          chmod +x test-app-service.sh
+          ./test-app-service.sh ${{ needs.setup.outputs.environment }} "https://${{ env.APP_SERVICE_NAME }}.azurewebsites.net"
+
+  # Deploy frontend
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    name: Deploy Frontend
+    needs: [setup, test, security, deploy-backend]
+    if: needs.setup.outputs.should_deploy == 'true' && (needs.setup.outputs.frontend_changed == 'true' || needs.deploy-backend.result == 'success')
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          lfs: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Set environment variables
+        run: |
+          cd frontend
+          if [[ "${{ needs.setup.outputs.environment }}" == "production" ]]; then
+            echo "REACT_APP_AZURE_AD_B2C_CLIENT_ID=${{ secrets.REACT_APP_AZURE_AD_B2C_CLIENT_ID_PROD }}" >> .env
+            echo "REACT_APP_AZURE_AD_B2C_AUTHORITY=${{ secrets.REACT_APP_AZURE_AD_B2C_AUTHORITY_PROD }}" >> .env
+            echo "REACT_APP_API_BASE_URL=https://taktmate-api-prod.azurewebsites.net" >> .env
+            echo "REACT_APP_REDIRECT_URI=https://app.taktmate.com/auth/callback" >> .env
+            echo "REACT_APP_POST_LOGOUT_REDIRECT_URI=https://app.taktmate.com" >> .env
+          else
+            echo "REACT_APP_AZURE_AD_B2C_CLIENT_ID=${{ secrets.REACT_APP_AZURE_AD_B2C_CLIENT_ID_STAGING }}" >> .env
+            echo "REACT_APP_AZURE_AD_B2C_AUTHORITY=${{ secrets.REACT_APP_AZURE_AD_B2C_AUTHORITY_STAGING }}" >> .env
+            echo "REACT_APP_API_BASE_URL=https://taktmate-api-staging.azurewebsites.net" >> .env
+            echo "REACT_APP_REDIRECT_URI=https://staging.taktmate.com/auth/callback" >> .env
+            echo "REACT_APP_POST_LOGOUT_REDIRECT_URI=https://staging.taktmate.com" >> .env
+          fi
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Deploy to Azure Static Web Apps
+        id: builddeploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "/frontend"
+          api_location: ""
+          output_location: "build"
+          skip_app_build: true
+          production_branch: "main"
+          deployment_environment: ${{ needs.setup.outputs.environment }}
+
+      - name: Test frontend deployment
+        run: |
+          sleep 30
+          if [[ "${{ needs.setup.outputs.environment }}" == "production" ]]; then
+            FRONTEND_URL="https://app.taktmate.com"
+          else
+            FRONTEND_URL="https://staging.taktmate.com"
+          fi
+          curl -f "$FRONTEND_URL" || exit 1
+          echo "✅ Frontend deployment successful: $FRONTEND_URL"
+
+  # Integration tests
+  integration-tests:
+    runs-on: ubuntu-latest
+    name: Integration Tests
+    needs: [setup, deploy-backend, deploy-frontend]
+    if: needs.setup.outputs.should_deploy == 'true' && (needs.deploy-backend.result == 'success' || needs.deploy-frontend.result == 'success')
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Set test environment
+        run: |
+          if [[ "${{ needs.setup.outputs.environment }}" == "production" ]]; then
+            echo "API_URL=https://taktmate-api-prod.azurewebsites.net" >> $GITHUB_ENV
+            echo "FRONTEND_URL=https://app.taktmate.com" >> $GITHUB_ENV
+            echo "TENANT_NAME=taktmate" >> $GITHUB_ENV
+          else
+            echo "API_URL=https://taktmate-api-staging.azurewebsites.net" >> $GITHUB_ENV
+            echo "FRONTEND_URL=https://staging.taktmate.com" >> $GITHUB_ENV
+            echo "TENANT_NAME=taktmate-staging" >> $GITHUB_ENV
+          fi
+
+      - name: Test B2C configuration
+        run: |
+          cd azure
+          chmod +x test-b2c-urls.sh
+          ./test-b2c-urls.sh ${{ needs.setup.outputs.environment }} ${{ env.TENANT_NAME }} ${{ secrets.B2C_APP_ID }} ${{ env.FRONTEND_URL }}
+
+      - name: Test Key Vault integration
+        run: |
+          cd azure
+          chmod +x test-key-vault.sh
+          ./test-key-vault.sh ${{ needs.setup.outputs.environment }}
+
+      - name: Test App Service
+        run: |
+          cd azure
+          chmod +x test-app-service.sh
+          ./test-app-service.sh ${{ needs.setup.outputs.environment }} ${{ env.API_URL }}
+
+      - name: Run end-to-end tests
+        run: |
+          cd backend
+          export API_BASE_URL=${{ env.API_URL }}
+          export FRONTEND_BASE_URL=${{ env.FRONTEND_URL }}
+          npm run test:e2e
+
+  # Performance tests
+  performance-tests:
+    runs-on: ubuntu-latest
+    name: Performance Tests
+    needs: [setup, integration-tests]
+    if: needs.setup.outputs.should_deploy == 'true' && needs.integration-tests.result == 'success' && needs.setup.outputs.environment == 'production'
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Run load tests
+        run: |
+          cat > loadtest.js << 'EOF'
+          import http from 'k6/http';
+          import { check, sleep } from 'k6';
+          
+          export let options = {
+            stages: [
+              { duration: '30s', target: 10 },
+              { duration: '1m', target: 20 },
+              { duration: '30s', target: 0 },
+            ],
+            thresholds: {
+              http_req_duration: ['p(95)<2000'], // 95% of requests must complete below 2s
+              http_req_failed: ['rate<0.1'], // error rate must be below 10%
+            },
+          };
+          
+          export default function () {
+            const response = http.get('https://taktmate-api-prod.azurewebsites.net/api/health');
+            check(response, {
+              'status is 200': (r) => r.status === 200,
+              'response time < 2000ms': (r) => r.timings.duration < 2000,
+            });
+            sleep(1);
+          }
+          EOF
+          
+          k6 run loadtest.js
+
+  # Monitoring setup
+  setup-monitoring:
+    runs-on: ubuntu-latest
+    name: Setup Monitoring
+    needs: [setup, integration-tests]
+    if: needs.setup.outputs.should_deploy == 'true' && needs.integration-tests.result == 'success'
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy dashboards
+        run: |
+          cd backend
+          npm run deploy:dashboards -- --environment ${{ needs.setup.outputs.environment }}
+
+      - name: Deploy alerts
+        run: |
+          cd backend
+          npm run deploy:alerts -- --environment ${{ needs.setup.outputs.environment }}
+
+      - name: Test monitoring
+        run: |
+          cd backend
+          npm run test:dashboards
+          npm run test:alerts
+
+  # Cleanup preview environments
+  cleanup-preview:
+    runs-on: ubuntu-latest
+    name: Cleanup Preview Environment
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Close Pull Request
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: "close"
+
+  # Deployment notification
+  notify:
+    runs-on: ubuntu-latest
+    name: Deployment Notification
+    needs: [setup, deploy-backend, deploy-frontend, integration-tests, performance-tests, setup-monitoring]
+    if: always() && needs.setup.outputs.should_deploy == 'true'
+    steps:
+      - name: Determine deployment status
+        id: status
+        run: |
+          if [[ "${{ needs.deploy-backend.result }}" == "success" && "${{ needs.deploy-frontend.result }}" == "success" && "${{ needs.integration-tests.result }}" == "success" ]]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "message=🎉 Deployment successful!" >> $GITHUB_OUTPUT
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "message=❌ Deployment failed!" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create deployment summary
+        run: |
+          echo "## 🚀 TaktMate Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ needs.setup.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ steps.status.outputs.message }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Component Status:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend:** ${{ needs.deploy-backend.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend:** ${{ needs.deploy-frontend.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Integration Tests:** ${{ needs.integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Performance Tests:** ${{ needs.performance-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Monitoring:** ${{ needs.setup-monitoring.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ needs.setup.outputs.environment }}" == "production" ]]; then
+            echo "### 🌐 Production URLs:" >> $GITHUB_STEP_SUMMARY
+            echo "- **Frontend:** https://app.taktmate.com" >> $GITHUB_STEP_SUMMARY
+            echo "- **Backend API:** https://taktmate-api-prod.azurewebsites.net" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### 🌐 Staging URLs:" >> $GITHUB_STEP_SUMMARY
+            echo "- **Frontend:** https://staging.taktmate.com" >> $GITHUB_STEP_SUMMARY
+            echo "- **Backend API:** https://taktmate-api-staging.azurewebsites.net" >> $GITHUB_STEP_SUMMARY
+          fi

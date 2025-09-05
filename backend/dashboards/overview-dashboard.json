@@ -1,0 +1,358 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "dashboardName": {
+      "type": "string",
+      "defaultValue": "TaktMate - Application Overview",
+      "metadata": {
+        "description": "Name of the dashboard"
+      }
+    },
+    "applicationInsightsResourceId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the Application Insights instance"
+      }
+    }
+  },
+  "variables": {
+    "dashboardId": "[guid(resourceGroup().id, parameters('dashboardName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Portal/dashboards",
+      "apiVersion": "2015-08-01-preview",
+      "name": "[variables('dashboardId')]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "hidden-title": "[parameters('dashboardName')]"
+      },
+      "properties": {
+        "lenses": {
+          "0": {
+            "order": 0,
+            "parts": {
+              "0": {
+                "position": {
+                  "x": 0,
+                  "y": 0,
+                  "colSpan": 4,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "resourceTypeMode",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "Scope",
+                      "value": {
+                        "resourceIds": [
+                          "[parameters('applicationInsightsResourceId')]"
+                        ]
+                      },
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartId",
+                      "value": "1d7a5b8a-4c5d-4b2a-8e3f-9c7d6e5f4a3b",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "Version",
+                      "value": "2.0",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "TimeRange",
+                      "value": "P1D",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "DashboardId",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "DraftRequestParameters",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Application Health Overview\nrequests\n| where timestamp > ago(1d)\n| summarize \n    TotalRequests = count(),\n    SuccessfulRequests = countif(success == true),\n    FailedRequests = countif(success == false),\n    AvgDuration = avg(duration),\n    P95Duration = percentile(duration, 95)\n| extend \n    SuccessRate = round((todouble(SuccessfulRequests) / todouble(TotalRequests)) * 100, 2),\n    ErrorRate = round((todouble(FailedRequests) / todouble(TotalRequests)) * 100, 2)\n| project \n    TotalRequests,\n    SuccessfulRequests,\n    FailedRequests,\n    SuccessRate,\n    ErrorRate,\n    AvgDuration,\n    P95Duration",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "ControlType",
+                      "value": "AnalyticsGrid",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "SpecificChart",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Application Health Summary",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartSubTitle",
+                      "value": "Last 24 hours",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart",
+                  "settings": {
+                    "content": {
+                      "Query": "// Application Health Overview\nrequests\n| where timestamp > ago(1d)\n| summarize \n    TotalRequests = count(),\n    SuccessfulRequests = countif(success == true),\n    FailedRequests = countif(success == false),\n    AvgDuration = avg(duration),\n    P95Duration = percentile(duration, 95)\n| extend \n    SuccessRate = round((todouble(SuccessfulRequests) / todouble(TotalRequests)) * 100, 2),\n    ErrorRate = round((todouble(FailedRequests) / todouble(TotalRequests)) * 100, 2)\n| project \n    TotalRequests,\n    SuccessfulRequests,\n    FailedRequests,\n    SuccessRate,\n    ErrorRate,\n    AvgDuration,\n    P95Duration",
+                      "ControlType": "AnalyticsGrid"
+                    }
+                  }
+                }
+              },
+              "1": {
+                "position": {
+                  "x": 4,
+                  "y": 0,
+                  "colSpan": 4,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "resourceTypeMode",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Request Volume Trends\nrequests\n| where timestamp > ago(1d)\n| summarize RequestCount = count() by bin(timestamp, 1h)\n| order by timestamp asc\n| render timechart",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Request Volume Trends",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "2": {
+                "position": {
+                  "x": 8,
+                  "y": 0,
+                  "colSpan": 4,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Response Time Distribution\nrequests\n| where timestamp > ago(1d)\n| summarize \n    P50 = percentile(duration, 50),\n    P75 = percentile(duration, 75),\n    P95 = percentile(duration, 95),\n    P99 = percentile(duration, 99)\n    by bin(timestamp, 1h)\n| order by timestamp asc\n| render timechart",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Response Time Percentiles",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "3": {
+                "position": {
+                  "x": 0,
+                  "y": 3,
+                  "colSpan": 6,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Top Endpoints by Request Count\nrequests\n| where timestamp > ago(1d)\n| summarize \n    RequestCount = count(),\n    AvgDuration = avg(duration),\n    ErrorRate = round((todouble(countif(success == false)) / todouble(count())) * 100, 2)\n    by name\n| order by RequestCount desc\n| take 10",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Top Endpoints",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "4": {
+                "position": {
+                  "x": 6,
+                  "y": 3,
+                  "colSpan": 6,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Error Rate by Status Code\nrequests\n| where timestamp > ago(1d) and success == false\n| summarize ErrorCount = count() by resultCode\n| order by ErrorCount desc\n| render piechart",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "Error Distribution by Status Code",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "5": {
+                "position": {
+                  "x": 0,
+                  "y": 6,
+                  "colSpan": 4,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// Active Users\ncustomEvents\n| where timestamp > ago(1d)\n| where name in ('FileUpload', 'ChatInteraction', 'FileAccess')\n| extend userId = tostring(customDimensions.userId)\n| where isnotempty(userId) and userId != 'anonymous'\n| summarize LastActivity = max(timestamp) by userId\n| summarize \n    TotalUsers = count(),\n    ActiveLast1h = countif(LastActivity > ago(1h)),\n    ActiveLast6h = countif(LastActivity > ago(6h)),\n    ActiveLast24h = countif(LastActivity > ago(24h))",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "User Activity Summary",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "6": {
+                "position": {
+                  "x": 4,
+                  "y": 6,
+                  "colSpan": 4,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// CSV Processing Metrics\ncustomEvents\n| where timestamp > ago(1d) and name == 'CSVFileUpload'\n| extend \n    fileSize = todouble(customMeasurements.fileSize),\n    rowCount = todouble(customMeasurements.rowCount),\n    duration = todouble(customMeasurements.duration)\n| summarize \n    FilesProcessed = count(),\n    TotalDataSize = sum(fileSize),\n    TotalRows = sum(rowCount),\n    AvgProcessingTime = avg(duration),\n    P95ProcessingTime = percentile(duration, 95)\n| extend \n    TotalDataSizeMB = round(TotalDataSize / 1024 / 1024, 2),\n    AvgProcessingTimeMs = round(AvgProcessingTime, 0),\n    P95ProcessingTimeMs = round(P95ProcessingTime, 0)",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "CSV Processing Summary",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              },
+              "7": {
+                "position": {
+                  "x": 8,
+                  "y": 6,
+                  "colSpan": 4,
+                  "rowSpan": 3
+                },
+                "metadata": {
+                  "inputs": [
+                    {
+                      "name": "ComponentId",
+                      "value": "[parameters('applicationInsightsResourceId')]"
+                    },
+                    {
+                      "name": "Query",
+                      "value": "// System Performance Overview\ncustomEvents\n| where timestamp > ago(1d) and name == 'SystemPerformance'\n| extend \n    heapUsed = todouble(customMeasurements.heapUsed),\n    cpuUser = todouble(customMeasurements.cpuUser),\n    cpuSystem = todouble(customMeasurements.cpuSystem)\n| summarize \n    AvgHeapUsed = avg(heapUsed),\n    MaxHeapUsed = max(heapUsed),\n    AvgCpuUser = avg(cpuUser),\n    AvgCpuSystem = avg(cpuSystem)\n    by bin(timestamp, 1h)\n| order by timestamp asc\n| render timechart",
+                      "isOptional": true
+                    },
+                    {
+                      "name": "PartTitle",
+                      "value": "System Performance Trends",
+                      "isOptional": true
+                    }
+                  ],
+                  "type": "Extension/Microsoft_OperationsManagementSuite_Workspace/PartType/LogsDashboardPart"
+                }
+              }
+            }
+          }
+        },
+        "metadata": {
+          "model": {
+            "timeRange": {
+              "value": {
+                "relative": {
+                  "duration": 24,
+                  "timeUnit": 1
+                }
+              },
+              "type": "MsPortalFx.Composition.Configuration.ValueTypes.TimeRange"
+            },
+            "filterLocale": {
+              "value": "en-us"
+            },
+            "filters": {
+              "value": {
+                "MsPortalFx_TimeRange": {
+                  "model": {
+                    "format": "utc",
+                    "granularity": "auto",
+                    "relative": "24h"
+                  },
+                  "displayCache": {
+                    "name": "UTC Time",
+                    "value": "Past 24 hours"
+                  },
+                  "filteredPartIds": []
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "dashboardId": {
+      "type": "string",
+      "value": "[variables('dashboardId')]"
+    }
+  }
+}
