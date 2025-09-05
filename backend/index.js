@@ -43,7 +43,10 @@ const {
   jwtAuthMiddleware, 
   optionalJwtAuthMiddleware 
 } = require('./middleware/jwtValidation');
-const securityMiddleware = require('./middleware/security');
+const { 
+  configureSecurityHeaders, 
+  generalRateLimit 
+} = require('./middleware/security');
 const { 
   InputValidationService, 
   ValidationRules, 
@@ -94,7 +97,8 @@ const openai = new OpenAI({
 });
 
 // Apply security middleware first
-app.use(securityMiddleware);
+app.use(configureSecurityHeaders());
+app.use(generalRateLimit);
 
 // Add Application Insights middleware early in the pipeline
 if (appInsights && appInsights.createExpressMiddleware) {
