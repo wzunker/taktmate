@@ -2,7 +2,7 @@
 // Comprehensive token lifecycle management, refresh handling, and session timeout configuration
 
 const jwt = require('jsonwebtoken');
-const jwksClient = require('jwks-rsa');
+const jwksClient = require('jwks-client').default || require('jwks-client');
 const axios = require('axios');
 const { config: azureConfig } = require('../config/entraExternalId');
 
