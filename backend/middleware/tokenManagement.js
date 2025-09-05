@@ -72,9 +72,7 @@ class TokenManagementService {
                 'User-Agent': 'TaktMate-Backend/2.0'
             },
             timeout: 30000, // 30 seconds
-            cache: true,
-            cacheMaxEntries: this.config.jwksCache.maxSize,
-            cacheMaxAge: this.config.jwksCache.ttl,
+            cache: false, // Disabled due to lru-cache compatibility issue in Azure App Service
             rateLimit: true,
             jwksRequestsPerMinute: 10,
             proxy: process.env.HTTPS_PROXY || process.env.HTTP_PROXY
