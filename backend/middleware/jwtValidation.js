@@ -7,7 +7,7 @@
  */
 
 const jwt = require('jsonwebtoken');
-const jwksClient = require('jwks-client');
+const jwksClient = require('jwks-client').default || require('jwks-client');
 const { 
   config, 
   getJwksUri, 
