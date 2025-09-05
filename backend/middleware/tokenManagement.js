@@ -4,7 +4,7 @@
 const jwt = require('jsonwebtoken');
 const jwksClient = require('jwks-client').default || require('jwks-client');
 const axios = require('axios');
-const { config: azureConfig } = require('../config/entraExternalId');
+const { config: azureConfig, getJwksUri } = require('../config/entraExternalId');
 
 /**
  * Advanced Token Management Service
@@ -67,7 +67,7 @@ class TokenManagementService {
         
         // JWKS client for token signature validation
         this.jwksClient = jwksClient({
-            jwksUri: azureConfig.getJwksUri(),
+            jwksUri: getJwksUri(),
             requestHeaders: {
                 'User-Agent': 'TaktMate-Backend/2.0'
             },
