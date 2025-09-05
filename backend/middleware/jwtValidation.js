@@ -32,6 +32,22 @@ try {
 /**
  * JWKS Client Configuration with dynamic configuration
  */
+// Debug configuration values
+console.log('🔧 JWKS Client Configuration Debug:');
+console.log('  - config.jwksCacheTtl:', config.jwksCacheTtl, typeof config.jwksCacheTtl);
+console.log('  - Number(config.jwksCacheTtl):', Number(config.jwksCacheTtl));
+console.log('  - Final cacheMaxAge:', Number(config.jwksCacheTtl) || 300000);
+
+// Ensure cacheMaxAge is a valid number
+const cacheMaxAge = (() => {
+  const value = Number(config.jwksCacheTtl);
+  if (isNaN(value) || value <= 0) {
+    console.warn('⚠️  Invalid jwksCacheTtl value, using default 300000ms');
+    return 300000;
+  }
+  return value;
+})();
+
 const jwksClientInstance = jwksClient({
   jwksUri: getJwksUri(),
   requestHeaders: {
@@ -40,7 +56,7 @@ const jwksClientInstance = jwksClient({
   timeout: parseInt(process.env.REQUEST_TIMEOUT) || 30000,
   cache: true,
   cacheMaxEntries: 5,
-  cacheMaxAge: parseInt(config.jwksCacheTtl) || 300000, // 5 minutes default
+  cacheMaxAge: cacheMaxAge,
   jwksRequestsPerMinute: 10,
   jwksRequestsPerMinuteRateLimitExceededError: new Error('Too many requests to JWKS endpoint'),
   getKeysInterceptor: (keys) => {
