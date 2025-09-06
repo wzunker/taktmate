@@ -19,7 +19,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "test:auth": "node scripts/test-frontend-auth.js",
     "test:auth:watch": "npm test -- --watch --testPathPattern=auth",

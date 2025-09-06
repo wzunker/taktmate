@@ -25,7 +25,7 @@
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": [
-      "/static/**",
+      "/static/*",
       "/manifest.json",
       "/robots.txt",
       "/sitemap.xml",
