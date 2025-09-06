@@ -37,7 +37,9 @@ const ChatBox = ({ fileData }) => {
     setMessages(newMessages);
 
     try {
-      const response = await axios.post('http://localhost:3001/chat', {
+      const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net/api';
+      console.log('🔍 ChatBox Debug - Using API URL:', backendURL);
+      const response = await axios.post(`${backendURL}/chat`, {
         fileId: fileData.fileId,
         message: userMessage
       });
