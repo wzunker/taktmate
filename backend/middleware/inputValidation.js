@@ -560,65 +560,6 @@ const ValidationRules = {
             .withMessage('Token type must be access_token, id_token, or refresh_token')
             .trim()
     ]
-};
-
-/**
- * Security middleware for additional protection
- */
-const SecurityMiddleware = {
-    // Prevent parameter pollution
-    preventParameterPollution: (req, res, next) => {
-        // Convert array parameters to single values (take first)
-        Object.keys(req.query).forEach(key => {
-            if (Array.isArray(req.query[key])) {
-                req.query[key] = req.query[key][0];
-            }
-        });
-        
-        Object.keys(req.body || {}).forEach(key => {
-            if (Array.isArray(req.body[key])) {
-                req.body[key] = req.body[key][0];
-            }
-        });
-        
-        next();
-    },
-    
-    // Content type validation
-    validateContentType: (allowedTypes = ['application/json', 'multipart/form-data']) => {
-        return (req, res, next) => {
-            if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
-                const contentType = req.get('Content-Type');
-                const isAllowed = allowedTypes.some(type => 
-                    contentType && contentType.toLowerCase().includes(type.toLowerCase())
-                );
-                
-                if (!isAllowed) {
-                    return res.status(415).json({
-                        error: 'Unsupported Media Type',
-                        message: `Content-Type must be one of: ${allowedTypes.join(', ')}`,
-                        code: 'UNSUPPORTED_MEDIA_TYPE'
-                    });
-                }
-            }
-            next();
-        };
-    },
-    
-    // Request size validation
-    validateRequestSize: (maxSize = 10 * 1024 * 1024) => { // 10MB default
-        return (req, res, next) => {
-            const contentLength = req.get('Content-Length');
-            if (contentLength && parseInt(contentLength) > maxSize) {
-                return res.status(413).json({
-                    error: 'Payload Too Large',
-                    message: `Request size exceeds maximum limit (${Math.round(maxSize / 1024 / 1024)}MB)`,
-                    code: 'PAYLOAD_TOO_LARGE'
-                });
-            }
-            next();
-        };
-    }
     
     /**
      * Create body validation rules from object
@@ -678,6 +619,65 @@ const SecurityMiddleware = {
             }
         }
         return rules;
+    }
+};
+
+/**
+ * Security middleware for additional protection
+ */
+const SecurityMiddleware = {
+    // Prevent parameter pollution
+    preventParameterPollution: (req, res, next) => {
+        // Convert array parameters to single values (take first)
+        Object.keys(req.query).forEach(key => {
+            if (Array.isArray(req.query[key])) {
+                req.query[key] = req.query[key][0];
+            }
+        });
+        
+        Object.keys(req.body || {}).forEach(key => {
+            if (Array.isArray(req.body[key])) {
+                req.body[key] = req.body[key][0];
+            }
+        });
+        
+        next();
+    },
+    
+    // Content type validation
+    validateContentType: (allowedTypes = ['application/json', 'multipart/form-data']) => {
+        return (req, res, next) => {
+            if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+                const contentType = req.get('Content-Type');
+                const isAllowed = allowedTypes.some(type => 
+                    contentType && contentType.toLowerCase().includes(type.toLowerCase())
+                );
+                
+                if (!isAllowed) {
+                    return res.status(415).json({
+                        error: 'Unsupported Media Type',
+                        message: `Content-Type must be one of: ${allowedTypes.join(', ')}`,
+                        code: 'UNSUPPORTED_MEDIA_TYPE'
+                    });
+                }
+            }
+            next();
+        };
+    },
+    
+    // Request size validation
+    validateRequestSize: (maxSize = 10 * 1024 * 1024) => { // 10MB default
+        return (req, res, next) => {
+            const contentLength = req.get('Content-Length');
+            if (contentLength && parseInt(contentLength) > maxSize) {
+                return res.status(413).json({
+                    error: 'Payload Too Large',
+                    message: `Request size exceeds maximum limit (${Math.round(maxSize / 1024 / 1024)}MB)`,
+                    code: 'PAYLOAD_TOO_LARGE'
+                });
+            }
+            next();
+        };
     }
 };
 
