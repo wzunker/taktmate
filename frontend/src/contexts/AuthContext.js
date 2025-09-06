@@ -19,6 +19,9 @@ import { loginRequest, protectedResources, authorities } from '../config/authCon
 // Create the authentication context
 const AuthContext = createContext();
 
+// Export the context for use in other components
+export { AuthContext };
+
 /**
  * Custom hook to use the authentication context
  */
