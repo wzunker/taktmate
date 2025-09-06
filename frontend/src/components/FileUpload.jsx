@@ -38,6 +38,15 @@ const FileUpload = ({ onFileUploaded }) => {
       const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
       console.log('🔍 FileUpload Debug - Using API URL:', backendURL);
       
+      // Test CORS by checking backend health endpoint first
+      try {
+        const healthResponse = await axios.get(`${backendURL}/api/health`);
+        console.log('🔍 Backend health check:', healthResponse.status === 200 ? 'SUCCESS' : 'FAILED');
+      } catch (healthError) {
+        console.log('🔍 Backend health check FAILED:', healthError.message);
+        console.log('🔍 This indicates CORS or connectivity issues');
+      }
+      
       // Get CSRF token first
       const csrfResponse = await axios.get(`${backendURL}/csrf-token`, {
         withCredentials: true // Include cookies for CSRF
@@ -48,6 +57,7 @@ const FileUpload = ({ onFileUploaded }) => {
       // Get authentication headers
       const authHeaders = await getAuthHeaders();
       console.log('🔍 Auth headers obtained:', authHeaders ? 'SUCCESS' : 'FAILED');
+      console.log('🔍 Auth headers content:', authHeaders);
       
       const response = await axios.post(`${backendURL}/upload`, formData, {
         headers: {
