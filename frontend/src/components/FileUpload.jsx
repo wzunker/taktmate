@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
 const FileUpload = ({ onFileUploaded }) => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const { getAuthHeaders } = useAuth();
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -43,10 +45,15 @@ const FileUpload = ({ onFileUploaded }) => {
       const csrfToken = csrfResponse.data.csrf.token;
       console.log('🔍 CSRF token obtained:', csrfToken ? 'SUCCESS' : 'FAILED');
       
+      // Get authentication headers
+      const authHeaders = await getAuthHeaders();
+      console.log('🔍 Auth headers obtained:', authHeaders ? 'SUCCESS' : 'FAILED');
+      
       const response = await axios.post(`${backendURL}/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'X-CSRF-Token': csrfToken,
+          ...authHeaders, // Add JWT authentication headers
         },
         withCredentials: true, // Include cookies for CSRF
         timeout: 30000, // 30 second timeout
