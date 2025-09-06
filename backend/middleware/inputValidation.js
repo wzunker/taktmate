@@ -420,6 +420,66 @@ class InputValidationService {
             }
         ];
     }
+    
+    /**
+     * Create body validation rules from object
+     */
+    createBodyValidation(bodyRules) {
+        const rules = [];
+        for (const [field, rule] of Object.entries(bodyRules)) {
+            if (rule.required) {
+                rules.push(body(field).notEmpty().withMessage(`${field} is required`));
+            }
+            if (rule.isEmail) {
+                rules.push(body(field).isEmail().withMessage(`${field} must be a valid email`));
+            }
+            if (rule.isLength) {
+                rules.push(body(field).isLength(rule.isLength).withMessage(`${field} length is invalid`));
+            }
+            if (rule.custom) {
+                rules.push(body(field).custom(rule.custom));
+            }
+        }
+        return rules;
+    }
+    
+    /**
+     * Create query validation rules from object
+     */
+    createQueryValidation(queryRules) {
+        const rules = [];
+        for (const [field, rule] of Object.entries(queryRules)) {
+            if (rule.required) {
+                rules.push(query(field).notEmpty().withMessage(`${field} is required`));
+            }
+            if (rule.isDate) {
+                rules.push(query(field).isISO8601().withMessage(`${field} must be a valid date`));
+            }
+            if (rule.custom) {
+                rules.push(query(field).custom(rule.custom));
+            }
+        }
+        return rules;
+    }
+    
+    /**
+     * Create params validation rules from object
+     */
+    createParamsValidation(paramsRules) {
+        const rules = [];
+        for (const [field, rule] of Object.entries(paramsRules)) {
+            if (rule.required) {
+                rules.push(param(field).notEmpty().withMessage(`${field} is required`));
+            }
+            if (rule.isUUID) {
+                rules.push(param(field).isUUID().withMessage(`${field} must be a valid UUID`));
+            }
+            if (rule.custom) {
+                rules.push(param(field).custom(rule.custom));
+            }
+        }
+        return rules;
+    }
 }
 
 /**
@@ -567,66 +627,6 @@ const ValidationRules = {
             .withMessage('Token type must be access_token, id_token, or refresh_token')
             .trim()
         ];
-    },
-    
-    /**
-     * Create body validation rules from object
-     */
-    createBodyValidation(bodyRules) {
-        const rules = [];
-        for (const [field, rule] of Object.entries(bodyRules)) {
-            if (rule.required) {
-                rules.push(body(field).notEmpty().withMessage(`${field} is required`));
-            }
-            if (rule.isEmail) {
-                rules.push(body(field).isEmail().withMessage(`${field} must be a valid email`));
-            }
-            if (rule.isLength) {
-                rules.push(body(field).isLength(rule.isLength).withMessage(`${field} length is invalid`));
-            }
-            if (rule.custom) {
-                rules.push(body(field).custom(rule.custom));
-            }
-        }
-        return rules;
-    },
-    
-    /**
-     * Create query validation rules from object
-     */
-    createQueryValidation(queryRules) {
-        const rules = [];
-        for (const [field, rule] of Object.entries(queryRules)) {
-            if (rule.required) {
-                rules.push(query(field).notEmpty().withMessage(`${field} is required`));
-            }
-            if (rule.isDate) {
-                rules.push(query(field).isISO8601().withMessage(`${field} must be a valid date`));
-            }
-            if (rule.custom) {
-                rules.push(query(field).custom(rule.custom));
-            }
-        }
-        return rules;
-    },
-    
-    /**
-     * Create params validation rules from object
-     */
-    createParamsValidation(paramsRules) {
-        const rules = [];
-        for (const [field, rule] of Object.entries(paramsRules)) {
-            if (rule.required) {
-                rules.push(param(field).notEmpty().withMessage(`${field} is required`));
-            }
-            if (rule.isUUID) {
-                rules.push(param(field).isUUID().withMessage(`${field} must be a valid UUID`));
-            }
-            if (rule.custom) {
-                rules.push(param(field).custom(rule.custom));
-            }
-        }
-        return rules;
     }
 };
 
