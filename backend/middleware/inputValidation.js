@@ -491,7 +491,7 @@ const ValidationRules = {
     // API parameter validation
     apiParams() {
         return [
-        param('id')
+            param('id')
             .isUUID()
             .withMessage('ID must be a valid UUID'),
             
@@ -518,7 +518,7 @@ const ValidationRules = {
     // File operation validation
     fileOperation() {
         return [
-        param('fileId')
+            param('fileId')
             .isUUID()
             .withMessage('File ID must be a valid UUID'),
             
@@ -536,7 +536,7 @@ const ValidationRules = {
     // Token refresh validation
     tokenRefresh() {
         return [
-        body('refreshToken')
+            body('refreshToken')
             .notEmpty()
             .withMessage('Refresh token is required')
             .isLength({ min: 10, max: 10000 })
@@ -554,7 +554,7 @@ const ValidationRules = {
     // Token validation
     tokenValidation() {
         return [
-        body('token')
+            body('token')
             .notEmpty()
             .withMessage('Token is required')
             .isLength({ min: 10, max: 10000 })
