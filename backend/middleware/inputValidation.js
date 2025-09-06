@@ -559,7 +559,7 @@ const ValidationRules = {
             .isIn(['access_token', 'id_token', 'refresh_token'])
             .withMessage('Token type must be access_token, id_token, or refresh_token')
             .trim()
-    ]
+    ];
     
     /**
      * Create body validation rules from object
