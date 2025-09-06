@@ -13,13 +13,13 @@ class GDPRComplianceService {
     constructor(appInsights = null) {
         this.appInsights = appInsights;
         
-        // Initialize Azure AD B2C API service
+        // Initialize Microsoft Entra External ID API service
         this.entraExternalIdApiService = new EntraExternalIdApiService(appInsights);
         
         // GDPR compliance configuration
         this.config = {
-            // Azure AD B2C GDPR features
-            enableBuiltInGDPR: process.env.ENABLE_AZURE_B2C_GDPR !== 'false',
+            // Microsoft Entra External ID GDPR features
+            enableBuiltInGDPR: process.env.ENABLE_ENTRA_EXTERNAL_ID_GDPR !== 'false',
             enableDataExport: process.env.ENABLE_DATA_EXPORT !== 'false',
             enableDataDeletion: process.env.ENABLE_DATA_DELETION !== 'false',
             enableConsentManagement: process.env.ENABLE_CONSENT_MANAGEMENT !== 'false',
@@ -46,11 +46,11 @@ class GDPRComplianceService {
             enableRightToPortability: process.env.ENABLE_RIGHT_TO_PORTABILITY !== 'false',
             enableRightToObject: process.env.ENABLE_RIGHT_TO_OBJECT !== 'false',
             
-            // Azure AD B2C specific settings
-            azureB2CTenantId: azureConfig.tenantId,
-            azureB2CClientId: azureConfig.clientId,
-            azureB2CClientSecret: azureConfig.clientSecret,
-            azureB2CDomain: azureConfig.domain,
+            // Microsoft Entra External ID specific settings
+            entraExternalIdTenantId: azureConfig.tenantId,
+            entraExternalIdClientId: azureConfig.clientId,
+            entraExternalIdClientSecret: azureConfig.clientSecret,
+            entraExternalIdDomain: azureConfig.domain,
             
             // Microsoft Graph API settings for GDPR operations
             graphApiBaseUrl: 'https://graph.microsoft.com/v1.0',
@@ -100,7 +100,7 @@ class GDPRComplianceService {
         this.auditLog = [];
         
         console.log('🛡️ GDPR Compliance Service initialized');
-        console.log(`   Azure AD B2C GDPR: ${this.config.enableBuiltInGDPR ? '✅' : '❌'}`);
+        console.log(`   Microsoft Entra External ID GDPR: ${this.config.enableBuiltInGDPR ? '✅' : '❌'}`);
         console.log(`   Data Export: ${this.config.enableDataExport ? '✅' : '❌'}`);
         console.log(`   Data Deletion: ${this.config.enableDataDeletion ? '✅' : '❌'}`);
         console.log(`   Consent Management: ${this.config.enableConsentManagement ? '✅' : '❌'}`);
@@ -112,7 +112,7 @@ class GDPRComplianceService {
      */
     async initialize() {
         try {
-            // Initialize Azure AD B2C API service
+            // Initialize Microsoft Entra External ID API service
             await this.entraExternalIdApiService.initialize();
             
             // Verify Azure AD B2C GDPR capabilities

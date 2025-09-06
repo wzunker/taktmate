@@ -3586,7 +3586,7 @@ app.use(async (error, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log('\n🚀 TaktMate Backend v2.0 - Azure AD B2C Enabled');
+  console.log('\n🚀 TaktMate Backend v2.0 - Microsoft Entra External ID Enabled');
   console.log('=' .repeat(60));
   console.log(`🌐 Server: http://localhost:${PORT}`);
   console.log(`🏥 Health: http://localhost:${PORT}/health`);
@@ -3595,7 +3595,7 @@ app.listen(PORT, () => {
   
   // Show configuration status
   console.log('\n🔧 Configuration:');
-  console.log(`   Azure AD B2C: ${azureConfig.tenantName ? '✅ Configured' : '❌ Not configured'}`);
+  console.log(`   Microsoft Entra External ID: ${azureConfig.tenantName ? '✅ Configured' : '❌ Not configured'}`);
   console.log(`   Application Insights: ${telemetryClient ? '✅ Initialized' : '⚠️  Not configured'}`);
   console.log(`   Rate Limiting: ✅ Enabled (5 endpoint types)`);
   console.log(`   Security Headers: ✅ Enabled (CSP, HSTS, Helmet)`);
@@ -3604,8 +3604,8 @@ app.listen(PORT, () => {
   console.log(`   Session Management: ✅ Enabled (24h timeout, file cleanup, activity tracking)`);
   console.log(`   Error Logging: ✅ Enabled (structured logging, categorization, alerting)`);
   console.log(`   Token Management: ✅ Enabled (refresh, validation, session timeout, fingerprinting)`);
-  console.log(`   GDPR Compliance: ✅ Enabled (Azure AD B2C integration, data export, consent management)`);
-  console.log(`   Account Deletion: ✅ Enabled (Azure AD B2C workflow, backup, verification, GDPR compliant)`);
+  console.log(`   GDPR Compliance: ✅ Enabled (Microsoft Entra External ID integration, data export, consent management)`);
+  console.log(`   Account Deletion: ✅ Enabled (Microsoft Entra External ID workflow, backup, verification, GDPR compliant)`);
   console.log(`   Legal Documents: ✅ Enabled (privacy policy, terms of service, cookie policy, versioning)`);
   console.log(`   Cookie Consent: ✅ Enabled (GDPR/ePrivacy compliant, session data disclosure, consent management)`);
   console.log(`   Data Retention: ✅ Enabled (automated lifecycle management, GDPR compliance, legal hold support)`);
@@ -3659,7 +3659,7 @@ app.listen(PORT, () => {
   console.log(`   Utilization: ${stats.utilizationPercent}%`);
   console.log(`   Max Capacity: ${stats.maxStorageCapacity} files`);
   
-  console.log('\n✨ TaktMate Backend is ready for Azure AD B2C authentication!');
+  console.log('\n✨ TaktMate Backend is ready for Microsoft Entra External ID authentication!');
   console.log('=' .repeat(60));
   console.log(`📝 Note: Using port ${PORT} (port 5000 is used by macOS AirPlay)\n`);
   
@@ -3668,7 +3668,7 @@ app.listen(PORT, () => {
     const startupMetrics = {
       properties: {
         version: '2.0.0',
-        azureAdB2CConfigured: azureConfig.tenantName ? 'true' : 'false',
+        entraExternalIdConfigured: azureConfig.tenantName ? 'true' : 'false',
         applicationInsightsConfigured: telemetryClient ? 'true' : 'false',
         performanceMonitoringEnabled: performanceMonitor ? 'true' : 'false',
         fileStoreEnabled: 'true',

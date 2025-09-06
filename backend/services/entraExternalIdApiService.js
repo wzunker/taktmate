@@ -119,7 +119,7 @@ class EntraExternalIdApiService {
         const missingConfig = requiredConfig.filter(key => !this.config[key]);
         
         if (missingConfig.length > 0) {
-            throw new Error(`Missing required Azure AD B2C API configuration: ${missingConfig.join(', ')}`);
+            throw new Error(`Missing required Microsoft Entra External ID API configuration: ${missingConfig.join(', ')}`);
         }
         
         // Validate tenant ID format (GUID)
@@ -128,7 +128,7 @@ class EntraExternalIdApiService {
             throw new Error('Invalid tenant ID format. Expected GUID format.');
         }
         
-        console.log('✅ Azure AD B2C API configuration validated');
+        console.log('✅ Microsoft Entra External ID API configuration validated');
     }
     
     /**
@@ -432,7 +432,7 @@ class EntraExternalIdApiService {
             
             // Track successful export in Application Insights
             if (this.appInsights) {
-                this.appInsights.telemetry.trackEvent('Azure_B2C_Data_Export_Completed', {
+                this.appInsights.telemetry.trackEvent('Entra_External_ID_Data_Export_Completed', {
                     userId: userId,
                     tenantId: this.config.tenantId,
                     profileExported: exportData.userProfile ? 'true' : 'false',
@@ -450,7 +450,7 @@ class EntraExternalIdApiService {
             
             // Track failed export in Application Insights
             if (this.appInsights) {
-                this.appInsights.telemetry.trackEvent('Azure_B2C_Data_Export_Failed', {
+                this.appInsights.telemetry.trackEvent('Entra_External_ID_Data_Export_Failed', {
                     userId: userId,
                     error: error.message
                 });
