@@ -102,6 +102,12 @@ export const validateConfiguration = () => {
     'REACT_APP_ENTRA_EXTERNAL_ID_TENANT_ID'
   ];
 
+  // Debug: Log all environment variables
+  console.log('🔍 Environment variables debug:');
+  console.log('CLIENT_ID:', process.env.REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID ? 'SET' : 'MISSING');
+  console.log('TENANT_ID:', process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_ID ? `SET (${process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_ID})` : 'MISSING');
+  console.log('Authority will be:', `https://login.microsoftonline.com/${process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_ID || 'your-tenant.onmicrosoft.com'}`);
+
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
   
   if (missingVars.length > 0) {
