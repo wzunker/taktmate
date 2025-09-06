@@ -13,9 +13,9 @@ import { LogLevel } from '@azure/msal-browser';
  */
 export const msalConfig = {
   auth: {
-    clientId: process.env.REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID || 'your-client-id-here',
+    clientId: process.env.REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID || '3f1869f7-716b-4885-ac8a-86e78515f3a4',
     // For Entra External ID, we use the tenant domain directly
-    authority: `https://login.microsoftonline.com/${process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_ID || 'your-tenant.onmicrosoft.com'}`,
+    authority: `https://login.microsoftonline.com/${process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_ID || 'taktmate.onmicrosoft.com'}`,
     knownAuthorities: ['login.microsoftonline.com'],
     redirectUri: process.env.REACT_APP_REDIRECT_URI || window.location.origin,
     postLogoutRedirectUri: process.env.REACT_APP_POST_LOGOUT_REDIRECT_URI || window.location.origin,
@@ -78,7 +78,7 @@ export const loginRequest = {
  */
 export const protectedResources = {
   taktmateApi: {
-    endpoint: process.env.REACT_APP_API_URL || 'http://localhost:3001',
+    endpoint: process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net/api',
     scopes: [
       'openid',
       'profile', 
