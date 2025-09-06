@@ -21,7 +21,7 @@ class AccountDeletionService {
         // Account deletion configuration
         this.config = {
             // Microsoft Entra External ID deletion settings
-            enableAzureB2CDeletion: process.env.ENABLE_AZURE_B2C_DELETION !== 'false',
+            enableEntraExternalIdDeletion: process.env.ENABLE_ENTRA_EXTERNAL_ID_DELETION !== 'false',
             enableSoftDelete: process.env.ENABLE_SOFT_DELETE !== 'false',
             softDeleteRetentionPeriod: parseInt(process.env.SOFT_DELETE_RETENTION_PERIOD) || 30 * 24 * 60 * 60 * 1000, // 30 days
             
@@ -114,7 +114,7 @@ class AccountDeletionService {
                 id: 'delete_azure_account',
                 name: 'Delete Microsoft Entra External ID Account',
                 description: 'Delete user account from Microsoft Entra External ID tenant',
-                required: this.config.enableAzureB2CDeletion,
+                required: this.config.enableEntraExternalIdDeletion,
                 timeout: 15 * 60 * 1000 // 15 minutes
             },
             {
@@ -134,7 +134,7 @@ class AccountDeletionService {
         ];
         
         console.log('🗑️ Account Deletion Service initialized');
-        console.log(`   Microsoft Entra External ID Deletion: ${this.config.enableAzureB2CDeletion ? '✅' : '❌'}`);
+        console.log(`   Microsoft Entra External ID Deletion: ${this.config.enableEntraExternalIdDeletion ? '✅' : '❌'}`);
         console.log(`   Soft Delete: ${this.config.enableSoftDelete ? '✅' : '❌'}`);
         console.log(`   Pre-deletion Backup: ${this.config.enablePreDeletionBackup ? '✅' : '❌'}`);
         console.log(`   GDPR Compliance Mode: ${this.config.gdprComplianceMode ? '✅' : '❌'}`);
@@ -678,7 +678,7 @@ class AccountDeletionService {
      * Execute delete Azure account step
      */
     async executeDeleteAzureAccount(deletionRequest, step) {
-        if (!this.config.enableAzureB2CDeletion) {
+        if (!this.config.enableEntraExternalIdDeletion) {
             step.status = 'skipped';
             return;
         }
@@ -718,7 +718,7 @@ class AccountDeletionService {
         
         try {
             // Verify Microsoft Entra External ID account deletion
-            if (this.config.enableAzureB2CDeletion) {
+            if (this.config.enableEntraExternalIdDeletion) {
                 try {
                     await this.entraExternalIdApiService.makeGraphApiRequest('GET', `/users/${deletionRequest.userId}`);
                     // If we reach here, user still exists
@@ -957,7 +957,7 @@ class AccountDeletionService {
             historyCount: this.deletionHistory.length,
             
             configuration: {
-                enableAzureB2CDeletion: this.config.enableAzureB2CDeletion,
+                enableEntraExternalIdDeletion: this.config.enableEntraExternalIdDeletion,
                 enableSoftDelete: this.config.enableSoftDelete,
                 enablePreDeletionBackup: this.config.enablePreDeletionBackup,
                 gdprComplianceMode: this.config.gdprComplianceMode,
