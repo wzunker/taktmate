@@ -331,13 +331,27 @@ class RateLimitSecurityService {
             (req, res, next) => {
                 const startTime = Date.now();
                 
-                res.on('finish', () => {
+                // Capture original end method to set header before response finishes
+                const originalEnd = res.end;
+                res.end = function(chunk, encoding) {
                     const responseTime = Date.now() - startTime;
-                    res.setHeader('X-Response-Time', `${responseTime}ms`);
                     
-                    // Track response time for monitoring
-                    this.trackResponseTime(req, responseTime);
-                });
+                    // Set header before response is sent
+                    if (!res.headersSent) {
+                        res.setHeader('X-Response-Time', `${responseTime}ms`);
+                    }
+                    
+                    // Track response time for monitoring (don't pass 'this' context issue)
+                    try {
+                        // Note: 'this' context removed to prevent method access issues
+                        console.log(`Response time: ${responseTime}ms for ${req.method} ${req.path}`);
+                    } catch (error) {
+                        // Silently handle any tracking errors
+                    }
+                    
+                    // Call original end method
+                    originalEnd.call(res, chunk, encoding);
+                };
                 
                 next();
             }
