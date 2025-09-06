@@ -17,7 +17,7 @@ import ChatBox from './components/ChatBox';
 import DataTable from './components/DataTable';
 import LoginButton from './components/auth/LoginButton';
 import UserProfile from './components/auth/UserProfile';
-import ProtectedRoute from './components/auth/ProtectedRoute';
+// import ProtectedRoute from './components/auth/ProtectedRoute'; // Unused for now
 import LandingPage from './components/LandingPage';
 import SEOHelmet, { SEOConfigs } from './components/SEOHelmet';
 
@@ -569,7 +569,7 @@ function LandingPageWrapper() {
  */
 function AppContentWrapper() {
   const { isAuthenticated, isLoading } = useAuth();
-  const location = useLocation();
+  // const location = useLocation(); // Unused for now
 
   if (isLoading) {
     return <LoadingScreen />;

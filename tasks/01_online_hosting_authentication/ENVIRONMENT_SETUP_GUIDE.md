@@ -90,15 +90,15 @@ REACT_APP_APP_NAME=TaktMate
 ## 🚀 **AFTER Configuration: Deploy Applications**
 
 ### Deploy Backend
-- [ ] **Commit and push your code** to trigger GitHub Actions deployment
-- [ ] **Check deployment logs** in App Service → Deployment Center
+- [X] **Commit and push your code** to trigger GitHub Actions deployment
+- [X] **Check deployment logs** in App Service → Deployment Center
 
 ### Deploy Frontend  
-- [ ] **GitHub Actions** automatically deploys when you push
-- [ ] **Check deployment status** in Static Web Apps → GitHub Actions runs
+- [X] **GitHub Actions** automatically deploys when you push
+- [X] **Check deployment status** in Static Web Apps → GitHub Actions runs
 
 ### Test Everything
-- [ ] **Visit App Service URL** - should not show errors
+- [X] **Visit App Service URL** - should not show errors
 - [ ] **Visit Static Web App URL** - should load React app
 - [ ] **Test authentication flow** - try signing in
 
@@ -109,11 +109,11 @@ REACT_APP_APP_NAME=TaktMate
 Write down these values (you'll need them for environment variables):
 
 ```
-App Service URL: https://taktmate-backend-api-[random].azurewebsites.net
-Static Web App URL: https://[random]-[random].azurestaticapps.net
-Client ID: [from Microsoft Entra External ID app registration]
-Client Secret: [the secret value you saved]
-Application Insights Connection String: [from Application Insights resource]
+App Service URL: https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net (/api/health)
+Static Web App URL: https://orange-flower-0b350780f.1.azurestaticapps.net/
+Client ID: 
+Client Secret: 
+Application Insights Connection String: 
 ```
 
 ---

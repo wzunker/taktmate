@@ -19,8 +19,8 @@ const UserProfile = ({
     isAuthenticated, 
     editProfile, 
     resetPassword, 
-    hasRole, 
-    hasCompany, 
+    // hasRole,  // Unused for now
+    // hasCompany,  // Unused for now 
     isEmailVerified,
     error,
     clearError 

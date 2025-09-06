@@ -14,7 +14,8 @@ import {
   UnauthenticatedTemplate 
 } from '@azure/msal-react';
 import { InteractionStatus } from '@azure/msal-browser';
-import { loginRequest, protectedResources, authorities } from '../config/authConfig';
+import { loginRequest, authorities } from '../config/authConfig';
+// import { protectedResources } from '../config/authConfig'; // Unused for now
 
 // Create the authentication context
 const AuthContext = createContext();

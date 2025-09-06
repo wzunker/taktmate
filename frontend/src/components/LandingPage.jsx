@@ -6,15 +6,16 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// import { motion, AnimatePresence } from 'framer-motion'; // Unused for now
 import { useNavigate } from 'react-router-dom';
 import LoginButton from './auth/LoginButton';
 import { useAuth } from '../contexts/AuthContext';
-import SEOHelmet, { SEOConfigs } from './SEOHelmet';
+import SEOHelmet from './SEOHelmet';
+// import { SEOConfigs } from './SEOHelmet'; // Unused for now
 
 const LandingPage = () => {
   const [showFloatingCTA, setShowFloatingCTA] = useState(false);
-  const [isSigningIn, setIsSigningIn] = useState(false);
+  // const [isSigningIn, setIsSigningIn] = useState(false); // Unused for now
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -40,12 +41,12 @@ const LandingPage = () => {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  // Enhanced sign-in handler with visual feedback
-  const handleSignIn = async () => {
-    setIsSigningIn(true);
-    // The actual sign-in is handled by LoginButton
-    // This just provides visual feedback
-  };
+  // Enhanced sign-in handler with visual feedback (unused for now)
+  // const handleSignIn = async () => {
+  //   setIsSigningIn(true);
+  //   // The actual sign-in is handled by LoginButton
+  //   // This just provides visual feedback
+  // };
 
   return (
     <>
@@ -772,10 +773,10 @@ const LandingPage = () => {
             <div>
               <h3 className="font-semibold mb-4">Product</h3>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white">Features</a></li>
-                <li><a href="#" className="hover:text-white">Security</a></li>
-                <li><a href="#" className="hover:text-white">Pricing</a></li>
-                <li><a href="#" className="hover:text-white">API</a></li>
+                <li><button className="hover:text-white text-left">Features</button></li>
+                <li><button className="hover:text-white text-left">Security</button></li>
+                <li><button className="hover:text-white text-left">Pricing</button></li>
+                <li><button className="hover:text-white text-left">API</button></li>
               </ul>
             </div>
 
@@ -783,10 +784,10 @@ const LandingPage = () => {
             <div>
               <h3 className="font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white">Documentation</a></li>
-                <li><a href="#" className="hover:text-white">Help Center</a></li>
-                <li><a href="#" className="hover:text-white">Contact Us</a></li>
-                <li><a href="#" className="hover:text-white">Status</a></li>
+                <li><button className="hover:text-white text-left">Documentation</button></li>
+                <li><button className="hover:text-white text-left">Help Center</button></li>
+                <li><button className="hover:text-white text-left">Contact Us</button></li>
+                <li><button className="hover:text-white text-left">Status</button></li>
               </ul>
             </div>
 
@@ -794,10 +795,10 @@ const LandingPage = () => {
             <div>
               <h3 className="font-semibold mb-4">Legal</h3>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white">Terms of Service</a></li>
-                <li><a href="#" className="hover:text-white">GDPR</a></li>
-                <li><a href="#" className="hover:text-white">Cookies</a></li>
+                <li><button className="hover:text-white text-left">Privacy Policy</button></li>
+                <li><button className="hover:text-white text-left">Terms of Service</button></li>
+                <li><button className="hover:text-white text-left">GDPR</button></li>
+                <li><button className="hover:text-white text-left">Cookies</button></li>
               </ul>
             </div>
           </div>
