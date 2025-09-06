@@ -20,12 +20,12 @@ class EntraExternalIdApiService {
             graphApiBetaUrl: 'https://graph.microsoft.com/beta',
             
             // Microsoft Entra External ID specific endpoints
-            tenantId: azureConfig.config.tenantId,
-            clientId: azureConfig.config.clientId,
-            clientSecret: azureConfig.config.clientSecret,
+            tenantId: azureConfig.tenantId,
+            clientId: azureConfig.clientId,
+            clientSecret: azureConfig.clientSecret,
             
             // Authentication configuration
-            authority: `https://login.microsoftonline.com/${azureConfig.config.tenantId}`,
+            authority: `https://login.microsoftonline.com/${azureConfig.tenantId}`,
             scope: 'https://graph.microsoft.com/.default',
             
             // API request configuration
