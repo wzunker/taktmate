@@ -84,6 +84,12 @@ try {
 }
 
 const app = express();
+
+// Configure trust proxy for Azure App Service (production-ready)
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1); // Trust first proxy (Azure App Service)
+}
+
 const PORT = process.env.PORT || 3001;
 
 // Initialize Azure OpenAI

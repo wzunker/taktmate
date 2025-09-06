@@ -23,7 +23,7 @@ class CSRFProtectionService {
             cookieOptions: {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-                sameSite: 'strict', // Strict same-site policy
+                sameSite: 'none', // Allow cross-origin for API calls (required for cross-domain)
                 maxAge: 60 * 60 * 1000, // 1 hour
                 path: '/'
             },
