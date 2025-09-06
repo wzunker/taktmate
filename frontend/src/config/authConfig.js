@@ -10,6 +10,7 @@ import { LogLevel } from '@azure/msal-browser';
 /**
  * Configuration object for Microsoft Entra External ID
  * Simplified configuration that works with current environment variables
+ * Updated: 2025-09-06 - Force cache refresh
  */
 export const msalConfig = {
   auth: {

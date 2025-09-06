@@ -11,7 +11,7 @@ import { AuthContext } from '../contexts/AuthContext';
 
 // Create axios instance with base configuration
 const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001',
+  baseURL: process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net/api',
   timeout: 30000, // 30 second timeout
   headers: {
     'Content-Type': 'application/json',
