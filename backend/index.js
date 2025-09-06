@@ -255,7 +255,7 @@ app.use(sessionManagement.createSessionMiddleware());
 app.use(tokenManagement.createTokenMiddleware());
 
 // Apply automatic token refresh middleware (if enabled)
-if (azureConfig.config.enableAutomaticTokenRefresh) {
+if (azureConfig.enableAutomaticTokenRefresh) {
   app.use(tokenManagement.createAutoRefreshMiddleware());
 }
 
@@ -572,7 +572,7 @@ app.post('/api/token/refresh',
       
       // Refresh the token
       const newTokenSet = await tokenManagement.refreshToken(refreshToken, {
-        scope: req.body.scope || azureConfig.config.scope
+        scope: req.body.scope || azureConfig.scope
       });
       
       res.json({

@@ -47,10 +47,10 @@ class GDPRComplianceService {
             enableRightToObject: process.env.ENABLE_RIGHT_TO_OBJECT !== 'false',
             
             // Azure AD B2C specific settings
-            azureB2CTenantId: azureConfig.config.tenantId,
-            azureB2CClientId: azureConfig.config.clientId,
-            azureB2CClientSecret: azureConfig.config.clientSecret,
-            azureB2CDomain: azureConfig.config.domain,
+            azureB2CTenantId: azureConfig.tenantId,
+            azureB2CClientId: azureConfig.clientId,
+            azureB2CClientSecret: azureConfig.clientSecret,
+            azureB2CDomain: azureConfig.domain,
             
             // Microsoft Graph API settings for GDPR operations
             graphApiBaseUrl: 'https://graph.microsoft.com/v1.0',
@@ -509,7 +509,7 @@ class GDPRComplianceService {
                 identities: azureUserData.userProfile?.profile?.identities || [],
                 dataSource: 'Azure AD B2C Microsoft Graph API',
                 retrievedAt: azureUserData.metadata?.exportDate || new Date().toISOString(),
-                tenantId: azureUserData.metadata?.tenantId || azureConfig.config.tenantId
+                tenantId: azureUserData.metadata?.tenantId || azureConfig.tenantId
             };
             
             console.log(`✅ Azure AD B2C data retrieved successfully for user ${userId}`);
@@ -525,11 +525,11 @@ class GDPRComplianceService {
                 fallbackReason: 'Graph API unavailable or insufficient permissions',
                 identity: {
                     objectId: userId,
-                    userPrincipalName: `${userId}@${azureConfig.config.tenantName}.onmicrosoft.com`
+                    userPrincipalName: `${userId}@${azureConfig.tenantName}.onmicrosoft.com`
                 },
                 dataSource: 'Azure AD B2C (Error Fallback)',
                 retrievedAt: new Date().toISOString(),
-                tenantId: azureConfig.config.tenantId
+                tenantId: azureConfig.tenantId
             };
         }
     }

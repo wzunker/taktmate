@@ -134,7 +134,7 @@ class TokenManagementService {
             const verifyOptions = {
                 algorithms: ['RS256'],
                 issuer: azureConfig.getIssuerUrl(),
-                audience: azureConfig.config.clientId,
+                audience: azureConfig.clientId,
                 clockTolerance: this.config.clockTolerance,
                 ignoreExpiration: options.ignoreExpiration || false,
                 ignoreNotBefore: options.ignoreNotBefore || false,
@@ -395,11 +395,11 @@ class TokenManagementService {
             const revokeData = new URLSearchParams({
                 token: token,
                 token_type_hint: tokenType,
-                client_id: azureConfig.config.clientId
+                client_id: azureConfig.clientId
             });
             
-            if (azureConfig.config.clientSecret) {
-                revokeData.append('client_secret', azureConfig.config.clientSecret);
+            if (azureConfig.clientSecret) {
+                revokeData.append('client_secret', azureConfig.clientSecret);
             }
             
             const response = await axios.post(revokeUrl, revokeData, {
@@ -493,7 +493,7 @@ class TokenManagementService {
      * Determine token type from payload
      */
     determineTokenType(payload) {
-        if (payload.aud && payload.aud === azureConfig.config.clientId) {
+        if (payload.aud && payload.aud === azureConfig.clientId) {
             if (payload.nonce || payload.at_hash) {
                 return 'id_token';
             }
@@ -522,12 +522,12 @@ class TokenManagementService {
         const data = new URLSearchParams({
             grant_type: 'refresh_token',
             refresh_token: refreshToken,
-            client_id: azureConfig.config.clientId,
-            scope: options.scope || azureConfig.config.scope
+            client_id: azureConfig.clientId,
+            scope: options.scope || azureConfig.scope
         });
         
-        if (azureConfig.config.clientSecret) {
-            data.append('client_secret', azureConfig.config.clientSecret);
+        if (azureConfig.clientSecret) {
+            data.append('client_secret', azureConfig.clientSecret);
         }
         
         return data;
