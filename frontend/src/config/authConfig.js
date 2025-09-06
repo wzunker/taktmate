@@ -68,8 +68,9 @@ export const loginRequest = {
   scopes: [
     'openid',
     'profile',
-    'email'
-    // Standard Entra External ID scopes - no custom API scopes needed for basic auth
+    'email',
+    // Request token for our application (this sets the correct audience)
+    `api://${process.env.REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID || '3f1869f7-716b-4885-ac8a-86e78515f3a4'}/access_as_user`
   ],
 };
 
