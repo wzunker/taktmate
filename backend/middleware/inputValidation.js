@@ -358,12 +358,30 @@ class InputValidationService {
      * Express middleware for request validation
      */
     createValidationMiddleware(validationRules) {
+        // Handle both array and object formats
+        let rules = [];
+        if (Array.isArray(validationRules)) {
+            rules = validationRules;
+        } else if (validationRules && typeof validationRules === 'object') {
+            // Convert object format to array of validation middleware
+            rules = [];
+            if (validationRules.body) {
+                rules.push(...this.createBodyValidation(validationRules.body));
+            }
+            if (validationRules.query) {
+                rules.push(...this.createQueryValidation(validationRules.query));
+            }
+            if (validationRules.params) {
+                rules.push(...this.createParamsValidation(validationRules.params));
+            }
+        }
+        
         return [
             // Apply rate limiting for validation-heavy requests
             this.validationRateLimit,
             
             // Apply validation rules
-            ...validationRules,
+            ...rules,
             
             // Handle validation results
             (req, res, next) => {
@@ -601,6 +619,84 @@ const SecurityMiddleware = {
             next();
         };
     }
+    
+    /**
+     * Create body validation rules from object
+     */
+    createBodyValidation(bodyRules) {
+        const rules = [];
+        for (const [field, rule] of Object.entries(bodyRules)) {
+            if (rule.required) {
+                rules.push(body(field).notEmpty().withMessage(`${field} is required`));
+            }
+            if (rule.isEmail) {
+                rules.push(body(field).isEmail().withMessage(`${field} must be a valid email`));
+            }
+            if (rule.isLength) {
+                rules.push(body(field).isLength(rule.isLength).withMessage(`${field} length is invalid`));
+            }
+            if (rule.custom) {
+                rules.push(body(field).custom(rule.custom));
+            }
+        }
+        return rules;
+    }
+    
+    /**
+     * Create query validation rules from object
+     */
+    createQueryValidation(queryRules) {
+        const rules = [];
+        for (const [field, rule] of Object.entries(queryRules)) {
+            if (rule.required) {
+                rules.push(query(field).notEmpty().withMessage(`${field} is required`));
+            }
+            if (rule.isDate) {
+                rules.push(query(field).isISO8601().withMessage(`${field} must be a valid date`));
+            }
+            if (rule.custom) {
+                rules.push(query(field).custom(rule.custom));
+            }
+        }
+        return rules;
+    }
+    
+    /**
+     * Create params validation rules from object
+     */
+    createParamsValidation(paramsRules) {
+        const rules = [];
+        for (const [field, rule] of Object.entries(paramsRules)) {
+            if (rule.required) {
+                rules.push(param(field).notEmpty().withMessage(`${field} is required`));
+            }
+            if (rule.isUUID) {
+                rules.push(param(field).isUUID().withMessage(`${field} must be a valid UUID`));
+            }
+            if (rule.custom) {
+                rules.push(param(field).custom(rule.custom));
+            }
+        }
+        return rules;
+    }
+};
+
+/**
+ * Common validation rules
+ */
+const ValidationRules = {
+    tokenRefresh: () => [
+        body('refresh_token').notEmpty().withMessage('Refresh token is required')
+    ],
+    
+    tokenValidation: () => [
+        body('access_token').notEmpty().withMessage('Access token is required')
+    ],
+    
+    chatMessage: [
+        body('message').notEmpty().withMessage('Message is required'),
+        body('message').isLength({ max: 1000 }).withMessage('Message too long')
+    ]
 };
 
 module.exports = {
