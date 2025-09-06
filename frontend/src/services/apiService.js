@@ -10,7 +10,7 @@ import axios from 'axios';
 import { AuthContext } from '../contexts/AuthContext';
 
 // Create axios instance with base configuration
-const baseURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net/api';
+const baseURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
 console.log('🔍 API Service Debug - Base URL:', baseURL);
 console.log('🔍 API Service Debug - Environment variable REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
 

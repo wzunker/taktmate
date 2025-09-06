@@ -33,7 +33,7 @@ const FileUpload = ({ onFileUploaded }) => {
 
     try {
       console.log('Uploading file:', file.name, file.size);
-      const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net/api';
+      const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
       console.log('🔍 FileUpload Debug - Using API URL:', backendURL);
       const response = await axios.post(`${backendURL}/upload`, formData, {
         headers: {
