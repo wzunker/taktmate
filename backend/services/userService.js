@@ -1,8 +1,8 @@
 /**
- * User Service for Azure AD B2C Integration
+ * User Service for Microsoft Entra External ID Integration
  * 
  * This service provides comprehensive user management functionality,
- * including profile extraction from Azure AD B2C claims, user data
+ * including profile extraction from Microsoft Entra External ID claims, user data
  * processing, validation, and business logic operations.
  */
 
@@ -53,7 +53,7 @@ class UserService {
         throw new Error('JWT payload is required');
       }
 
-      // Extract basic user profile using Azure AD B2C config
+      // Extract basic user profile using Microsoft Entra External ID config
       const baseProfile = extractUserProfile(jwtPayload);
       
       // Enhanced user profile processing

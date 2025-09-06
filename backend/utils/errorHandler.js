@@ -21,8 +21,8 @@ const ErrorTypes = {
   ACCOUNT_DISABLED: { code: 403, type: 'ACCOUNT_DISABLED' },
   ACCOUNT_LOCKED: { code: 423, type: 'ACCOUNT_LOCKED' },
   
-  // Azure AD B2C Specific Errors
-  AZURE_AD_B2C_UNAVAILABLE: { code: 503, type: 'AZURE_AD_B2C_UNAVAILABLE' },
+  // Microsoft Entra External ID Specific Errors
+  ENTRA_EXTERNAL_ID_UNAVAILABLE: { code: 503, type: 'ENTRA_EXTERNAL_ID_UNAVAILABLE' },
   INVALID_TENANT: { code: 401, type: 'INVALID_TENANT' },
   INVALID_CLIENT: { code: 401, type: 'INVALID_CLIENT' },
   JWKS_FETCH_ERROR: { code: 503, type: 'JWKS_FETCH_ERROR' },
@@ -103,15 +103,15 @@ const ErrorMessages = {
     guidance: 'Your account is temporarily locked due to security reasons. Please try again later or contact support.'
   },
   
-  AZURE_AD_B2C_UNAVAILABLE: {
-    message: 'Azure AD B2C authentication service is temporarily unavailable.',
+  ENTRA_EXTERNAL_ID_UNAVAILABLE: {
+    message: 'Microsoft Entra External ID authentication service is temporarily unavailable.',
     userMessage: 'Authentication service is temporarily unavailable.',
     action: 'retry_later',
     guidance: 'The authentication service is currently experiencing issues. Please try again in a few minutes.'
   },
   
   INVALID_TENANT: {
-    message: 'Invalid Azure AD B2C tenant configuration.',
+    message: 'Invalid Microsoft Entra External ID tenant configuration.',
     userMessage: 'Authentication configuration error.',
     action: 'contact_support',
     guidance: 'There is a configuration issue with the authentication system. Please contact support.'
@@ -350,7 +350,7 @@ class JWTErrorHandler {
       return new TaktMateError('JWKS_FETCH_ERROR', error, context);
     }
 
-    // Azure AD B2C specific errors
+    // Microsoft Entra External ID specific errors
     if (error.message && error.message.includes('tenant')) {
       return new TaktMateError('INVALID_TENANT', error, context);
     }

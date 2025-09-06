@@ -183,7 +183,7 @@ function validateConfiguration(strict = false) {
     const missingRecommended = recommended.filter(key => !process.env[key]);
     if (missingRecommended.length > 0) {
       console.warn(
-        `⚠️  Missing recommended Azure AD B2C environment variables: ${missingRecommended.join(', ')}\n` +
+        `⚠️  Missing recommended Microsoft Entra External ID environment variables: ${missingRecommended.join(', ')}\n` +
         'These variables are recommended for production deployment.'
       );
     }

@@ -86,7 +86,7 @@ class CookieConsentService {
                     },
                     {
                         name: 'auth_token',
-                        purpose: 'Authentication token for Azure AD B2C integration',
+                        purpose: 'Authentication token for Microsoft Entra External ID integration',
                         expiry: '24 hours',
                         type: 'HTTP Cookie',
                         domain: 'taktmate.com'
@@ -507,7 +507,7 @@ class CookieConsentService {
                     
                     thirdPartySharing: [
                         {
-                            service: 'Microsoft Azure AD B2C',
+                            service: 'Microsoft Microsoft Entra External ID',
                             purpose: 'Authentication and identity management',
                             dataShared: 'Authentication tokens and session identifiers'
                         },

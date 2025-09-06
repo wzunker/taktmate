@@ -198,7 +198,7 @@ Welcome to ${this.config.companyName} ("we," "our," or "us"). We are committed t
 ## 2. Information We Collect
 
 ### 2.1 Information You Provide to Us
-- **Account Information:** When you create an account, we collect information such as your name, email address, and authentication credentials through Azure Active Directory B2C.
+- **Account Information:** When you create an account, we collect information such as your name, email address, and authentication credentials through Microsoft Entra External ID.
 - **Profile Information:** Additional profile information you choose to provide, including job title, company, and other professional details.
 - **Content:** Data files (CSV files) you upload and process through our service.
 - **Communications:** Messages, feedback, and other communications you send to us.
@@ -210,7 +210,7 @@ Welcome to ${this.config.companyName} ("we," "our," or "us"). We are committed t
 - **Analytics Data:** Performance metrics, error tracking, and usage analytics through Azure Application Insights.
 
 ### 2.3 Information from Third Parties
-- **Azure Active Directory B2C:** Authentication and identity information from Microsoft Azure AD B2C.
+- **Microsoft Entra External ID:** Authentication and identity information from Microsoft Microsoft Entra External ID.
 - **OpenAI Services:** Processing results and interaction data from OpenAI API services.
 
 ## 3. How We Use Your Information
@@ -254,7 +254,7 @@ Under the General Data Protection Regulation (GDPR), we process your personal da
 ### 5.1 Service Providers
 We may share your information with trusted third-party service providers who assist us in operating our service:
 
-- **Microsoft Azure:** Cloud infrastructure, authentication (Azure AD B2C), and analytics (Application Insights)
+- **Microsoft Azure:** Cloud infrastructure, authentication (Microsoft Entra External ID), and analytics (Application Insights)
 - **OpenAI:** AI processing services for chat and data analysis features
 - **Security Providers:** Services that help us detect and prevent fraud and security threats
 
@@ -405,7 +405,7 @@ ${this.config.companyName} provides a cloud-based service that allows users to:
 
 ### 3.1 Account Creation
 - You must create an account to use our Service
-- Authentication is provided through Microsoft Azure Active Directory B2C
+- Authentication is provided through Microsoft Microsoft Entra External ID
 - You must provide accurate and complete information when creating your account
 - You are responsible for maintaining the security of your account credentials
 
@@ -685,7 +685,7 @@ These cookies enhance your experience by remembering your preferences:
 Our service may use third-party cookies from the following providers:
 
 ### 4.1 Microsoft Azure Services
-- **Azure Active Directory B2C:** Authentication and identity management
+- **Microsoft Entra External ID:** Authentication and identity management
 - **Azure Application Insights:** Performance monitoring and analytics
 - **Azure CDN:** Content delivery and caching
 

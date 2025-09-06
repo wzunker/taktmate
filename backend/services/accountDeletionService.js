@@ -1,5 +1,5 @@
 // TaktMate Account Deletion Service
-// Comprehensive user account deletion workflow through Azure AD B2C with GDPR compliance
+// Comprehensive user account deletion workflow through Microsoft Entra External ID with GDPR compliance
 
 const axios = require('axios');
 const { config: azureConfig } = require('../config/entraExternalId');
@@ -7,7 +7,7 @@ const { EntraExternalIdApiService } = require('./entraExternalIdApiService');
 
 /**
  * Account Deletion Service
- * Manages comprehensive user account deletion workflow through Azure AD B2C
+ * Manages comprehensive user account deletion workflow through Microsoft Entra External ID
  */
 class AccountDeletionService {
     constructor(appInsights = null, fileStore = null, sessionManagement = null) {
@@ -20,7 +20,7 @@ class AccountDeletionService {
         
         // Account deletion configuration
         this.config = {
-            // Azure AD B2C deletion settings
+            // Microsoft Entra External ID deletion settings
             enableAzureB2CDeletion: process.env.ENABLE_AZURE_B2C_DELETION !== 'false',
             enableSoftDelete: process.env.ENABLE_SOFT_DELETE !== 'false',
             softDeleteRetentionPeriod: parseInt(process.env.SOFT_DELETE_RETENTION_PERIOD) || 30 * 24 * 60 * 60 * 1000, // 30 days
@@ -112,8 +112,8 @@ class AccountDeletionService {
             },
             {
                 id: 'delete_azure_account',
-                name: 'Delete Azure AD B2C Account',
-                description: 'Delete user account from Azure AD B2C tenant',
+                name: 'Delete Microsoft Entra External ID Account',
+                description: 'Delete user account from Microsoft Entra External ID tenant',
                 required: this.config.enableAzureB2CDeletion,
                 timeout: 15 * 60 * 1000 // 15 minutes
             },
@@ -134,7 +134,7 @@ class AccountDeletionService {
         ];
         
         console.log('🗑️ Account Deletion Service initialized');
-        console.log(`   Azure AD B2C Deletion: ${this.config.enableAzureB2CDeletion ? '✅' : '❌'}`);
+        console.log(`   Microsoft Entra External ID Deletion: ${this.config.enableAzureB2CDeletion ? '✅' : '❌'}`);
         console.log(`   Soft Delete: ${this.config.enableSoftDelete ? '✅' : '❌'}`);
         console.log(`   Pre-deletion Backup: ${this.config.enablePreDeletionBackup ? '✅' : '❌'}`);
         console.log(`   GDPR Compliance Mode: ${this.config.gdprComplianceMode ? '✅' : '❌'}`);
@@ -207,7 +207,7 @@ class AccountDeletionService {
                 },
                 
                 verification: {
-                    azureB2CDeleted: false,
+                    entraExternalIdDeleted: false,
                     applicationDataDeleted: false,
                     filesDeleted: false,
                     sessionsDeleted: false,
@@ -552,14 +552,14 @@ class AccountDeletionService {
             reason: deletionRequest.reason
         });
         
-        // Verify user exists in Azure AD B2C
+        // Verify user exists in Microsoft Entra External ID
         try {
             const userProfile = await this.entraExternalIdApiService.exportUserProfile(deletionRequest.userId);
             if (!userProfile || !userProfile.profile) {
-                console.warn(`⚠️ User ${deletionRequest.userId} not found in Azure AD B2C, may have been already deleted`);
+                console.warn(`⚠️ User ${deletionRequest.userId} not found in Microsoft Entra External ID, may have been already deleted`);
             }
         } catch (error) {
-            console.warn(`⚠️ Could not verify user in Azure AD B2C: ${error.message}`);
+            console.warn(`⚠️ Could not verify user in Microsoft Entra External ID: ${error.message}`);
         }
     }
     
@@ -684,23 +684,23 @@ class AccountDeletionService {
         }
         
         try {
-            // Delete user from Azure AD B2C using Microsoft Graph API
+            // Delete user from Microsoft Entra External ID using Microsoft Graph API
             const deleteEndpoint = `/users/${deletionRequest.userId}`;
             
             await this.entraExternalIdApiService.makeGraphApiRequest('DELETE', deleteEndpoint);
             
             // Update verification
-            deletionRequest.verification.azureB2CDeleted = true;
+            deletionRequest.verification.entraExternalIdDeleted = true;
             
-            console.log(`✅ Deleted Azure AD B2C account for user ${deletionRequest.userId}`);
+            console.log(`✅ Deleted Microsoft Entra External ID account for user ${deletionRequest.userId}`);
             
         } catch (error) {
-            console.error(`❌ Failed to delete Azure AD B2C account for user ${deletionRequest.userId}:`, error.message);
+            console.error(`❌ Failed to delete Microsoft Entra External ID account for user ${deletionRequest.userId}:`, error.message);
             
             // Check if user was already deleted
             if (error.message.includes('Request_ResourceNotFound') || error.message.includes('404')) {
-                console.log(`ℹ️ User ${deletionRequest.userId} was already deleted from Azure AD B2C`);
-                deletionRequest.verification.azureB2CDeleted = true;
+                console.log(`ℹ️ User ${deletionRequest.userId} was already deleted from Microsoft Entra External ID`);
+                deletionRequest.verification.entraExternalIdDeleted = true;
             } else {
                 throw error;
             }
@@ -717,16 +717,16 @@ class AccountDeletionService {
         }
         
         try {
-            // Verify Azure AD B2C account deletion
+            // Verify Microsoft Entra External ID account deletion
             if (this.config.enableAzureB2CDeletion) {
                 try {
                     await this.entraExternalIdApiService.makeGraphApiRequest('GET', `/users/${deletionRequest.userId}`);
                     // If we reach here, user still exists
-                    throw new Error('User account still exists in Azure AD B2C');
+                    throw new Error('User account still exists in Microsoft Entra External ID');
                 } catch (error) {
                     if (error.message.includes('Request_ResourceNotFound') || error.message.includes('404')) {
-                        deletionRequest.verification.azureB2CDeleted = true;
-                        console.log(`✅ Verified: User ${deletionRequest.userId} deleted from Azure AD B2C`);
+                        deletionRequest.verification.entraExternalIdDeleted = true;
+                        console.log(`✅ Verified: User ${deletionRequest.userId} deleted from Microsoft Entra External ID`);
                     } else {
                         throw error;
                     }

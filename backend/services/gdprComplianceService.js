@@ -115,8 +115,8 @@ class GDPRComplianceService {
             // Initialize Microsoft Entra External ID API service
             await this.entraExternalIdApiService.initialize();
             
-            // Verify Azure AD B2C GDPR capabilities
-            await this.verifyAzureB2CGDPRCapabilities();
+            // Verify Microsoft Entra External ID GDPR capabilities
+            await this.verifyEntraExternalIdGDPRCapabilities();
             
             // Initialize consent management
             if (this.config.enableConsentManagement) {
@@ -138,17 +138,17 @@ class GDPRComplianceService {
     }
     
     /**
-     * Verify Azure AD B2C GDPR capabilities
+     * Verify Microsoft Entra External ID GDPR capabilities
      */
-    async verifyAzureB2CGDPRCapabilities() {
+    async verifyEntraExternalIdGDPRCapabilities() {
         try {
-            // Check if Azure AD B2C tenant has GDPR features enabled
+            // Check if Microsoft Entra External ID tenant has GDPR features enabled
             const capabilities = {
                 dataExport: this.config.enableDataExport,
                 dataDeletion: this.config.enableDataDeletion,
                 consentManagement: this.config.enableConsentManagement,
-                auditLogging: true, // Always available in Azure AD B2C
-                dataRetention: true, // Configurable in Azure AD B2C
+                auditLogging: true, // Always available in Microsoft Entra External ID
+                dataRetention: true, // Configurable in Microsoft Entra External ID
                 rightToAccess: this.config.enableRightToAccess,
                 rightToErasure: this.config.enableRightToErasure,
                 rightToPortability: this.config.enableRightToPortability
@@ -157,15 +157,15 @@ class GDPRComplianceService {
             // Log GDPR capabilities
             this.auditGDPREvent('gdpr_capabilities_verified', {
                 capabilities: capabilities,
-                azureTenant: this.config.azureB2CTenantId,
+                azureTenant: this.config.entraExternalIdTenantId,
                 timestamp: new Date().toISOString()
             });
             
-            console.log('✅ Azure AD B2C GDPR capabilities verified');
+            console.log('✅ Microsoft Entra External ID GDPR capabilities verified');
             return capabilities;
             
         } catch (error) {
-            console.error('❌ Failed to verify Azure AD B2C GDPR capabilities:', error.message);
+            console.error('❌ Failed to verify Microsoft Entra External ID GDPR capabilities:', error.message);
             throw error;
         }
     }
@@ -175,35 +175,35 @@ class GDPRComplianceService {
      */
     async initializeConsentManagement() {
         try {
-            // Define consent categories based on Azure AD B2C attributes
+            // Define consent categories based on Microsoft Entra External ID attributes
             this.consentCategories = {
                 ESSENTIAL: {
                     required: true,
                     description: 'Essential for account creation and authentication',
                     purposes: ['account_creation', 'authentication', 'security'],
                     lawfulBasis: 'contract',
-                    azureB2CAttributes: ['email', 'name', 'objectId']
+                    entraExternalIdAttributes: ['email', 'name', 'objectId']
                 },
                 FUNCTIONAL: {
                     required: false,
                     description: 'Improve user experience and functionality',
                     purposes: ['personalization', 'preferences', 'feature_enhancement'],
                     lawfulBasis: 'legitimate_interest',
-                    azureB2CAttributes: ['company', 'jobTitle', 'department']
+                    entraExternalIdAttributes: ['company', 'jobTitle', 'department']
                 },
                 ANALYTICS: {
                     required: false,
                     description: 'Usage analytics and performance monitoring',
                     purposes: ['analytics', 'performance', 'optimization'],
                     lawfulBasis: 'consent',
-                    azureB2CAttributes: ['lastSignInDateTime', 'signInActivity']
+                    entraExternalIdAttributes: ['lastSignInDateTime', 'signInActivity']
                 },
                 MARKETING: {
                     required: false,
                     description: 'Marketing communications and promotions',
                     purposes: ['marketing', 'communications', 'promotions'],
                     lawfulBasis: 'consent',
-                    azureB2CAttributes: ['marketingConsent', 'communicationPreferences']
+                    entraExternalIdAttributes: ['marketingConsent', 'communicationPreferences']
                 }
             };
             
@@ -226,28 +226,28 @@ class GDPRComplianceService {
                     category: 'IDENTITY_DATA',
                     retention: this.config.userDataRetentionPeriod,
                     autoDelete: true,
-                    azureB2CManaged: true,
-                    description: 'User profile data managed by Azure AD B2C'
+                    entraExternalIdManaged: true,
+                    description: 'User profile data managed by Microsoft Entra External ID'
                 },
                 SESSION_DATA: {
                     category: 'TECHNICAL_DATA',
                     retention: this.config.sessionDataRetentionPeriod,
                     autoDelete: true,
-                    azureB2CManaged: false,
+                    entraExternalIdManaged: false,
                     description: 'Session and activity data managed by application'
                 },
                 FILE_UPLOADS: {
                     category: 'USAGE_DATA',
                     retention: this.config.sessionDataRetentionPeriod,
                     autoDelete: true,
-                    azureB2CManaged: false,
+                    entraExternalIdManaged: false,
                     description: 'User uploaded files and associated data'
                 },
                 AUDIT_LOGS: {
                     category: 'TECHNICAL_DATA',
                     retention: this.config.auditLogRetentionPeriod,
                     autoDelete: false,
-                    azureB2CManaged: false,
+                    entraExternalIdManaged: false,
                     description: 'Audit logs for compliance and security'
                 }
             };
@@ -285,7 +285,7 @@ class GDPRComplianceService {
                     required: categoryConfig.required,
                     lawfulBasis: categoryConfig.lawfulBasis,
                     purposes: categoryConfig.purposes,
-                    azureB2CAttributes: categoryConfig.azureB2CAttributes
+                    entraExternalIdAttributes: categoryConfig.entraExternalIdAttributes
                 };
             }
             
@@ -379,7 +379,7 @@ class GDPRComplianceService {
                 requestedBy: userId
             });
             
-            // Get user data from Azure AD B2C
+            // Get user data from Microsoft Entra External ID
             const azureUserData = await this.getAzureB2CUserData(userId);
             
             // Get application-specific user data
@@ -456,11 +456,11 @@ class GDPRComplianceService {
     }
     
     /**
-     * Get user data from Azure AD B2C using Microsoft Graph API
+     * Get user data from Microsoft Entra External ID using Microsoft Graph API
      */
     async getAzureB2CUserData(userId) {
         try {
-            console.log(`📥 Retrieving Azure AD B2C data for user ${userId}`);
+            console.log(`📥 Retrieving Microsoft Entra External ID data for user ${userId}`);
             
             // Use the Azure B2C API service to get comprehensive user data
             const azureUserData = await this.entraExternalIdApiService.exportUserData(userId);
@@ -507,27 +507,27 @@ class GDPRComplianceService {
                     extensionProperties: azureUserData.customExtensions?.extensionProperties || []
                 },
                 identities: azureUserData.userProfile?.profile?.identities || [],
-                dataSource: 'Azure AD B2C Microsoft Graph API',
+                dataSource: 'Microsoft Entra External ID Microsoft Graph API',
                 retrievedAt: azureUserData.metadata?.exportDate || new Date().toISOString(),
                 tenantId: azureUserData.metadata?.tenantId || azureConfig.tenantId
             };
             
-            console.log(`✅ Azure AD B2C data retrieved successfully for user ${userId}`);
+            console.log(`✅ Microsoft Entra External ID data retrieved successfully for user ${userId}`);
             return structuredData;
             
         } catch (error) {
-            console.error('❌ Failed to get Azure AD B2C user data:', error.message);
+            console.error('❌ Failed to get Microsoft Entra External ID user data:', error.message);
             
             // Return fallback data structure with error information
             return {
-                error: 'Failed to retrieve Azure AD B2C data via Microsoft Graph API',
+                error: 'Failed to retrieve Microsoft Entra External ID data via Microsoft Graph API',
                 message: error.message,
                 fallbackReason: 'Graph API unavailable or insufficient permissions',
                 identity: {
                     objectId: userId,
                     userPrincipalName: `${userId}@${azureConfig.tenantName}.onmicrosoft.com`
                 },
-                dataSource: 'Azure AD B2C (Error Fallback)',
+                dataSource: 'Microsoft Entra External ID (Error Fallback)',
                 retrievedAt: new Date().toISOString(),
                 tenantId: azureConfig.tenantId
             };
@@ -900,7 +900,7 @@ class GDPRComplianceService {
      */
     getComplianceStatus() {
         return {
-            azureB2CGDPREnabled: this.config.enableBuiltInGDPR,
+            entraExternalIdGDPREnabled: this.config.enableBuiltInGDPR,
             dataExportEnabled: this.config.enableDataExport,
             dataDeletionEnabled: this.config.enableDataDeletion,
             consentManagementEnabled: this.config.enableConsentManagement,
