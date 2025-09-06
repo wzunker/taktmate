@@ -5,7 +5,9 @@
  * error handling, and token management.
  */
 
+import React from 'react';
 import axios from 'axios';
+import { AuthContext } from '../contexts/AuthContext';
 
 // Create axios instance with base configuration
 const apiClient = axios.create({

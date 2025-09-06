@@ -81,13 +81,13 @@ export const AuthProvider = ({ children }) => {
       throw new Error('No account available for token acquisition');
     }
 
-    try {
-      const request = {
-        ...loginRequest,
-        account: account,
-        forceRefresh: forceRefresh,
-      };
+    const request = {
+      ...loginRequest,
+      account: account,
+      forceRefresh: forceRefresh,
+    };
 
+    try {
       const response = await instance.acquireTokenSilent(request);
       setAccessToken(response.accessToken);
       setError(null);

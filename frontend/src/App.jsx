@@ -103,11 +103,13 @@ function AppContent() {
     setFileData(uploadedFileData);
   };
 
+  // Get auth context for API service
+  const authContext = useAuth();
+  
   // Set auth context for API service
   useEffect(() => {
-    const authContext = useAuth();
     setAuthContext(authContext);
-  }, []);
+  }, [authContext]);
 
   // Loading state with transitions
   if (isLoading) {
