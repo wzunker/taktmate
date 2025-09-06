@@ -35,10 +35,20 @@ const FileUpload = ({ onFileUploaded }) => {
       console.log('Uploading file:', file.name, file.size);
       const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
       console.log('🔍 FileUpload Debug - Using API URL:', backendURL);
+      
+      // Get CSRF token first
+      const csrfResponse = await axios.get(`${backendURL}/csrf-token`, {
+        withCredentials: true // Include cookies for CSRF
+      });
+      const csrfToken = csrfResponse.data.csrf.token;
+      console.log('🔍 CSRF token obtained:', csrfToken ? 'SUCCESS' : 'FAILED');
+      
       const response = await axios.post(`${backendURL}/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'X-CSRF-Token': csrfToken,
         },
+        withCredentials: true, // Include cookies for CSRF
         timeout: 30000, // 30 second timeout
       });
       console.log('Upload response:', response.data);
