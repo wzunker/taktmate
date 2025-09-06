@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // TaktMate GDPR Compliance Testing Script
-// Tests Azure AD B2C GDPR compliance features, data export, consent management, and privacy controls
+// Tests Microsoft Entra External ID GDPR compliance features, data export, consent management, and privacy controls
 
 const axios = require('axios');
 const fs = require('fs');
@@ -454,7 +454,7 @@ class GDPRComplianceTest {
         
         // Validate GDPR configuration
         if (gdprCompliance.azureB2CGDPREnabled === undefined) {
-            issues.push('Azure AD B2C GDPR setting not configured');
+            issues.push('Microsoft Entra External ID GDPR setting not configured');
         }
         
         if (gdprCompliance.dataExportEnabled === undefined) {

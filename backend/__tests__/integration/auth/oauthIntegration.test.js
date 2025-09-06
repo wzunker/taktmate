@@ -137,7 +137,7 @@ describe('OAuth Integration Tests', () => {
     test('should process OAuth callback with valid token', async () => {
       // Simulate OAuth callback with ID token
       const idToken = global.testUtils.generateTestAzureToken({
-        aud: process.env.AZURE_AD_B2C_CLIENT_ID,
+        aud: process.env.ENTRA_EXTERNAL_ID_CLIENT_ID,
         iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
         nonce: 'test-nonce-123',
         c_hash: 'test-code-hash'
@@ -586,7 +586,7 @@ describe('OAuth Integration Tests', () => {
     test('should handle missing required claims in tokens', async () => {
       const incompleteToken = jwt.sign({
         iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
-        aud: process.env.AZURE_AD_B2C_CLIENT_ID,
+        aud: process.env.ENTRA_EXTERNAL_ID_CLIENT_ID,
         // Missing required claims like 'sub', 'exp', etc.
         iat: Math.floor(Date.now() / 1000)
       }, process.env.JWT_SECRET);

@@ -604,7 +604,7 @@ async function main() {
         if (report.success) {
           log('1. JWT middleware is ready for integration', colors.blue);
           log('2. Proceed with authentication routes implementation', colors.blue);
-          log('3. Test with real Azure AD B2C tokens', colors.blue);
+          log('3. Test with real Microsoft Entra External ID tokens', colors.blue);
         } else {
           log('1. Fix the issues identified in the test report', colors.red);
           log('2. Re-run tests to verify fixes', colors.blue);

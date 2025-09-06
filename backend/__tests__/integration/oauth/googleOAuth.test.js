@@ -92,7 +92,7 @@ describe('Google OAuth Integration Tests', () => {
       // Create a Google-specific Microsoft Entra External ID token
       const googleToken = global.testUtils.generateTestAzureToken({
         iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
-        aud: process.env.AZURE_AD_B2C_CLIENT_ID,
+        aud: process.env.ENTRA_EXTERNAL_ID_CLIENT_ID,
         idp: 'google.com',
         emails: ['user@gmail.com'],
         name: 'John Google User',
@@ -133,7 +133,7 @@ describe('Google OAuth Integration Tests', () => {
       // Test with minimal Google profile data
       const minimalGoogleToken = global.testUtils.generateTestAzureToken({
         iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
-        aud: process.env.AZURE_AD_B2C_CLIENT_ID,
+        aud: process.env.ENTRA_EXTERNAL_ID_CLIENT_ID,
         idp: 'google.com',
         emails: ['minimal@gmail.com'],
         name: 'Minimal User',
@@ -158,7 +158,7 @@ describe('Google OAuth Integration Tests', () => {
       // Create an invalid token (wrong signature)
       const invalidToken = jwt.sign({
         iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
-        aud: process.env.AZURE_AD_B2C_CLIENT_ID,
+        aud: process.env.ENTRA_EXTERNAL_ID_CLIENT_ID,
         idp: 'google.com',
         emails: ['invalid@gmail.com']
       }, 'wrong-secret');
@@ -180,7 +180,7 @@ describe('Google OAuth Integration Tests', () => {
       // Create an expired Google token
       const expiredToken = global.testUtils.generateTestAzureToken({
         iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
-        aud: process.env.AZURE_AD_B2C_CLIENT_ID,
+        aud: process.env.ENTRA_EXTERNAL_ID_CLIENT_ID,
         idp: 'google.com',
         emails: ['expired@gmail.com'],
         exp: Math.floor(Date.now() / 1000) - 3600 // Expired 1 hour ago
@@ -423,7 +423,7 @@ describe('Google OAuth Integration Tests', () => {
     test('should validate Google OAuth issuer', async () => {
       const wrongIssuerToken = global.testUtils.generateTestAzureToken({
         iss: 'https://malicious-issuer.com/v2.0/',
-        aud: process.env.AZURE_AD_B2C_CLIENT_ID,
+        aud: process.env.ENTRA_EXTERNAL_ID_CLIENT_ID,
         idp: 'google.com',
         emails: ['issuer@gmail.com']
       });

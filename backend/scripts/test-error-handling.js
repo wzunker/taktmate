@@ -727,7 +727,7 @@ async function main() {
         if (report.success) {
           log('1. Error handling system is ready for production use', colors.blue);
           log('2. Integrate with monitoring and alerting systems', colors.blue);
-          log('3. Test with real Azure AD B2C error scenarios', colors.blue);
+          log('3. Test with real Microsoft Entra External ID error scenarios', colors.blue);
         } else {
           log('1. Fix the issues identified in the test report', colors.red);
           log('2. Re-run tests to verify fixes', colors.blue);

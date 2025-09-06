@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // TaktMate Token Management Testing Script
-// Tests Azure AD B2C token lifecycle, refresh, validation, and session timeout
+// Tests Microsoft Entra External ID token lifecycle, refresh, validation, and session timeout
 
 const axios = require('axios');
 const fs = require('fs');
@@ -22,7 +22,7 @@ class TokenManagementTest {
             maxRetries: 3
         };
         
-        // Test JWT tokens (mock tokens for testing - in real scenario these come from Azure AD B2C)
+        // Test JWT tokens (mock tokens for testing - in real scenario these come from Microsoft Entra External ID)
         this.mockTokens = this.generateMockTokens();
         
         console.log('🧪 TaktMate Token Management Testing Suite');

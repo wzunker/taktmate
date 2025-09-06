@@ -93,7 +93,7 @@ describe('Microsoft OAuth Integration Tests', () => {
       // Create a Microsoft-specific Microsoft Entra External ID token
       const microsoftToken = global.testUtils.generateTestAzureToken({
         iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
-        aud: process.env.AZURE_AD_B2C_CLIENT_ID,
+        aud: process.env.ENTRA_EXTERNAL_ID_CLIENT_ID,
         idp: 'live.com',
         emails: ['user@outlook.com'],
         name: 'John Microsoft User',
@@ -132,7 +132,7 @@ describe('Microsoft OAuth Integration Tests', () => {
       // Test with Microsoft Work/School account (Azure AD)
       const workToken = global.testUtils.generateTestAzureToken({
         iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
-        aud: process.env.AZURE_AD_B2C_CLIENT_ID,
+        aud: process.env.ENTRA_EXTERNAL_ID_CLIENT_ID,
         idp: 'https://sts.windows.net/work-tenant-id/',
         emails: ['user@company.com'],
         name: 'Work User',
@@ -163,7 +163,7 @@ describe('Microsoft OAuth Integration Tests', () => {
       // Test with Microsoft Personal account (MSA)
       const personalToken = global.testUtils.generateTestAzureToken({
         iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
-        aud: process.env.AZURE_AD_B2C_CLIENT_ID,
+        aud: process.env.ENTRA_EXTERNAL_ID_CLIENT_ID,
         idp: 'live.com',
         emails: ['user@hotmail.com'],
         name: 'Personal User',
@@ -190,7 +190,7 @@ describe('Microsoft OAuth Integration Tests', () => {
       // Create an invalid token (wrong signature)
       const invalidToken = jwt.sign({
         iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
-        aud: process.env.AZURE_AD_B2C_CLIENT_ID,
+        aud: process.env.ENTRA_EXTERNAL_ID_CLIENT_ID,
         idp: 'live.com',
         emails: ['invalid@outlook.com']
       }, 'wrong-secret');
@@ -212,7 +212,7 @@ describe('Microsoft OAuth Integration Tests', () => {
       // Create an expired Microsoft token
       const expiredToken = global.testUtils.generateTestAzureToken({
         iss: `https://test-tenant.ciamlogin.com/test-tenant-id/v2.0/`,
-        aud: process.env.AZURE_AD_B2C_CLIENT_ID,
+        aud: process.env.ENTRA_EXTERNAL_ID_CLIENT_ID,
         idp: 'live.com',
         emails: ['expired@outlook.com'],
         exp: Math.floor(Date.now() / 1000) - 3600 // Expired 1 hour ago
@@ -452,7 +452,7 @@ describe('Microsoft OAuth Integration Tests', () => {
     test('should validate Microsoft OAuth issuer', async () => {
       const wrongIssuerToken = global.testUtils.generateTestAzureToken({
         iss: 'https://malicious-issuer.com/v2.0/',
-        aud: process.env.AZURE_AD_B2C_CLIENT_ID,
+        aud: process.env.ENTRA_EXTERNAL_ID_CLIENT_ID,
         idp: 'live.com',
         emails: ['issuer@outlook.com']
       });

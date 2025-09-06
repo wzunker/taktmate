@@ -196,14 +196,14 @@ Every error includes comprehensive context information:
 
 **User Action:** Wait specified time before retrying
 
-## Azure AD B2C Specific Errors
+## Microsoft Entra External ID Specific Errors
 
 ### 1. Service Unavailable (503)
 
-**Error Code:** `AZURE_AD_B2C_UNAVAILABLE`
+**Error Code:** `ENTRA_EXTERNAL_ID_UNAVAILABLE`
 
 **Triggers:**
-- Azure AD B2C service outage
+- Microsoft Entra External ID service outage
 - Network connectivity issues
 - Service maintenance
 
@@ -427,7 +427,7 @@ Create test scenarios for:
 
 ### JWKS Key Issues
 
-1. **Network connectivity**: Check Azure AD B2C endpoint accessibility
+1. **Network connectivity**: Check Microsoft Entra External ID endpoint accessibility
 2. **Key rotation**: Clear JWKS cache after key rotation
 3. **Configuration**: Verify tenant and client configuration
 

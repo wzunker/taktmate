@@ -883,12 +883,12 @@ async function main() {
         log('\n📖 Next Steps:', colors.cyan);
         if (report.success) {
           log('1. User service is ready for integration', colors.blue);
-          log('2. Test with real Azure AD B2C tokens', colors.blue);
+          log('2. Test with real Microsoft Entra External ID tokens', colors.blue);
           log('3. Integrate with authentication routes', colors.blue);
         } else {
           log('1. Fix the issues identified in the test report', colors.red);
           log('2. Re-run tests to verify fixes', colors.blue);
-          log('3. Check Azure AD B2C configuration', colors.blue);
+          log('3. Check Microsoft Entra External ID configuration', colors.blue);
         }
         break;
     }

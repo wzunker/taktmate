@@ -3,7 +3,7 @@
 /**
  * CSV Endpoints Testing Utility for TaktMate
  * 
- * This script tests the enhanced CSV endpoints with Azure AD B2C authentication,
+ * This script tests the enhanced CSV endpoints with Microsoft Entra External ID authentication,
  * including file upload, chat functionality, file management, and access control.
  */
 
@@ -86,10 +86,10 @@ function createSampleCSVData() {
 }
 
 /**
- * Create mock authentication token (for testing without real Azure AD B2C)
+ * Create mock authentication token (for testing without real Microsoft Entra External ID)
  */
 function createMockAuthToken() {
-  // This would normally be a real JWT token from Azure AD B2C
+  // This would normally be a real JWT token from Microsoft Entra External ID
   // For testing purposes, we'll create a mock token structure
   return {
     headers: {
@@ -655,7 +655,7 @@ async function main() {
         log('\n📖 Next Steps:', colors.cyan);
         if (report.success) {
           log('1. CSV endpoints are ready for production use', colors.blue);
-          log('2. Test with real Azure AD B2C tokens', colors.blue);
+          log('2. Test with real Microsoft Entra External ID tokens', colors.blue);
           log('3. Integrate with frontend application', colors.blue);
         } else {
           log('1. Fix the issues identified in the test report', colors.red);
