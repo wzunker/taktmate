@@ -513,7 +513,7 @@ const ValidationRules = {
             .withMessage('Search query must be less than 500 characters')
             .customSanitizer((value) => validator.escape(value.trim()))
         ];
-    }
+    },
     
     // File operation validation
     fileOperation() {
@@ -531,7 +531,7 @@ const ValidationRules = {
             .isJSON()
             .withMessage('Parameters must be valid JSON')
         ];
-    }
+    },
     
     // Token refresh validation
     tokenRefresh() {
@@ -549,7 +549,7 @@ const ValidationRules = {
             .withMessage('Scope must not exceed 1000 characters')
             .trim()
         ];
-    }
+    },
     
     // Token validation
     tokenValidation() {
@@ -567,7 +567,7 @@ const ValidationRules = {
             .withMessage('Token type must be access_token, id_token, or refresh_token')
             .trim()
         ];
-    }
+    },
     
     /**
      * Create body validation rules from object
@@ -589,7 +589,7 @@ const ValidationRules = {
             }
         }
         return rules;
-    }
+    },
     
     /**
      * Create query validation rules from object
@@ -608,7 +608,7 @@ const ValidationRules = {
             }
         }
         return rules;
-    }
+    },
     
     /**
      * Create params validation rules from object
@@ -689,23 +689,6 @@ const SecurityMiddleware = {
     }
 };
 
-/**
- * Common validation rules
- */
-const ValidationRules = {
-    tokenRefresh: () => [
-        body('refresh_token').notEmpty().withMessage('Refresh token is required')
-    ],
-    
-    tokenValidation: () => [
-        body('access_token').notEmpty().withMessage('Access token is required')
-    ],
-    
-    chatMessage: [
-        body('message').notEmpty().withMessage('Message is required'),
-        body('message').isLength({ max: 1000 }).withMessage('Message too long')
-    ]
-};
 
 module.exports = {
     InputValidationService,
