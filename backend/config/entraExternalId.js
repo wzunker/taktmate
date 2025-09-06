@@ -144,8 +144,9 @@ function getIssuerUrl() {
  * @returns {string} The JWKS URI
  */
 function getJwksUri() {
-  const { domain, tenantName, signUpSignInPolicy } = entraExternalIdConfig;
-  return `https://${domain}/${tenantName}.onmicrosoft.com/${signUpSignInPolicy}/discovery/v2.0/keys`;
+  const { tenantId } = entraExternalIdConfig;
+  // Microsoft Entra External ID uses standard OAuth 2.0 JWKS endpoint
+  return `https://login.microsoftonline.com/${tenantId}/discovery/v2.0/keys`;
 }
 
 /**
