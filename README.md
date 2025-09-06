@@ -559,4 +559,4 @@ Frontend (React)     Microsoft Entra External ID Tenant     Backend (Node.js)
 - ✅ **Token Expiration**: Configurable token lifetimes with refresh capabilities
 - ✅ **Role-Based Access**: Flexible authorization middleware for API protection
 - ✅ **Audit Logging**: Comprehensive security monitoring and error tracking
-- ✅ **HTTPS Enforcement**: Secure token transmission and redirect handling
+- ✅ **HTTPS Enforcement**: Secure token transmission and redirect handling# Trigger deployment after making repo public
