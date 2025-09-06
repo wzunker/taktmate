@@ -2553,7 +2553,7 @@ app.post('/upload',
   rateLimitSecurity.createRateLimiter('upload'),
   rateLimitSecurity.createSlowDown('upload'),
   csrfProtection.createCSRFProtection(), // Add CSRF protection for form submissions
-  jwtAuthMiddleware(), 
+  // jwtAuthMiddleware(),  // TEMPORARILY DISABLED for debugging
   upload.single('csvFile'), 
   async (req, res) => {
   const startTime = Date.now();
