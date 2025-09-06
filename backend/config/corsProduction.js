@@ -14,7 +14,8 @@ class ProductionCORSConfig {
         // Production domains for TaktMate
         this.productionDomains = [
             'https://app.taktconnect.com',
-            'https://www.taktconnect.com'
+            'https://www.taktconnect.com',
+            'https://orange-flower-0b350780f.1.azurestaticapps.net'
         ];
         
         // Additional allowed origins from environment
