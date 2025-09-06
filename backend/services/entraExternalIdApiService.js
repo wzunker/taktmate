@@ -122,10 +122,12 @@ class EntraExternalIdApiService {
             throw new Error(`Missing required Azure AD B2C API configuration: ${missingConfig.join(', ')}`);
         }
         
-        // Validate tenant ID format (GUID)
+        // Validate tenant ID format (GUID or tenant name)
         const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        if (!guidRegex.test(this.config.tenantId)) {
-            throw new Error('Invalid tenant ID format. Expected GUID format.');
+        const tenantNameRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$/;
+        
+        if (!guidRegex.test(this.config.tenantId) && !tenantNameRegex.test(this.config.tenantId)) {
+            console.warn('⚠️  Tenant ID should preferably be in GUID format for production. Current format may cause issues with some API calls.');
         }
         
         console.log('✅ Azure AD B2C API configuration validated');

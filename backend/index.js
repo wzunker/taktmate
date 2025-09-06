@@ -191,40 +191,7 @@ app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Initialize error logging system
-errorLogging.initialize().catch(error => {
-  console.error('❌ Failed to initialize error logging:', error.message);
-});
-
-// Initialize GDPR compliance system
-gdprCompliance.initialize().catch(error => {
-  console.error('❌ Failed to initialize GDPR compliance:', error.message);
-});
-
-// Initialize account deletion system
-accountDeletion.initialize().catch(error => {
-  console.error('❌ Failed to initialize account deletion service:', error.message);
-});
-
-// Initialize legal documents system
-legalDocuments.initialize().catch(error => {
-  console.error('❌ Failed to initialize legal documents service:', error.message);
-});
-
-// Initialize cookie consent system
-cookieConsent.initialize().catch(error => {
-  console.error('❌ Failed to initialize cookie consent service:', error.message);
-});
-
-// Initialize data retention system
-dataRetention.initialize().catch(error => {
-  console.error('❌ Failed to initialize data retention service:', error.message);
-});
-
-// Initialize audit logging system
-auditLogging.initialize().catch(error => {
-  console.error('❌ Failed to initialize audit logging service:', error.message);
-});
+// Service initialization will happen after all services are created
 
 // Apply HTTP request/response logging middleware (early in stack)
 app.use(errorLogging.createHTTPLoggingMiddleware());
@@ -247,6 +214,35 @@ dataRetention = new DataRetentionService(appInsights, fileStore, sessionManageme
 // Update Audit Logging Service with dependencies (now that fileStore and sessionManagement are available)
 auditLogging.fileStore = fileStore;
 auditLogging.sessionManagement = sessionManagement;
+
+// Initialize all services now that they are fully created and configured
+errorLogging.initialize().catch(error => {
+  console.error('❌ Failed to initialize error logging:', error.message);
+});
+
+gdprCompliance.initialize().catch(error => {
+  console.error('❌ Failed to initialize GDPR compliance:', error.message);
+});
+
+accountDeletion.initialize().catch(error => {
+  console.error('❌ Failed to initialize account deletion service:', error.message);
+});
+
+legalDocuments.initialize().catch(error => {
+  console.error('❌ Failed to initialize legal documents service:', error.message);
+});
+
+cookieConsent.initialize().catch(error => {
+  console.error('❌ Failed to initialize cookie consent service:', error.message);
+});
+
+dataRetention.initialize().catch(error => {
+  console.error('❌ Failed to initialize data retention service:', error.message);
+});
+
+auditLogging.initialize().catch(error => {
+  console.error('❌ Failed to initialize audit logging service:', error.message);
+});
 
 // Apply session tracking middleware
 app.use(sessionManagement.createSessionMiddleware());
