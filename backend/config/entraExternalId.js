@@ -81,7 +81,7 @@ const entraExternalIdConfig = {
   enableCors: process.env.ENABLE_CORS !== 'false',
   
   // Debug Configuration
-  debugJwt: process.env.DEBUG_JWT === 'true',
+  debugJwt: true, // Temporarily enable for debugging
   debugAuth: process.env.DEBUG_AUTH === 'true',
   debugSecurity: process.env.DEBUG_SECURITY === 'true',
   
