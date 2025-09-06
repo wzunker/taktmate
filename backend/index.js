@@ -194,7 +194,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Service initialization will happen after all services are created
 
 // Apply HTTP request/response logging middleware (early in stack)
-app.use(errorLogging.createHTTPLoggingMiddleware());
+// TEMPORARILY DISABLED: app.use(errorLogging.createHTTPLoggingMiddleware());
 
 // Apply audit logging middleware (after authentication setup)
 app.use(auditLogging.createAuditMiddleware());

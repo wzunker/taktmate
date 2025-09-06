@@ -1156,6 +1156,8 @@ class ErrorLoggingService {
      * Create Express middleware for request/response logging
      */
     createHTTPLoggingMiddleware() {
+        const self = this; // Capture the ErrorLoggingService instance
+        
         return (req, res, next) => {
             const startTime = Date.now();
             req.startTime = startTime;
@@ -1169,14 +1171,14 @@ class ErrorLoggingService {
                 
                 // Log HTTP request/response
                 try {
-                    await this.logHTTP(req, res, duration);
+                    await self.logHTTP(req, res, duration);
                 } catch (error) {
                     console.error('❌ HTTP logging failed:', error.message);
                 }
                 
-                // Call original end method
-                originalEnd.call(this, chunk, encoding);
-            }.bind(this);
+                // Call original end method with correct context
+                originalEnd.call(res, chunk, encoding);
+            };
             
             next();
         };
