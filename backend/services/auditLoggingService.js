@@ -1006,12 +1006,13 @@ class AuditLoggingService {
                 
                 // Override res.json to capture response
                 const originalJson = res.json;
+                const self = this; // Capture audit service context
                 res.json = function(data) {
                     // Log response
                     const responseTime = Date.now() - startTime;
                     
                     // Don't await this to avoid blocking response
-                    this.logAuditEvent('DATA_ACCESS', {
+                    self.logAuditEvent('DATA_ACCESS', {
                         requestId: req.auditRequestId,
                         endpoint: req.originalUrl || req.url,
                         httpMethod: req.method,
@@ -1029,8 +1030,8 @@ class AuditLoggingService {
                         console.error('❌ Failed to log response audit event:', error.message);
                     });
                     
-                    return originalJson.call(this, data);
-                }.bind(this);
+                    return originalJson.call(res, data);
+                };
                 
                 next();
             } catch (error) {
