@@ -42,8 +42,8 @@ class CSRFProtectionService {
             doubleSubmitCookie: true, // Use double submit cookie pattern
             encryptTokens: true,      // Encrypt tokens for additional security
             rotateTokens: true,       // Rotate tokens on each request
-            validateOrigin: true,     // Validate request origin
-            validateReferer: true,    // Validate referer header
+            validateOrigin: false,    // Disable for cross-origin API calls (we use JWT instead)
+            validateReferer: false,   // Disable for cross-origin API calls (we use JWT instead)
             
             // Exempted paths (typically for API endpoints with other auth)
             exemptPaths: [

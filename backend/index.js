@@ -2552,8 +2552,8 @@ app.get('/api/status', optionalJwtAuthMiddleware(), (req, res) => {
 app.post('/upload', 
   rateLimitSecurity.createRateLimiter('upload'),
   rateLimitSecurity.createSlowDown('upload'),
-  csrfProtection.createCSRFProtection(), // Add CSRF protection for form submissions
-  // jwtAuthMiddleware(),  // TEMPORARILY DISABLED for debugging
+  // csrfProtection.createCSRFProtection(), // TEMPORARILY DISABLED for debugging
+  jwtAuthMiddleware(), // Re-enabled
   upload.single('csvFile'), 
   async (req, res) => {
   const startTime = Date.now();

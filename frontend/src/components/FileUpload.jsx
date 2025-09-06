@@ -47,13 +47,6 @@ const FileUpload = ({ onFileUploaded }) => {
         console.log('🔍 This indicates CORS or connectivity issues');
       }
       
-      // Get CSRF token first
-      const csrfResponse = await axios.get(`${backendURL}/csrf-token`, {
-        withCredentials: true // Include cookies for CSRF
-      });
-      const csrfToken = csrfResponse.data.csrf.token;
-      console.log('🔍 CSRF token obtained:', csrfToken ? 'SUCCESS' : 'FAILED');
-      
       // Get authentication headers
       const authHeaders = await getAuthHeaders();
       console.log('🔍 Auth headers obtained:', authHeaders ? 'SUCCESS' : 'FAILED');
@@ -62,10 +55,8 @@ const FileUpload = ({ onFileUploaded }) => {
       const response = await axios.post(`${backendURL}/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          'X-CSRF-Token': csrfToken,
           ...authHeaders, // Add JWT authentication headers
         },
-        withCredentials: true, // Include cookies for CSRF
         timeout: 30000, // 30 second timeout
       });
       console.log('Upload response:', response.data);
