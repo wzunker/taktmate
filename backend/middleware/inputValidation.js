@@ -489,7 +489,8 @@ const ValidationRules = {
     ],
     
     // API parameter validation
-    apiParams = [
+    get apiParams() {
+        return [
         param('id')
             .isUUID()
             .withMessage('ID must be a valid UUID'),
@@ -511,10 +512,12 @@ const ValidationRules = {
             .isLength({ max: 500 })
             .withMessage('Search query must be less than 500 characters')
             .customSanitizer((value) => validator.escape(value.trim()))
-    ],
+        ];
+    }
     
     // File operation validation
-    fileOperation = [
+    get fileOperation() {
+        return [
         param('fileId')
             .isUUID()
             .withMessage('File ID must be a valid UUID'),
@@ -527,10 +530,12 @@ const ValidationRules = {
             .optional()
             .isJSON()
             .withMessage('Parameters must be valid JSON')
-    ],
+        ];
+    }
     
     // Token refresh validation
-    tokenRefresh = () => [
+    get tokenRefresh() {
+        return () => [
         body('refreshToken')
             .notEmpty()
             .withMessage('Refresh token is required')
@@ -543,10 +548,12 @@ const ValidationRules = {
             .isLength({ max: 1000 })
             .withMessage('Scope must not exceed 1000 characters')
             .trim()
-    ]
+        ];
+    }
     
     // Token validation
-    tokenValidation = () => [
+    get tokenValidation() {
+        return () => [
         body('token')
             .notEmpty()
             .withMessage('Token is required')
@@ -559,7 +566,8 @@ const ValidationRules = {
             .isIn(['access_token', 'id_token', 'refresh_token'])
             .withMessage('Token type must be access_token, id_token, or refresh_token')
             .trim()
-    ]
+        ];
+    }
     
     /**
      * Create body validation rules from object
