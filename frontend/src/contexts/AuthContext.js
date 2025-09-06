@@ -14,7 +14,7 @@ import {
   UnauthenticatedTemplate 
 } from '@azure/msal-react';
 import { InteractionStatus } from '@azure/msal-browser';
-import { loginRequest, authorities } from '../config/authConfig';
+import { loginRequest } from '../config/authConfig';
 // import { protectedResources } from '../config/authConfig'; // Unused for now
 
 // Create the authentication context
@@ -170,18 +170,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
-   * Edit profile (redirect to Microsoft Entra External ID profile editing flow)
+   * Edit profile (uses standard Microsoft account profile editing)
    */
   const editProfile = async () => {
     try {
       setError(null);
-      const editProfileRequest = {
-        authority: authorities.editProfile.authority,
-        scopes: loginRequest.scopes,
-        account: account,
-      };
-
-      await instance.loginRedirect(editProfileRequest);
+      // For Entra External ID, profile editing is handled through standard Microsoft account flows
+      // Redirect to Microsoft account management
+      window.open('https://account.microsoft.com/profile', '_blank');
     } catch (error) {
       console.error('Edit profile failed:', error);
       setError(error);
@@ -190,17 +186,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
-   * Reset password (redirect to Microsoft Entra External ID password reset flow)
+   * Reset password (uses standard Microsoft account password reset)
    */
   const resetPassword = async () => {
     try {
       setError(null);
-      const resetPasswordRequest = {
-        authority: authorities.resetPassword.authority,
-        scopes: loginRequest.scopes,
-      };
-
-      await instance.loginRedirect(resetPasswordRequest);
+      // For Entra External ID, password reset is handled through standard Microsoft account flows
+      // Redirect to Microsoft account password reset
+      window.open('https://account.live.com/password/reset', '_blank');
     } catch (error) {
       console.error('Reset password failed:', error);
       setError(error);
