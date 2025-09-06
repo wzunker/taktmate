@@ -217,7 +217,7 @@ router.get('/config', authRateLimit, (req, res) => {
 
 /**
  * GET /auth/login-url
- * Generate Azure AD B2C login URL
+ * Generate Microsoft Entra External ID login URL
  */
 router.get('/login-url', authRateLimit, [
   // Validate redirect_uri parameter
@@ -265,7 +265,7 @@ router.get('/login-url', authRateLimit, [
 
 /**
  * GET /auth/password-reset-url
- * Generate Azure AD B2C password reset URL
+ * Generate Microsoft Entra External ID password reset URL
  */
 router.get('/password-reset-url', authRateLimit, [
   body('redirect_uri')
@@ -318,7 +318,7 @@ router.get('/password-reset-url', authRateLimit, [
 
 /**
  * GET /auth/profile-edit-url
- * Generate Azure AD B2C profile edit URL
+ * Generate Microsoft Entra External ID profile edit URL
  */
 router.get('/profile-edit-url', jwtAuthMiddleware(), [
   body('redirect_uri')

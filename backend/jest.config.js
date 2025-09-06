@@ -1,5 +1,5 @@
 // Jest configuration for TaktMate Backend Unit Tests
-// Comprehensive testing setup for Azure AD B2C integration and token validation
+// Comprehensive testing setup for Microsoft Entra External ID integration and token validation
 
 module.exports = {
   // Test environment

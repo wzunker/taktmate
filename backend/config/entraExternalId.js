@@ -106,7 +106,7 @@ const entraExternalIdConfig = {
 };
 
 /**
- * Get the metadata URL for the Azure AD B2C tenant
+ * Get the metadata URL for the Microsoft Entra External ID tenant
  * Used for JWT token validation and discovering endpoint information
  * 
  * @returns {string} The OpenID Connect metadata URL
@@ -221,7 +221,7 @@ function validateConfiguration(strict = false) {
   
   // Debug logging for configuration validation
   if (entraExternalIdConfig.debugAuth) {
-    console.log('✅ Azure AD B2C Configuration validated successfully');
+    console.log('✅ Microsoft Entra External ID Configuration validated successfully');
     console.log(`   Tenant: ${entraExternalIdConfig.tenantName}`);
     console.log(`   Environment: ${entraExternalIdConfig.environment}`);
     console.log(`   Debug Mode: JWT=${entraExternalIdConfig.debugJwt}, Auth=${entraExternalIdConfig.debugAuth}`);
@@ -229,7 +229,7 @@ function validateConfiguration(strict = false) {
 }
 
 /**
- * Extract user profile information from Azure AD B2C JWT token claims
+ * Extract user profile information from Microsoft Entra External ID JWT token claims
  * 
  * @param {Object} tokenPayload - Decoded JWT token payload
  * @returns {Object} User profile object
@@ -268,7 +268,7 @@ function extractUserProfile(tokenPayload) {
 }
 
 /**
- * Generate login URL for Azure AD B2C
+ * Generate login URL for Microsoft Entra External ID
  * 
  * @param {string} redirectUri - Redirect URI (optional, uses config default)
  * @param {Object} options - Additional options
@@ -330,7 +330,7 @@ function generateLoginUrl(redirectUri = null, options = {}) {
 }
 
 /**
- * Generate password reset URL for Azure AD B2C
+ * Generate password reset URL for Microsoft Entra External ID
  * 
  * @param {string} redirectUri - Redirect URI (optional, uses config default)
  * @param {Object} options - Additional options
@@ -348,7 +348,7 @@ function generatePasswordResetUrl(redirectUri = null, options = {}) {
 }
 
 /**
- * Generate profile edit URL for Azure AD B2C
+ * Generate profile edit URL for Microsoft Entra External ID
  * 
  * @param {string} redirectUri - Redirect URI (optional, uses config default)
  * @param {Object} options - Additional options
@@ -366,7 +366,7 @@ function generateProfileEditUrl(redirectUri = null, options = {}) {
 }
 
 /**
- * Generate logout URL for Azure AD B2C
+ * Generate logout URL for Microsoft Entra External ID
  * 
  * @returns {string} The complete logout URL
  */
@@ -381,7 +381,7 @@ function generateLogoutUrl() {
 }
 
 /**
- * Generate token refresh URL for Azure AD B2C
+ * Generate token refresh URL for Microsoft Entra External ID
  * 
  * @returns {string} The token refresh URL
  */
@@ -443,8 +443,8 @@ function needsTokenRefresh(expiresAt, threshold = null) {
  */
 function getTokenLifetimeConfig() {
   return {
-    accessTokenLifetime: 60 * 60 * 1000, // 1 hour (Azure AD B2C default)
-    idTokenLifetime: 60 * 60 * 1000, // 1 hour (Azure AD B2C default)
+    accessTokenLifetime: 60 * 60 * 1000, // 1 hour (Microsoft Entra External ID default)
+    idTokenLifetime: 60 * 60 * 1000, // 1 hour (Microsoft Entra External ID default)
     refreshTokenLifetime: entraExternalIdConfig.refreshTokenLifetime,
     sessionTimeout: entraExternalIdConfig.sessionTimeout,
     inactivityTimeout: entraExternalIdConfig.inactivityTimeout,
@@ -621,7 +621,7 @@ function isFeatureEnabled(feature) {
 function logConfigurationSummary() {
   if (!entraExternalIdConfig.debugAuth) return;
   
-  console.log('\n🔧 Azure AD B2C Configuration Summary');
+  console.log('\n🔧 Microsoft Entra External ID Configuration Summary');
   console.log('=====================================');
   console.log(`Environment: ${entraExternalIdConfig.environment}`);
   console.log(`Tenant: ${entraExternalIdConfig.tenantName}`);
@@ -657,10 +657,10 @@ if (entraExternalIdConfig.environment !== 'test') {
     logConfigurationSummary();
     
     if (entraExternalIdConfig.debugAuth) {
-      console.log('✅ Azure AD B2C configuration module loaded successfully');
+      console.log('✅ Microsoft Entra External ID configuration module loaded successfully');
     }
   } catch (error) {
-    console.error('❌ Azure AD B2C Configuration Error:', error.message);
+    console.error('❌ Microsoft Entra External ID Configuration Error:', error.message);
     
     if (entraExternalIdConfig.isProduction) {
       console.error('💥 Exiting due to configuration error in production environment');

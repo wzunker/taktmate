@@ -2,7 +2,7 @@
  * Enhanced File Storage System for TaktMate
  * 
  * This module provides comprehensive file storage functionality with user association,
- * access control, file management, and integration with Azure AD B2C authentication.
+ * access control, file management, and integration with Microsoft Entra External ID authentication.
  */
 
 const { config } = require('./config/entraExternalId');
@@ -60,7 +60,7 @@ class FileStore {
    * @param {string} fileId - Unique file identifier
    * @param {string} filename - Original filename
    * @param {Array} rows - Parsed CSV data
-   * @param {string} userId - User ID from Azure AD B2C
+   * @param {string} userId - User ID from Microsoft Entra External ID
    * @param {Object} userProfile - User profile information
    * @param {Object} options - Additional storage options
    * @returns {Object} Storage result

@@ -54,7 +54,7 @@ const corsConfiguration = {
             'X-File-Name',
             'X-File-Size',
             'X-File-Type',
-            // Azure AD B2C headers
+            // Microsoft Entra External ID headers
             'X-MS-CLIENT-PRINCIPAL-ID',
             'X-MS-CLIENT-PRINCIPAL-NAME',
             'X-MS-CLIENT-PRINCIPAL',
