@@ -93,6 +93,11 @@ class ProductionCORSConfig {
                 'X-MS-CLIENT-PRINCIPAL',
                 'X-MS-CLIENT-PRINCIPAL-IDP',
                 
+                // CSRF Protection headers
+                'X-CSRF-Token',
+                'X-XSRF-Token',
+                'CSRF-Token',
+                
                 // Custom application headers
                 'X-API-Version',
                 'X-Request-ID',
@@ -101,7 +106,6 @@ class ProductionCORSConfig {
                 'X-Feature-Flags',
                 
                 // Security headers
-                'X-CSRF-Token',
                 'X-Session-ID'
             ],
             exposedHeaders: [
