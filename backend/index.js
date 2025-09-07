@@ -2559,7 +2559,7 @@ app.post('/upload',
   rateLimitSecurity.createRateLimiter('upload'),
   rateLimitSecurity.createSlowDown('upload'),
   csrfProtection.createCSRFProtection(), // Re-enabled with fixed origin validation
-  jwtAuthMiddleware(), // Re-enabled - need to fix jwks-client issue properly
+  jwtAuthMiddleware(), // Re-enabled with production-ready JWT implementation
   upload.single('csvFile'), 
   async (req, res) => {
   const startTime = Date.now();

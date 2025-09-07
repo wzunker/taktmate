@@ -7,7 +7,8 @@
  */
 
 const jwt = require('jsonwebtoken');
-const jwksClient = require('jwks-client').default || require('jwks-client');
+const axios = require('axios');
+const crypto = require('crypto');
 const { 
   config, 
   getJwksUri, 
@@ -34,39 +35,78 @@ try {
  * Note: Caching disabled due to lru-cache compatibility issue in Azure App Service
  */
 
-const jwksClientInstance = jwksClient({
-  jwksUri: getJwksUri(),
-  requestHeaders: {
-    'User-Agent': 'TaktMate-JWT-Validator/1.0'
-  },
-  timeout: parseInt(process.env.REQUEST_TIMEOUT) || 30000,
-  cache: false, // Temporarily disable cache to bypass lru-cache issue
-  jwksRequestsPerMinute: 10,
-  jwksRequestsPerMinuteRateLimitExceededError: new Error('Too many requests to JWKS endpoint'),
-  getKeysInterceptor: (keys) => {
+/**
+ * Production-ready JWKS key cache
+ * Simple, reliable approach without problematic dependencies
+ */
+let jwksKeysCache = null;
+let jwksCacheExpiry = 0;
+const JWKS_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+
+async function getJwksKeys() {
+  // Check cache first
+  if (jwksKeysCache && Date.now() < jwksCacheExpiry) {
     if (config.debugJwt) {
-      console.log(`✅ JWKS keys retrieved: ${keys.length} keys`);
+      console.log('✅ Using cached JWKS keys');
+    }
+    return jwksKeysCache;
+  }
+
+  try {
+    if (config.debugJwt) {
+      console.log('🔍 Fetching JWKS keys from:', getJwksUri());
     }
     
+    const response = await axios.get(getJwksUri(), {
+      timeout: 30000,
+      headers: {
+        'User-Agent': 'TaktMate-JWT-Validator/1.0'
+      }
+    });
+
+    jwksKeysCache = response.data.keys;
+    jwksCacheExpiry = Date.now() + JWKS_CACHE_DURATION;
+
+    if (config.debugJwt) {
+      console.log(`✅ JWKS keys fetched successfully: ${jwksKeysCache.length} keys`);
+    }
+
     // Track JWKS key retrieval in Application Insights
     if (telemetry) {
       telemetry.trackEvent('JWKSKeysRetrieved', {
-        keyCount: keys.length.toString(),
+        keyCount: jwksKeysCache.length.toString(),
         jwksUri: getJwksUri()
       });
     }
-    
-    return keys;
+
+    return jwksKeysCache;
+  } catch (error) {
+    console.error('❌ Failed to fetch JWKS keys:', error.message);
+    if (telemetry) {
+      telemetry.trackEvent('JWKSKeysFetchFailed', {
+        error: error.message,
+        jwksUri: getJwksUri()
+      });
+    }
+    throw new Error('JWKS key fetch failed');
   }
-});
+}
 
 /**
- * Get signing key for JWT verification using jwks-client with enhanced error handling
+ * Get signing key for JWT verification using production-ready approach
  */
 async function getSigningKey(kid, context = {}) {
   try {
-    const key = await jwksClientInstance.getSigningKey(kid);
-    return key.getPublicKey();
+    const keys = await getJwksKeys();
+    const key = keys.find(k => k.kid === kid);
+    
+    if (!key) {
+      throw new Error(`Signing key not found for kid: ${kid}`);
+    }
+    
+    // Convert JWK to PEM format
+    const publicKey = jwkToPem(key);
+    return publicKey;
   } catch (error) {
     // Create specific error for JWKS key retrieval failure
     const jwksError = createAuthError('JWKS_FETCH_ERROR', error, context);
@@ -74,17 +114,7 @@ async function getSigningKey(kid, context = {}) {
   }
 }
 
-/**
- * Get JWKS keys (for compatibility with existing code)
- */
-async function getJwksKeys() {
-  try {
-    const keys = await jwksClientInstance.getKeys();
-    return keys.map(key => key.rawKey || key);
-  } catch (error) {
-    throw new Error(`Failed to get JWKS keys: ${error.message}`);
-  }
-}
+// getJwksKeys function is already defined above - removing duplicate
 
 /**
  * Validate JWT token with comprehensive error handling and telemetry
@@ -530,6 +560,36 @@ function getJwksCacheStats() {
   };
 }
 
+/**
+ * Convert JWK to PEM format for jsonwebtoken library
+ * Production-ready implementation without external dependencies
+ */
+function jwkToPem(jwk) {
+  if (jwk.kty !== 'RSA') {
+    throw new Error('Only RSA keys are supported');
+  }
+
+  try {
+    // Use Node.js built-in crypto module for reliable key conversion
+    const publicKey = crypto.createPublicKey({
+      key: {
+        kty: jwk.kty,
+        n: jwk.n,
+        e: jwk.e
+      },
+      format: 'jwk'
+    });
+
+    return publicKey.export({
+      type: 'spki',
+      format: 'pem'
+    });
+  } catch (error) {
+    console.error('❌ Failed to convert JWK to PEM:', error.message);
+    throw new Error('JWK to PEM conversion failed');
+  }
+}
+
 module.exports = {
   jwtAuthMiddleware,
   optionalJwtAuthMiddleware,
@@ -540,5 +600,6 @@ module.exports = {
   extractTokenFromRequest,
   getJwksKeys,
   clearJwksCache,
-  getJwksCacheStats
+  getJwksCacheStats,
+  jwkToPem
 };
