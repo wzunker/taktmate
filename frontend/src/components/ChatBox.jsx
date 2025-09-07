@@ -44,6 +44,12 @@ const ChatBox = ({ fileData }) => {
       // Get authentication headers for chat request
       const authHeaders = await getAuthHeaders(); // Keep Content-Type for JSON request
       
+      console.log('🔍 Chat request data:', {
+        fileId: fileData.fileId,
+        message: userMessage,
+        messageLength: userMessage.length
+      });
+      
       const response = await axios.post(`${backendURL}/chat`, {
         fileId: fileData.fileId,
         message: userMessage
