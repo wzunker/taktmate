@@ -193,8 +193,8 @@ class ProductionCORSConfig {
                 issues.push(`Production domain must use HTTPS: ${domain}`);
             }
             
-            if (!domain.includes('taktconnect.com')) {
-                issues.push(`Production domain should be on taktconnect.com: ${domain}`);
+            if (!domain.includes('taktconnect.com') && !domain.includes('azurestaticapps.net')) {
+                issues.push(`Production domain should be on taktconnect.com or azurestaticapps.net: ${domain}`);
             }
         });
         
