@@ -250,6 +250,25 @@ class RateLimitSecurityService {
         
         return rateLimit({
             ...config,
+            // Production-ready Azure App Service configuration
+            trustProxy: true, // Trust Azure App Service proxy
+            
+            // Skip rate limiting if IP can't be determined (Azure App Service compatibility)
+            skip: (req) => {
+                const ip = req.ip || req.connection?.remoteAddress || req.headers['x-forwarded-for']?.split(',')[0];
+                return !ip || ip === '::1' || ip === '127.0.0.1' || ip === 'unknown';
+            },
+            
+            // Custom key generator for Azure App Service
+            keyGenerator: (req) => {
+                return req.ip || 
+                       req.headers['x-forwarded-for']?.split(',')[0] || 
+                       req.connection?.remoteAddress || 
+                       req.headers['x-real-ip'] ||
+                       'fallback-key';
+            },
+            
+            // Use handler instead of deprecated onLimitReached
             handler: (req, res) => {
                 // Track rate limit violation
                 this.trackRateLimitViolation(req, type);
@@ -277,9 +296,34 @@ class RateLimitSecurityService {
         
         return slowDown({
             ...config,
-            onLimitReached: (req, res) => {
-                this.trackSlowDownActivated(req, type);
-            }
+            // Production-ready Azure App Service configuration
+            trustProxy: true, // Trust Azure App Service proxy
+            
+            // Skip if IP can't be determined
+            skip: (req) => {
+                const ip = req.ip || req.connection?.remoteAddress || req.headers['x-forwarded-for']?.split(',')[0];
+                return !ip || ip === '::1' || ip === '127.0.0.1' || ip === 'unknown';
+            },
+            
+            // Custom key generator for Azure App Service
+            keyGenerator: (req) => {
+                return req.ip || 
+                       req.headers['x-forwarded-for']?.split(',')[0] || 
+                       req.connection?.remoteAddress || 
+                       req.headers['x-real-ip'] ||
+                       'fallback-key';
+            },
+            
+            // Use modern delayMs function
+            delayMs: (used, req) => {
+                const delayAfter = req.slowDown?.limit || config.delayAfter || 0;
+                return Math.max(0, (used - delayAfter) * (config.delayMs || 1000));
+            },
+            
+            // Remove deprecated onLimitReached
+            // onLimitReached: (req, res) => {
+            //     this.trackSlowDownActivated(req, type);
+            // }
         });
     }
     
