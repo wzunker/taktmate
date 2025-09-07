@@ -1,6 +1,6 @@
 {
   "name": "taktmate-backend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "TaktMate MVP Backend - CSV Chat with GPT-5",
   "main": "index.js",
   "scripts": {

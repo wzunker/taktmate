@@ -93,9 +93,9 @@ class ProductionCORSConfig {
                 'X-MS-CLIENT-PRINCIPAL',
                 'X-MS-CLIENT-PRINCIPAL-IDP',
                 
-                // CSRF Protection headers
+                // CSRF Protection headers (updated for production cross-origin support)
                 'X-CSRF-Token',
-                'X-XSRF-Token',
+                'X-XSRF-Token', 
                 'CSRF-Token',
                 
                 // Custom application headers
