@@ -2930,7 +2930,7 @@ app.post('/chat',
     console.log('🔍 Chat Debug: Attempting to retrieve file:', {
       fileId,
       userId: req.user.id,
-      totalFilesInStore: fileStore.getAllFiles().length
+      userFilesCount: fileStore.getUserFiles(req.user.id).length
     });
     
     const fileData = fileStore.get(fileId, req.user.id, {
