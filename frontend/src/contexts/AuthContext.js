@@ -204,13 +204,19 @@ export const AuthProvider = ({ children }) => {
   /**
    * Get authenticated API headers
    */
-  const getAuthHeaders = async (forceRefresh = false) => {
+  const getAuthHeaders = async (forceRefresh = false, includeContentType = true) => {
     try {
       const token = accessToken && !forceRefresh ? accessToken : await acquireAccessToken(forceRefresh);
-      return {
+      const headers = {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
       };
+      
+      // Only include Content-Type for JSON requests, not for file uploads
+      if (includeContentType) {
+        headers['Content-Type'] = 'application/json';
+      }
+      
+      return headers;
     } catch (error) {
       console.error('Failed to get auth headers:', error);
       throw error;

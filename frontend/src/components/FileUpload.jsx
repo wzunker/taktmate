@@ -67,8 +67,8 @@ const FileUpload = ({ onFileUploaded }) => {
       const csrfToken = csrfResponse.data.csrf.token;
       console.log('🔍 CSRF token obtained:', csrfToken ? 'SUCCESS' : 'FAILED');
       
-      // Get authentication headers
-      const authHeaders = await getAuthHeaders();
+      // Get authentication headers without Content-Type (for file upload)
+      const authHeaders = await getAuthHeaders(false, false); // Don't include Content-Type
       console.log('🔍 Auth headers obtained:', authHeaders ? 'SUCCESS' : 'FAILED');
       console.log('🔍 Auth headers content:', authHeaders);
       
