@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
 const ChatBox = ({ fileData }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef(null);
+  const { getAuthHeaders } = useAuth();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -39,9 +41,17 @@ const ChatBox = ({ fileData }) => {
     try {
       const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
       console.log('🔍 ChatBox Debug - Using API URL:', backendURL);
+      // Get authentication headers for chat request
+      const authHeaders = await getAuthHeaders(); // Keep Content-Type for JSON request
+      
       const response = await axios.post(`${backendURL}/chat`, {
         fileId: fileData.fileId,
         message: userMessage
+      }, {
+        headers: {
+          ...authHeaders, // Add JWT authentication headers
+        },
+        timeout: 30000, // 30 second timeout
       });
 
       if (response.data.success) {
