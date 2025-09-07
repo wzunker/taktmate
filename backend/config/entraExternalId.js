@@ -134,8 +134,9 @@ function getAuthorityUrl() {
  * @returns {string} The issuer URL
  */
 function getIssuerUrl() {
-  const { domain, tenantName, signUpSignInPolicy, tenantId } = entraExternalIdConfig;
-  return `https://${domain}/${tenantId}/v2.0/`;
+  const { tenantId } = entraExternalIdConfig;
+  // Microsoft Entra External ID uses standard OAuth 2.0 issuer
+  return `https://login.microsoftonline.com/${tenantId}/v2.0`;
 }
 
 /**
