@@ -2890,6 +2890,14 @@ app.post('/chat',
     
     // Use validated and sanitized data from middleware
     const { fileId, message } = req.validatedData;
+    
+    // Debug file access
+    console.log('🔍 Chat Debug: Request data:', {
+      fileId,
+      message: message?.substring(0, 50) + '...',
+      userId: req.user.id,
+      validatedDataKeys: Object.keys(req.validatedData || {})
+    });
 
     // Additional message validation and sanitization
     const messageValidation = inputValidator.validateChatMessage(message);
@@ -2919,12 +2927,27 @@ app.post('/chat',
     }
 
     // Retrieve CSV data with user access control
+    console.log('🔍 Chat Debug: Attempting to retrieve file:', {
+      fileId,
+      userId: req.user.id,
+      totalFilesInStore: fileStore.getAllFiles().length
+    });
+    
     const fileData = fileStore.get(fileId, req.user.id, {
       userAgent: req.headers['user-agent'],
       ip: req.ip
     });
+    
+    console.log('🔍 Chat Debug: File retrieval result:', {
+      found: !!fileData,
+      fileDataKeys: fileData ? Object.keys(fileData) : 'null'
+    });
 
     if (!fileData) {
+      console.log('❌ Chat Debug: File not found. Available files:', 
+        fileStore.getUserFiles(req.user.id).map(f => ({ id: f.id, name: f.filename }))
+      );
+      
       return res.status(404).json({ 
         success: false,
         error: 'File not found or access denied. Please check the file ID and your permissions.',
