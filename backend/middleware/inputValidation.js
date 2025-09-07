@@ -514,8 +514,10 @@ const ValidationRules = {
             
         body('fileId')
             .optional()
-            .isUUID()
-            .withMessage('File ID must be a valid UUID')
+            .isLength({ min: 10, max: 200 })
+            .withMessage('File ID must be between 10 and 200 characters')
+            .matches(/^[a-zA-Z0-9_-]+$/)
+            .withMessage('File ID contains invalid characters')
     ],
     
     // User profile validation
