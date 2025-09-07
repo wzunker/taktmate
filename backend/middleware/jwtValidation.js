@@ -336,22 +336,37 @@ function jwtAuthMiddleware(options = {}) {
       method: req.method
     };
     
-    // Validate token with context - this will throw TaktMateError on failure
+    // Validate token with context - use try-catch to prevent crashes
     if (config.debugJwt) {
       console.log('🔍 JWT Auth: Starting token validation...');
     }
     
-    const validation = await validateJwtToken(token, context);
-    
-    if (config.debugJwt) {
-      console.log('✅ JWT Auth: Token validation successful for user:', validation.userProfile?.email || validation.userProfile?.id);
+    let validation;
+    try {
+      validation = await validateJwtToken(token, context);
+      
+      if (config.debugJwt) {
+        console.log('✅ JWT Auth: Token validation successful for user:', validation.userProfile?.email || validation.userProfile?.id);
+      }
+      
+      // Add user information to request
+      req.user = validation.userProfile;
+      req.token = validation.payload;
+      req.userId = validation.userProfile.id;
+      req.authDuration = validation.validationDuration;
+    } catch (validationError) {
+      if (config.debugJwt) {
+        console.log('❌ JWT Auth: Token validation failed:', validationError.message);
+      }
+      
+      // Don't crash the server - return 401 instead
+      return res.status(401).json({
+        success: false,
+        error: 'Token validation failed',
+        message: 'Invalid or expired token',
+        code: 'TOKEN_VALIDATION_FAILED'
+      });
     }
-    
-    // Add user information to request
-    req.user = validation.userProfile;
-    req.token = validation.payload;
-    req.userId = validation.userProfile.id;
-    req.authDuration = validation.validationDuration;
     
     // Track successful authentication
     const duration = Date.now() - startTime;
