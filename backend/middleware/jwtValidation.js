@@ -298,10 +298,20 @@ function jwtAuthMiddleware(options = {}) {
   return asyncHandler(async (req, res, next) => {
     const startTime = Date.now();
     
+    // Production debugging for JWT authentication
+    if (config.debugJwt) {
+      console.log('🔍 JWT Auth: Processing request for:', req.method, req.path);
+      console.log('🔍 JWT Auth: Authorization header:', req.headers.authorization ? 'Present' : 'Missing');
+      console.log('🔍 JWT Auth: Origin:', req.headers.origin);
+    }
+    
     // Extract token from request
     const token = extractTokenFromRequest(req);
     
     if (!token) {
+      if (config.debugJwt) {
+        console.log('❌ JWT Auth: No token found in request headers');
+      }
       // Track missing token event
       if (telemetry) {
         telemetry.trackEvent('AuthenticationFailed', {
@@ -327,7 +337,15 @@ function jwtAuthMiddleware(options = {}) {
     };
     
     // Validate token with context - this will throw TaktMateError on failure
+    if (config.debugJwt) {
+      console.log('🔍 JWT Auth: Starting token validation...');
+    }
+    
     const validation = await validateJwtToken(token, context);
+    
+    if (config.debugJwt) {
+      console.log('✅ JWT Auth: Token validation successful for user:', validation.userProfile?.email || validation.userProfile?.id);
+    }
     
     // Add user information to request
     req.user = validation.userProfile;
