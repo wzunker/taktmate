@@ -25,7 +25,7 @@ const entraExternalIdConfig = {
   // Tenant Configuration
   tenantName: process.env.ENTRA_EXTERNAL_ID_TENANT_NAME || 'taktmate',
   tenantId: process.env.ENTRA_EXTERNAL_ID_TENANT_ID,
-  domain: process.env.ENTRA_EXTERNAL_ID_DOMAIN || `${process.env.ENTRA_EXTERNAL_ID_TENANT_NAME || 'taktmate'}.ciamlogin.com`,
+  domain: process.env.ENTRA_EXTERNAL_ID_DOMAIN || `${process.env.ENTRA_EXTERNAL_ID_TENANT_NAME || 'taktmate'}.onmicrosoft.com`,
   
   // Application Registration Details
   clientId: process.env.ENTRA_EXTERNAL_ID_CLIENT_ID,

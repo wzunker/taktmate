@@ -32,6 +32,19 @@ const FileUpload = ({ onFileUploaded }) => {
 
     const formData = new FormData();
     formData.append('csvFile', file);
+    
+    // Debug FormData content
+    console.log('🔍 FormData Debug:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      formDataHasFile: formData.has('csvFile'),
+      formDataEntries: Array.from(formData.entries()).map(([key, value]) => ({
+        key,
+        valueType: typeof value,
+        fileName: value.name || 'N/A'
+      }))
+    });
 
     try {
       console.log('Uploading file:', file.name, file.size);
@@ -61,13 +74,16 @@ const FileUpload = ({ onFileUploaded }) => {
       
       const response = await axios.post(`${backendURL}/upload`, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          // Don't set Content-Type manually - let axios set it with boundary
+          // 'Content-Type': 'multipart/form-data', // REMOVED - axios will set this automatically
           'X-CSRF-Token': csrfToken,
           ...authHeaders, // Add JWT authentication headers
         },
         withCredentials: true, // Include cookies for CSRF
         timeout: 30000, // 30 second timeout
       });
+      
+      console.log('🔍 Upload request sent with formData:', formData.get('csvFile')?.name);
       console.log('Upload response:', response.data);
 
       if (response.data.success) {
