@@ -15,9 +15,9 @@ import { LogLevel } from '@azure/msal-browser';
 export const msalConfig = {
   auth: {
     clientId: process.env.REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID || '3f1869f7-716b-4885-ac8a-86e78515f3a4',
-    // For Entra External ID, we use the tenant domain directly
-    authority: `https://login.microsoftonline.com/${process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_ID || 'taktmate.onmicrosoft.com'}`,
-    knownAuthorities: ['login.microsoftonline.com'],
+    // Use External ID user flow for multi-provider authentication
+    authority: `https://taktmate.ciamlogin.com/${process.env.REACT_APP_ENTRA_EXTERNAL_ID_USER_FLOW || 'TaktMateSignUpSignIn'}`,
+    knownAuthorities: ['taktmate.ciamlogin.com'],
     redirectUri: process.env.REACT_APP_REDIRECT_URI || window.location.origin,
     postLogoutRedirectUri: process.env.REACT_APP_POST_LOGOUT_REDIRECT_URI || window.location.origin,
     navigateToLoginRequestUrl: false,
