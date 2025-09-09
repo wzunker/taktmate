@@ -64,7 +64,7 @@
     "X-XSS-Protection": "1; mode=block",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://login.microsoftonline.com https://taktmate.ciamlogin.com https://accounts.google.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://login.microsoftonline.com https://taktmate.ciamlogin.com https://accounts.google.com https://api.openai.com https://*.applicationinsights.azure.com https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net; frame-src https://login.microsoftonline.com https://taktmate.ciamlogin.com https://accounts.google.com;"
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://login.microsoftonline.com https://accounts.google.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://login.microsoftonline.com https://accounts.google.com https://api.openai.com https://*.applicationinsights.azure.com https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net; frame-src https://login.microsoftonline.com https://accounts.google.com;"
   },
   "responseOverrides": {
     "401": {

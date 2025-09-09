@@ -15,9 +15,9 @@ import { LogLevel } from '@azure/msal-browser';
 export const msalConfig = {
   auth: {
     clientId: process.env.REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID || '3f1869f7-716b-4885-ac8a-86e78515f3a4',
-    // Use External ID user flow for multi-provider authentication
-    authority: `https://taktmate.ciamlogin.com/${process.env.REACT_APP_ENTRA_EXTERNAL_ID_USER_FLOW || 'TaktMateSignUpSignIn'}`,
-    knownAuthorities: ['taktmate.ciamlogin.com'],
+    // Use External ID with tenant ID (not user flow in URL for External ID)
+    authority: `https://login.microsoftonline.com/${process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_ID || 'taktmate.onmicrosoft.com'}`,
+    knownAuthorities: ['login.microsoftonline.com'],
     redirectUri: process.env.REACT_APP_REDIRECT_URI || window.location.origin,
     postLogoutRedirectUri: process.env.REACT_APP_POST_LOGOUT_REDIRECT_URI || window.location.origin,
     navigateToLoginRequestUrl: false,
@@ -99,27 +99,14 @@ export const protectedResources = {
  * Configuration validation
  */
 export const validateConfiguration = () => {
-  const requiredEnvVars = [
-    'REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID',
-    'REACT_APP_ENTRA_EXTERNAL_ID_TENANT_ID'
-  ];
-
   // Debug: Log all environment variables
   console.log('🔍 Environment variables debug:');
-  console.log('CLIENT_ID:', process.env.REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID ? 'SET' : 'MISSING');
-  console.log('TENANT_ID:', process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_ID ? `SET (${process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_ID})` : 'MISSING');
+  console.log('CLIENT_ID:', process.env.REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID ? 'SET' : 'USING DEFAULT');
+  console.log('USER_FLOW:', process.env.REACT_APP_ENTRA_EXTERNAL_ID_USER_FLOW ? `SET (${process.env.REACT_APP_ENTRA_EXTERNAL_ID_USER_FLOW})` : 'USING DEFAULT');
   console.log('Authority will be:', `https://login.microsoftonline.com/${process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_ID || 'taktmate.onmicrosoft.com'}`);
 
-  const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-  
-  if (missingVars.length > 0) {
-    console.warn('⚠️ Missing Microsoft Entra External ID environment variables:', missingVars);
-    console.warn('The application will use default values, but authentication may not work correctly.');
-    console.warn('Please check your .env file and ensure all required variables are set.');
-    return false;
-  }
-
-  console.log('✅ Microsoft Entra External ID configuration validated');
+  // For External ID, we have good defaults so we don't require environment variables
+  console.log('✅ Microsoft Entra External ID configuration ready (using defaults if env vars missing)');
   return true;
 };
 
