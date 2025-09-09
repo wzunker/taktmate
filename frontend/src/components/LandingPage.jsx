@@ -26,25 +26,23 @@ const LandingPage = () => {
   // Authentication handlers for different providers
   const handleMicrosoftSignIn = async () => {
     try {
-      await signIn();
+      await signIn('microsoft');
     } catch (error) {
       console.error('Microsoft sign-in failed:', error);
     }
   };
 
   const handleGoogleSignIn = async () => {
-    // Google sign-in will be handled by the External ID user flow
     try {
-      await signIn();
+      await signIn('google');
     } catch (error) {
       console.error('Google sign-in failed:', error);
     }
   };
 
   const handleEmailSignIn = async () => {
-    // Email/password sign-in will be handled by the External ID user flow
     try {
-      await signIn();
+      await signIn('email');
     } catch (error) {
       console.error('Email sign-in failed:', error);
     }
