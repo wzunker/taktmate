@@ -7,42 +7,45 @@
 
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useIsAuthenticated, useMsal, InteractionStatus } from "@azure/msal-react";
+import { loginRequest } from '../config/authConfig';
 import SEOHelmet from './SEOHelmet';
 
 const LandingPage = () => {
-  const { isAuthenticated, isLoading, signInRedirect, msalInstance } = useAuth();
+  const { instance, inProgress } = useMsal();
+  const isAuthenticated = useIsAuthenticated();
   const navigate = useNavigate();
   const redirectAttempted = useRef(false);
 
   // Handle authentication success - redirect to dashboard
   useEffect(() => {
-    if (isAuthenticated && !isLoading) {
+    if (isAuthenticated) {
       navigate('/dashboard');
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, navigate]);
 
-  // Auto-redirect to External ID authentication (run only once on mount)
+  // Auto-redirect to External ID authentication
   useEffect(() => {
-    // Only run once when component mounts
-    if (!isAuthenticated && !isLoading && !redirectAttempted.current) {
+    if (!isAuthenticated && 
+        inProgress === InteractionStatus.None && 
+        !redirectAttempted.current) {
+      
       redirectAttempted.current = true;
       console.log('🚀 Auto-redirecting to External ID authentication...');
       
-      // Use a timeout to ensure MSAL is ready and avoid immediate execution
       const timer = setTimeout(() => {
-        signInRedirect().catch(error => {
+        instance.loginRedirect(loginRequest).catch(error => {
           console.error('❌ Redirect failed:', error);
-          redirectAttempted.current = false; // Reset on error
+          redirectAttempted.current = false;
         });
-      }, 500);
+      }, 100); // Reduce timeout since we're checking interaction status
       
       return () => clearTimeout(timer);
     }
-  }, []); // Empty dependency array - only run once on mount
+  }, [isAuthenticated, inProgress, instance]);
 
-  // Show loading state while redirecting to authentication
-  if (isLoading || !isAuthenticated) {
+  // Show loading while not authenticated or interaction in progress
+  if (!isAuthenticated || inProgress !== InteractionStatus.None) {
     return (
       <>
         <SEOHelmet 

@@ -138,26 +138,25 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       
-      // Multiple checks to prevent interaction conflicts
-      const interactionStatus = await instance.getInteractionStatus();
-      const activeAccount = instance.getActiveAccount();
+      console.log('🚀 Redirecting to External ID authentication...');
       
-      // If user is already authenticated, don't redirect
+      // Check if interaction is already in progress using MSAL's internal state
+      const interactionStatus = instance.getInteractionStatus();
+      if (interactionStatus !== 'None') {
+        console.log('⚠️ Interaction already in progress, skipping redirect');
+        return;
+      }
+      
+      // Check if user is already authenticated
+      const activeAccount = instance.getActiveAccount();
       if (activeAccount) {
         console.log('✅ User already has active account, skipping redirect');
         return;
       }
       
-      // Check if there's already an interaction in progress
-      if (interactionStatus !== 'none') {
-        console.log('🔄 MSAL interaction already in progress, aborting redirect');
-        return;
-      }
-      
-      console.log('🚀 Redirecting to External ID authentication...');
       await instance.loginRedirect(loginRequest);
     } catch (error) {
-      // Handle specific interaction_in_progress error
+      // Handle specific interaction_in_progress error gracefully
       if (error.errorCode === 'interaction_in_progress') {
         console.log('🔄 Interaction already in progress, ignoring error');
         return;
