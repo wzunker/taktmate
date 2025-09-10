@@ -116,41 +116,12 @@ export const AuthProvider = ({ children }) => {
   /**
    * Sign in with popup
    */
-  const signIn = async (provider = null) => {
+  const signIn = async () => {
     try {
       setError(null);
+      console.log('🔍 Attempting sign-in with External ID user flow...');
       
-      // Create login request with provider-specific parameters
-      const request = { ...loginRequest };
-      
-      if (provider === 'google') {
-        // For Google, let's try a direct approach with identity provider hint
-        request.extraQueryParameters = { 
-          ...request.extraQueryParameters,
-          prompt: 'select_account',
-          // Try to hint that we want Google specifically
-          login_hint: 'user@gmail.com'
-        };
-        console.log('🔍 Attempting Google sign-in with request:', request);
-      } else if (provider === 'microsoft') {
-        // For Microsoft personal accounts
-        request.extraQueryParameters = { 
-          ...request.extraQueryParameters,
-          prompt: 'select_account'
-        };
-        console.log('🔍 Attempting Microsoft sign-in with request:', request);
-      } else if (provider === 'email') {
-        // For local accounts (email/password)
-        request.extraQueryParameters = { 
-          ...request.extraQueryParameters,
-          prompt: 'login'
-        };
-        console.log('🔍 Attempting Email sign-in with request:', request);
-      } else {
-        console.log('🔍 Attempting default sign-in with request:', request);
-      }
-      
-      const response = await instance.loginPopup(request);
+      const response = await instance.loginPopup(loginRequest);
       console.log('Sign in successful:', response);
       return response;
     } catch (error) {
@@ -163,41 +134,12 @@ export const AuthProvider = ({ children }) => {
   /**
    * Sign in with redirect
    */
-  const signInRedirect = async (provider = null) => {
+  const signInRedirect = async () => {
     try {
       setError(null);
+      console.log('🚀 Redirecting to External ID authentication...');
       
-      // Create login request with provider-specific parameters
-      const request = { ...loginRequest };
-      
-      if (provider === 'google') {
-        // For Google, let's try a direct approach with identity provider hint
-        request.extraQueryParameters = { 
-          ...request.extraQueryParameters,
-          prompt: 'select_account',
-          // Try to hint that we want Google specifically
-          login_hint: 'user@gmail.com'
-        };
-        console.log('🔍 Attempting Google redirect with request:', request);
-      } else if (provider === 'microsoft') {
-        // For Microsoft personal accounts
-        request.extraQueryParameters = { 
-          ...request.extraQueryParameters,
-          prompt: 'select_account'
-        };
-        console.log('🔍 Attempting Microsoft redirect with request:', request);
-      } else if (provider === 'email') {
-        // For local accounts (email/password)
-        request.extraQueryParameters = { 
-          ...request.extraQueryParameters,
-          prompt: 'login'
-        };
-        console.log('🔍 Attempting Email redirect with request:', request);
-      } else {
-        console.log('🔍 Attempting default redirect with request:', request);
-      }
-      
-      await instance.loginRedirect(request);
+      await instance.loginRedirect(loginRequest);
     } catch (error) {
       console.error('Sign in redirect failed:', error);
       setError(error);
