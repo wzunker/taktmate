@@ -34,15 +34,17 @@ const LandingPage = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  // Handle authentication redirect - run once on mount
+  // Handle authentication redirect - run once on mount with CORRECT configuration
   useEffect(() => {
-    logAuthStep('LandingPage mounted, checking auth state', {
+    console.log('🔧 AUTHENTICATION RE-ENABLED with correct authority URL');
+    console.log('🔍 Current state:', {
       isAuthenticated,
       inProgress,
       interactionStatus: inProgress
     });
     
     if (!isAuthenticated && inProgress === InteractionStatus.None) {
+      console.log('✅ Starting authentication with corrected configuration...');
       handleAuthRedirect(instance);
     }
   }, []); // Empty dependency array - run once only
@@ -68,8 +70,20 @@ const LandingPage = () => {
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
               TaktMate
             </h1>
-            <p className="text-gray-600 mb-6">
-              Redirecting to secure sign-in...
+            <div className="bg-green-100 border border-green-400 rounded-lg p-4 mb-6 text-left">
+              <h2 className="font-bold text-green-800 mb-2">✅ Configuration Fixed</h2>
+              <p className="text-green-700 text-sm mb-2">
+                Using correct External ID authority URL from your OpenID configuration.
+              </p>
+              <div className="text-xs text-green-600 space-y-1">
+                <p><strong>Authority:</strong> taktmate.ciamlogin.com/7d673488-...</p>
+                <p><strong>Redirect URI:</strong> {window.location.origin}</p>
+                <p><strong>Auth State:</strong> {isAuthenticated ? 'Authenticated' : 'Redirecting...'}</p>
+              </div>
+            </div>
+            
+            <p className="text-gray-600 mb-4">
+              Redirecting to secure Microsoft Entra External ID sign-in...
             </p>
             
             {/* Loading spinner */}
