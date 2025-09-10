@@ -15,9 +15,9 @@ import { LogLevel } from '@azure/msal-browser';
 export const msalConfig = {
   auth: {
     clientId: process.env.REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID || '3f1869f7-716b-4885-ac8a-86e78515f3a4',
-    // Use the CORRECT External ID authority from your working OpenID configuration
-    authority: process.env.REACT_APP_ENTRA_EXTERNAL_ID_AUTHORITY || 
-               `https://taktmate.ciamlogin.com/7d673488-6daf-4406-b9ce-d2d1f2b5c0db`,
+          // Use the CORRECT External ID authority from your working OpenID configuration
+          authority: process.env.REACT_APP_ENTRA_EXTERNAL_ID_AUTHORITY ||
+                     `https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/v2.0`,
     knownAuthorities: ['taktmate.ciamlogin.com', 'login.microsoftonline.com'],
     redirectUri: process.env.REACT_APP_REDIRECT_URI || window.location.origin,
     postLogoutRedirectUri: process.env.REACT_APP_POST_LOGOUT_REDIRECT_URI || window.location.origin,
@@ -104,10 +104,10 @@ export const validateConfiguration = () => {
   console.log('🔍 Environment variables debug:');
   console.log('CLIENT_ID:', process.env.REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID ? 'SET' : 'USING DEFAULT');
   console.log('USER_FLOW:', process.env.REACT_APP_ENTRA_EXTERNAL_ID_USER_FLOW ? `SET (${process.env.REACT_APP_ENTRA_EXTERNAL_ID_USER_FLOW})` : 'USING DEFAULT');
-  const authority = process.env.REACT_APP_ENTRA_EXTERNAL_ID_AUTHORITY || 
-                   `https://taktmate.ciamlogin.com/7d673488-6daf-4406-b9ce-d2d1f2b5c0db`;
+  const authority = process.env.REACT_APP_ENTRA_EXTERNAL_ID_AUTHORITY ||
+                   `https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/v2.0`;
   console.log('Authority will be:', authority);
-  console.log('Authority source:', process.env.REACT_APP_ENTRA_EXTERNAL_ID_AUTHORITY ? 'CUSTOM ENV VAR' : 'CORRECT TENANT ID FROM OPENID CONFIG');
+  console.log('Authority source:', process.env.REACT_APP_ENTRA_EXTERNAL_ID_AUTHORITY ? 'CUSTOM ENV VAR' : 'CORRECT AUTHORITY FROM OPENID CONFIG');
   console.log('Redirect URI:', process.env.REACT_APP_REDIRECT_URI || window.location.origin);
   console.log('Known Authorities:', ['taktmate.ciamlogin.com', 'login.microsoftonline.com']);
   console.log('Expected OpenID Config URL:', `${authority}/.well-known/openid_configuration`);
