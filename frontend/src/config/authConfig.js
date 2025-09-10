@@ -104,6 +104,8 @@ export const validateConfiguration = () => {
   console.log('CLIENT_ID:', process.env.REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID ? 'SET' : 'USING DEFAULT');
   console.log('USER_FLOW:', process.env.REACT_APP_ENTRA_EXTERNAL_ID_USER_FLOW ? `SET (${process.env.REACT_APP_ENTRA_EXTERNAL_ID_USER_FLOW})` : 'USING DEFAULT');
   console.log('Authority will be:', `https://taktmate.ciamlogin.com/${process.env.REACT_APP_ENTRA_EXTERNAL_ID_USER_FLOW || 'TaktMateSignUpSignIn'}`);
+  console.log('Redirect URI:', process.env.REACT_APP_REDIRECT_URI || window.location.origin);
+  console.log('Known Authorities:', ['taktmate.ciamlogin.com']);
 
   // For External ID, we have good defaults so we don't require environment variables
   console.log('✅ Microsoft Entra External ID configuration ready (using defaults if env vars missing)');

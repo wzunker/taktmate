@@ -156,7 +156,7 @@ function AppContent() {
               className="flex items-center space-x-4"
             >
               <AnimatePresence mode="wait">
-                {isAuthenticated ? (
+                {isAuthenticated && (
                   <motion.div
                     key="authenticated"
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -165,18 +165,6 @@ function AppContent() {
                     transition={{ duration: 0.2 }}
                   >
                     <UserProfile variant="dropdown" showDetailedInfo={false} />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="unauthenticated"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <LoginButton variant="primary" size="sm">
-                      Sign In
-                    </LoginButton>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -326,11 +314,12 @@ function AppContent() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3, duration: 0.4 }}
-                  className="mb-12"
+                  className="mb-12 text-center"
                 >
-                  <LoginButton variant="primary" size="lg" className="px-8 py-4">
-                    Get Started - Sign In
-                  </LoginButton>
+                  <div className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                    Redirecting to secure sign-in...
+                  </div>
                 </motion.div>
                 
                 <motion.div 
@@ -482,11 +471,12 @@ function LoginPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.4 }}
-          className="mt-8"
+          className="mt-8 text-center"
         >
-          <LoginButton variant="primary" size="lg" className="w-full">
-            Sign In with Microsoft Entra External ID
-          </LoginButton>
+          <div className="inline-flex items-center justify-center w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+            Redirecting to secure sign-in...
+          </div>
         </motion.div>
         
         {/* Additional info */}
