@@ -2,70 +2,53 @@
  * Direct Redirect Landing Page for TaktMate
  * 
  * Automatically redirects users to External ID authentication.
- * No custom login buttons needed - Microsoft handles the authentication flow.
+ * Uses isolated authentication logic to prevent infinite loops.
  */
 
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useIsAuthenticated, useMsal, InteractionStatus } from "@azure/msal-react";
-import { loginRequest } from '../config/authConfig';
+import { handleAuthRedirect } from '../utils/authRedirect';
+import { logReactState, logAuthStep } from '../utils/debugLogger';
 import SEOHelmet from './SEOHelmet';
-
-// Global flag to prevent multiple redirect attempts across component instances
-let globalRedirectAttempted = false;
 
 const LandingPage = () => {
   const { instance, inProgress } = useMsal();
   const isAuthenticated = useIsAuthenticated();
   const navigate = useNavigate();
 
+  // Debug: Log React state on every render
+  useEffect(() => {
+    logReactState('LandingPage', {
+      isAuthenticated,
+      inProgress,
+      interactionStatus: inProgress
+    });
+  });
+
   // Handle authentication success - redirect to dashboard
   useEffect(() => {
     if (isAuthenticated) {
-      // Reset the global flag when user is authenticated
-      globalRedirectAttempted = false;
+      logAuthStep('User authenticated, redirecting to dashboard');
       navigate('/dashboard');
     }
   }, [isAuthenticated, navigate]);
 
-  // Cleanup: Reset global flag on component unmount
+  // Handle authentication redirect - run once on mount
   useEffect(() => {
-    return () => {
-      // Only reset if user is not authenticated (meaning redirect failed)
-      if (!isAuthenticated) {
-        globalRedirectAttempted = false;
-      }
-    };
-  }, [isAuthenticated]);
-
-  // Auto-redirect to External ID authentication using global flag
-  useEffect(() => {
-    console.log('🔍 LandingPage useEffect - Auth check:', {
+    logAuthStep('LandingPage mounted, checking auth state', {
       isAuthenticated,
       inProgress,
-      globalRedirectAttempted,
       interactionStatus: inProgress
     });
     
-    if (!isAuthenticated && 
-        inProgress === InteractionStatus.None && 
-        !globalRedirectAttempted) {
-      
-      globalRedirectAttempted = true;
-      console.log('🚀 Auto-redirecting to External ID authentication...');
-      
-      // Immediate redirect without timeout - more reliable
-      instance.loginRedirect(loginRequest).catch(error => {
-        console.error('❌ Redirect failed:', error);
-        globalRedirectAttempted = false; // Reset on error
-      });
-    } else {
-      console.log('🚫 Redirect skipped - conditions not met');
+    if (!isAuthenticated && inProgress === InteractionStatus.None) {
+      handleAuthRedirect(instance);
     }
-  }, [isAuthenticated, inProgress, instance]);
+  }, []); // Empty dependency array - run once only
 
-  // Show loading while not authenticated or interaction in progress
-  if (!isAuthenticated || inProgress !== InteractionStatus.None) {
+  // Show loading while not authenticated
+  if (!isAuthenticated) {
     return (
       <>
         <SEOHelmet 
