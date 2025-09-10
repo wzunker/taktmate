@@ -15,9 +15,9 @@ import { LogLevel } from '@azure/msal-browser';
 export const msalConfig = {
   auth: {
     clientId: process.env.REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID || '3f1869f7-716b-4885-ac8a-86e78515f3a4',
-    // Use External ID with tenant ID (not user flow in URL for External ID)
-    authority: `https://login.microsoftonline.com/${process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_ID || 'taktmate.onmicrosoft.com'}`,
-    knownAuthorities: ['login.microsoftonline.com'],
+    // Use External ID with user flow endpoint
+    authority: `https://taktmate.ciamlogin.com/${process.env.REACT_APP_ENTRA_EXTERNAL_ID_USER_FLOW || 'TaktMateSignUpSignIn'}`,
+    knownAuthorities: ['taktmate.ciamlogin.com'],
     redirectUri: process.env.REACT_APP_REDIRECT_URI || window.location.origin,
     postLogoutRedirectUri: process.env.REACT_APP_POST_LOGOUT_REDIRECT_URI || window.location.origin,
     navigateToLoginRequestUrl: false,
@@ -103,7 +103,7 @@ export const validateConfiguration = () => {
   console.log('🔍 Environment variables debug:');
   console.log('CLIENT_ID:', process.env.REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID ? 'SET' : 'USING DEFAULT');
   console.log('USER_FLOW:', process.env.REACT_APP_ENTRA_EXTERNAL_ID_USER_FLOW ? `SET (${process.env.REACT_APP_ENTRA_EXTERNAL_ID_USER_FLOW})` : 'USING DEFAULT');
-  console.log('Authority will be:', `https://login.microsoftonline.com/${process.env.REACT_APP_ENTRA_EXTERNAL_ID_TENANT_ID || 'taktmate.onmicrosoft.com'}`);
+  console.log('Authority will be:', `https://taktmate.ciamlogin.com/${process.env.REACT_APP_ENTRA_EXTERNAL_ID_USER_FLOW || 'TaktMateSignUpSignIn'}`);
 
   // For External ID, we have good defaults so we don't require environment variables
   console.log('✅ Microsoft Entra External ID configuration ready (using defaults if env vars missing)');
