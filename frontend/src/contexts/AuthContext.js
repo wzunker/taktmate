@@ -132,40 +132,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   /**
-   * Sign in with redirect
+   * Sign in with redirect - DISABLED
+   * 
+   * This function has been disabled to prevent conflicts with the isolated
+   * authentication redirect logic in handleAuthRedirect utility.
    */
   const signInRedirect = async () => {
-    try {
-      setError(null);
-      
-      console.log('🚀 Redirecting to External ID authentication...');
-      
-      // Check if interaction is already in progress using MSAL's internal state
-      const interactionStatus = instance.getInteractionStatus();
-      if (interactionStatus !== 'None') {
-        console.log('⚠️ Interaction already in progress, skipping redirect');
-        return;
-      }
-      
-      // Check if user is already authenticated
-      const activeAccount = instance.getActiveAccount();
-      if (activeAccount) {
-        console.log('✅ User already has active account, skipping redirect');
-        return;
-      }
-      
-      await instance.loginRedirect(loginRequest);
-    } catch (error) {
-      // Handle specific interaction_in_progress error gracefully
-      if (error.errorCode === 'interaction_in_progress') {
-        console.log('🔄 Interaction already in progress, ignoring error');
-        return;
-      }
-      
-      console.error('Sign in redirect failed:', error);
-      setError(error);
-      throw error;
-    }
+    console.warn('🚫 signInRedirect() is DISABLED - Use handleAuthRedirect() from utils/authRedirect instead');
+    console.warn('🚫 This prevents conflicts between multiple authentication attempts');
+    return Promise.resolve();
   };
 
   /**

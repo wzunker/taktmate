@@ -23,21 +23,9 @@ const LoginButton = ({
    * Handle sign in with selected method
    */
   const handleSignIn = async () => {
-    setIsSigningIn(true);
-    clearError();
-
-    try {
-      if (loginMethod === 'popup') {
-        await signIn();
-      } else {
-        await signInRedirect();
-      }
-    } catch (error) {
-      console.error('Login failed:', error);
-      // Error is handled by the AuthContext
-    } finally {
-      setIsSigningIn(false);
-    }
+    console.warn('🚫 LoginButton is DISABLED - Authentication now uses direct redirect via handleAuthRedirect()');
+    console.warn('🚫 This button should not be rendered in the current authentication flow');
+    return Promise.resolve();
   };
 
   /**
