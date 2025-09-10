@@ -9,8 +9,8 @@ import { HelmetProvider } from 'react-helmet-async';
 // Configuration
 import { msalConfig } from './config/authConfig';
 
-// Context Providers
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+// Direct MSAL hooks - no custom AuthContext needed
+import { useIsAuthenticated, useMsal } from '@azure/msal-react';
 
 // Components
 import FileUpload from './components/FileUpload';
@@ -22,8 +22,7 @@ import UserProfile from './components/auth/UserProfile';
 import LandingPage from './components/LandingPage';
 import SEOHelmet, { SEOConfigs } from './components/SEOHelmet';
 
-// Services
-import { setAuthContext } from './services/apiService';
+// Services (auth context removed - using direct MSAL tokens)
 
 // Create MSAL instance
 const msalInstance = new PublicClientApplication(msalConfig);
@@ -97,20 +96,17 @@ function LoadingScreen({ message = "Loading TaktMate..." }) {
  */
 function AppContent() {
   const [fileData, setFileData] = useState(null);
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const isAuthenticated = useIsAuthenticated();
+  const { accounts, inProgress } = useMsal();
+  const isLoading = inProgress !== 'None';
+  const user = accounts[0] || null;
   const location = useLocation();
 
   const handleFileUploaded = (uploadedFileData) => {
     setFileData(uploadedFileData);
   };
 
-  // Get auth context for API service
-  const authContext = useAuth();
-  
-  // Set auth context for API service
-  useEffect(() => {
-    setAuthContext(authContext);
-  }, [authContext]);
+  // Note: API service auth context removed - using direct MSAL tokens instead
 
   // Loading state with transitions
   if (isLoading) {
@@ -411,7 +407,9 @@ function AppContent() {
  * Enhanced Login page component with smooth transitions
  */
 function LoginPage() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const isAuthenticated = useIsAuthenticated();
+  const { inProgress } = useMsal();
+  const isLoading = inProgress !== 'None';
   const location = useLocation();
 
   // Redirect if already authenticated
@@ -530,7 +528,7 @@ function AnimatedRoutes() {
  * Landing page wrapper with route awareness
  */
 function LandingPageWrapper() {
-  const { isAuthenticated } = useAuth();
+  const isAuthenticated = useIsAuthenticated();
   const location = useLocation();
   
   // Redirect to main app if authenticated
@@ -559,7 +557,9 @@ function LandingPageWrapper() {
  * App content wrapper with authentication logic
  */
 function AppContentWrapper() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const isAuthenticated = useIsAuthenticated();
+  const { inProgress } = useMsal();
+  const isLoading = inProgress !== 'None';
   // const location = useLocation(); // Unused for now
 
   if (isLoading) {
@@ -596,11 +596,9 @@ function App() {
   return (
     <HelmetProvider>
       <MsalProvider instance={msalInstance}>
-        <AuthProvider>
-          <Router>
-            <AnimatedRoutes />
-          </Router>
-        </AuthProvider>
+        <Router>
+          <AnimatedRoutes />
+        </Router>
       </MsalProvider>
     </HelmetProvider>
   );
