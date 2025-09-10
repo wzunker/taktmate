@@ -22,42 +22,24 @@ const LandingPage = () => {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  // Auto-redirect to External ID authentication on load (only once)
+  // Auto-redirect to External ID authentication (run only once on mount)
   useEffect(() => {
-    const handleRedirect = async () => {
-      // Prevent multiple redirect attempts
-      if (redirectAttempted.current) {
-        console.log('🚫 Redirect already attempted, skipping');
-        return;
-      }
-
-      // Check if user is already authenticated
-      if (isAuthenticated) {
-        console.log('✅ User already authenticated, skipping redirect');
-        return;
-      }
-
-      // Check if MSAL is still loading
-      if (isLoading) {
-        console.log('⏳ MSAL still loading, waiting...');
-        return;
-      }
-
-      // Mark that we're attempting a redirect
+    // Only run once when component mounts
+    if (!isAuthenticated && !isLoading && !redirectAttempted.current) {
       redirectAttempted.current = true;
-      
       console.log('🚀 Auto-redirecting to External ID authentication...');
-      try {
-        await signInRedirect();
-      } catch (error) {
-        console.error('❌ Redirect failed:', error);
-        // Reset the flag on error so we can try again
-        redirectAttempted.current = false;
-      }
-    };
-
-    handleRedirect();
-  }, [isAuthenticated, isLoading, signInRedirect]);
+      
+      // Use a timeout to ensure MSAL is ready and avoid immediate execution
+      const timer = setTimeout(() => {
+        signInRedirect().catch(error => {
+          console.error('❌ Redirect failed:', error);
+          redirectAttempted.current = false; // Reset on error
+        });
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, []); // Empty dependency array - only run once on mount
 
   // Show loading state while redirecting to authentication
   if (isLoading || !isAuthenticated) {
