@@ -5,7 +5,9 @@ import App from './App';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
+  // Temporarily disabled StrictMode to fix infinite redirect loop
+  // React 18 StrictMode intentionally double-mounts components which triggers multiple MSAL redirects
+  // <React.StrictMode>
     <App />
-  </React.StrictMode>
+  // </React.StrictMode>
 );
