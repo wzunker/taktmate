@@ -137,8 +137,15 @@ export const AuthProvider = ({ children }) => {
   const signInRedirect = async () => {
     try {
       setError(null);
-      console.log('🚀 Redirecting to External ID authentication...');
       
+      // Check if there's already an interaction in progress
+      const interactionStatus = await instance.getInteractionStatus();
+      if (interactionStatus !== 'none') {
+        console.log('🔄 MSAL interaction already in progress, aborting redirect');
+        return;
+      }
+      
+      console.log('🚀 Redirecting to External ID authentication...');
       await instance.loginRedirect(loginRequest);
     } catch (error) {
       console.error('Sign in redirect failed:', error);

@@ -5,14 +5,15 @@
  * No custom login buttons needed - Microsoft handles the authentication flow.
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import SEOHelmet from './SEOHelmet';
 
 const LandingPage = () => {
-  const { isAuthenticated, isLoading, signInRedirect } = useAuth();
+  const { isAuthenticated, isLoading, signInRedirect, msalInstance } = useAuth();
   const navigate = useNavigate();
+  const redirectAttempted = useRef(false);
 
   // Handle authentication success - redirect to dashboard
   useEffect(() => {
@@ -21,12 +22,41 @@ const LandingPage = () => {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  // Auto-redirect to External ID authentication on load
+  // Auto-redirect to External ID authentication on load (only once)
   useEffect(() => {
-    if (!isAuthenticated && !isLoading) {
+    const handleRedirect = async () => {
+      // Prevent multiple redirect attempts
+      if (redirectAttempted.current) {
+        console.log('🚫 Redirect already attempted, skipping');
+        return;
+      }
+
+      // Check if user is already authenticated
+      if (isAuthenticated) {
+        console.log('✅ User already authenticated, skipping redirect');
+        return;
+      }
+
+      // Check if MSAL is still loading
+      if (isLoading) {
+        console.log('⏳ MSAL still loading, waiting...');
+        return;
+      }
+
+      // Mark that we're attempting a redirect
+      redirectAttempted.current = true;
+      
       console.log('🚀 Auto-redirecting to External ID authentication...');
-      signInRedirect();
-    }
+      try {
+        await signInRedirect();
+      } catch (error) {
+        console.error('❌ Redirect failed:', error);
+        // Reset the flag on error so we can try again
+        redirectAttempted.current = false;
+      }
+    };
+
+    handleRedirect();
   }, [isAuthenticated, isLoading, signInRedirect]);
 
   // Show loading state while redirecting to authentication
