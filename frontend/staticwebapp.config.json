@@ -1,11 +1,22 @@
 {
+  "$schema": "https://aka.ms/staticwebapp.config.schema.json",
   "auth": {
     "identityProviders": {
-      "azureActiveDirectory": {
-        "registration": {
-          "openIdIssuer": "https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/v2.0",
-          "clientIdSettingName": "REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID",
-          "clientSecretSettingName": "AAD_CLIENT_SECRET"
+      "customOpenIdConnectProviders": {
+        "entraExternalId": {
+          "registration": {
+            "clientIdSettingName": "ENTRA_EXTERNAL_ID_CLIENT_ID",
+            "clientCredential": {
+              "clientSecretSettingName": "ENTRA_EXTERNAL_ID_CLIENT_SECRET"
+            },
+            "openIdConnectConfiguration": {
+              "wellKnownOpenIdConfiguration": "https://taktmate.ciamlogin.com/7d673488-6daf-4406-b9ce-d2d1f2b5c0db/TaktMateSignUpSignIn/v2.0/.well-known/openid-configuration"
+            }
+          },
+          "login": {
+            "nameClaimType": "name",
+            "scopes": ["openid", "profile", "email"]
+          }
         }
       }
     }
@@ -13,7 +24,7 @@
   "routes": [
     {
       "route": "/login",
-      "redirect": "/.auth/login/aad"
+      "redirect": "/.auth/login/entraExternalId"
     },
     {
       "route": "/logout",
@@ -21,7 +32,6 @@
     },
     {
       "route": "/*",
-      "serve": "/index.html",
       "allowedRoles": ["authenticated"]
     }
   ],
@@ -72,7 +82,7 @@
   "responseOverrides": {
     "401": {
       "statusCode": 302,
-      "redirect": "/.auth/login/aad?post_login_redirect_uri=.referrer"
+      "redirect": "/.auth/login/entraExternalId?post_login_redirect_uri=.referrer"
     },
     "403": {
       "rewrite": "/index.html", 
@@ -94,9 +104,8 @@
     "apiRuntime": "node:18"
   },
   "environmentVariables": [
-    "REACT_APP_ENTRA_EXTERNAL_ID_CLIENT_ID",
-    "REACT_APP_ENTRA_EXTERNAL_ID_TENANT_ID",
-    "AAD_CLIENT_SECRET",
+    "ENTRA_EXTERNAL_ID_CLIENT_ID",
+    "ENTRA_EXTERNAL_ID_CLIENT_SECRET",
     "REACT_APP_API_URL",
     "REACT_APP_APP_NAME",
     "REACT_APP_ENVIRONMENT"
