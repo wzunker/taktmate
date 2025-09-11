@@ -82,7 +82,7 @@
   "responseOverrides": {
     "401": {
       "statusCode": 302,
-      "redirect": "/.auth/login/entraExternalId?post_login_redirect_uri=.referrer"
+      "redirect": "/.auth/login/entraExternalId"
     },
     "403": {
       "rewrite": "/index.html", 
