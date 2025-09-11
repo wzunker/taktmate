@@ -10,7 +10,7 @@
               "clientSecretSettingName": "ENTRA_EXTERNAL_ID_CLIENT_SECRET"
             },
             "openIdConnectConfiguration": {
-              "wellKnownOpenIdConfiguration": "https://taktmate.ciamlogin.com/7d673488-6daf-4406-b9ce-d2d1f2b5c0db/TaktMateSignUpSignIn/v2.0/.well-known/openid-configuration"
+              "wellKnownOpenIdConfiguration": "https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/v2.0/.well-known/openid-configuration"
             }
           },
           "login": {
