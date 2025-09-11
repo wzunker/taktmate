@@ -14,7 +14,7 @@
             }
           },
           "login": {
-            "nameClaimType": "name",
+            "nameClaimType": "email",
             "scopes": ["openid", "profile", "email"]
           }
         }
@@ -28,7 +28,7 @@
     },
     {
       "route": "/login",
-      "redirect": "/.auth/login/entraExternalId?post_login_redirect_uri=.referrer"
+      "redirect": "/.auth/login/entraExternalId?post_login_redirect_uri=/"
     },
     {
       "route": "/logout",
