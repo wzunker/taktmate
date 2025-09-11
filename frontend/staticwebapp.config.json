@@ -42,6 +42,7 @@
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": [
+      "/.auth/*",
       "/static/*",
       "/manifest.json",
       "/robots.txt",
