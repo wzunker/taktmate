@@ -21,6 +21,7 @@
     },
     {
       "route": "/*",
+      "serve": "/index.html",
       "allowedRoles": ["authenticated"]
     }
   ],
