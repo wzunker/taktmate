@@ -23,16 +23,16 @@
   },
   "routes": [
     {
+      "route": "/.auth/*",
+      "allowedRoles": ["anonymous"]
+    },
+    {
       "route": "/login",
-      "redirect": "/.auth/login/entraExternalId"
+      "redirect": "/.auth/login/entraExternalId?post_login_redirect_uri=.referrer"
     },
     {
       "route": "/logout",
       "redirect": "/.auth/logout"
-    },
-    {
-      "route": "/.auth/*",
-      "allowedRoles": ["anonymous"]
     },
     {
       "route": "/*",
