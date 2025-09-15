@@ -23,10 +23,6 @@
   },
   "routes": [
     {
-      "route": "/.auth/*",
-      "allowedRoles": ["anonymous"]
-    },
-    {
       "route": "/login",
       "redirect": "/.auth/login/entraExternalId?post_login_redirect_uri=/"
     },
@@ -35,8 +31,12 @@
       "redirect": "/.auth/logout"
     },
     {
-      "route": "/*",
+      "route": "/api/*",
       "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/*",
+      "allowedRoles": ["anonymous"]
     }
   ],
   "navigationFallback": {
@@ -85,14 +85,6 @@
     "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://taktmate.ciamlogin.com https://accounts.google.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://taktmate.ciamlogin.com https://accounts.google.com https://api.openai.com https://*.applicationinsights.azure.com https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net; frame-src https://taktmate.ciamlogin.com https://accounts.google.com;"
   },
   "responseOverrides": {
-    "401": {
-      "statusCode": 302,
-      "redirect": "/.auth/login/entraExternalId"
-    },
-    "403": {
-      "rewrite": "/index.html", 
-      "statusCode": 200
-    },
     "404": {
       "rewrite": "/index.html",
       "statusCode": 200
@@ -116,3 +108,4 @@
     "REACT_APP_ENVIRONMENT"
   ]
 }
+
