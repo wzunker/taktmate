@@ -8,7 +8,6 @@ import { HelmetProvider } from 'react-helmet-async';
 import FileUpload from './components/FileUpload';
 import ChatBox from './components/ChatBox';
 import DataTable from './components/DataTable';
-import LandingPage from './components/LandingPage';
 import SEOHelmet, { SEOConfigs } from './components/SEOHelmet';
 
 /**
@@ -106,10 +105,9 @@ function AnimatedRoutes() {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<AppContent />} />
         <Route path="/dashboard" element={<AppContent />} />
-        <Route path="/login" element={<LandingPage />} />
-        <Route path="*" element={<LandingPage />} />
+        <Route path="*" element={<AppContent />} />
       </Routes>
     </AnimatePresence>
   );
