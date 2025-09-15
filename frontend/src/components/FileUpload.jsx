@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
 
 const FileUpload = ({ onFileUploaded }) => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
-  const { getAuthHeaders } = useAuth();
+  // SWA handles authentication automatically - no need for auth headers
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -67,17 +66,13 @@ const FileUpload = ({ onFileUploaded }) => {
       const csrfToken = csrfResponse.data.csrf.token;
       console.log('🔍 CSRF token obtained:', csrfToken ? 'SUCCESS' : 'FAILED');
       
-      // Get authentication headers without Content-Type (for file upload)
-      const authHeaders = await getAuthHeaders(false, false); // Don't include Content-Type
-      console.log('🔍 Auth headers obtained:', authHeaders ? 'SUCCESS' : 'FAILED');
-      console.log('🔍 Auth headers content:', authHeaders);
+      // SWA handles authentication automatically - no auth headers needed
       
       const response = await axios.post(`${backendURL}/upload`, formData, {
         headers: {
           // Don't set Content-Type manually - let axios set it with boundary
-          // 'Content-Type': 'multipart/form-data', // REMOVED - axios will set this automatically
-          'X-CSRF-Token': csrfToken,
-          ...authHeaders, // Add JWT authentication headers
+          'X-CSRF-Token': csrfToken
+          // SWA handles authentication automatically via cookies
         },
         withCredentials: true, // Include cookies for CSRF
         timeout: 30000, // 30 second timeout

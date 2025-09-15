@@ -1,13 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
 
 const ChatBox = ({ fileData }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef(null);
-  const { getAuthHeaders } = useAuth();
+  // SWA handles authentication automatically - no need for auth headers
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -41,8 +40,7 @@ const ChatBox = ({ fileData }) => {
     try {
       const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
       console.log('🔍 ChatBox Debug - Using API URL:', backendURL);
-      // Get authentication headers for chat request
-      const authHeaders = await getAuthHeaders(); // Keep Content-Type for JSON request
+      // SWA handles authentication automatically - no auth headers needed
       
       console.log('🔍 Chat request data:', {
         fileId: fileData.fileId,
@@ -55,7 +53,8 @@ const ChatBox = ({ fileData }) => {
         message: userMessage
       }, {
         headers: {
-          ...authHeaders, // Add JWT authentication headers
+          'Content-Type': 'application/json'
+          // SWA handles authentication automatically via cookies
         },
         timeout: 30000, // 30 second timeout
       });
