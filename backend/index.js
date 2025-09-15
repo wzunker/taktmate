@@ -38,11 +38,11 @@ function markdownToHtml(markdown) {
     .replace(/<\/ul><ul>/gim, '');
 }
 
-// Import middleware
+// Import middleware - Using SWA authentication
 const { 
-  jwtAuthMiddleware, 
-  optionalJwtAuthMiddleware 
-} = require('./middleware/jwtValidation');
+  swaAuthMiddleware, 
+  optionalSwaAuthMiddleware 
+} = require('./middleware/swaAuth');
 const { 
   configureSecurityHeaders, 
   generalRateLimit 
@@ -56,7 +56,6 @@ const { RateLimitSecurityService } = require('./middleware/rateLimitSecurity');
 const { CSRFProtectionService } = require('./middleware/csrfProtection');
 const { SessionManagementService } = require('./middleware/sessionManagement');
 const { ErrorLoggingService } = require('./middleware/errorLogging');
-const { TokenManagementService } = require('./middleware/tokenManagement');
 const cookieParser = require('cookie-parser');
 
 // Import error handling
@@ -153,8 +152,6 @@ let sessionManagement = null;
 // Initialize Enhanced Error Logging Service
 const errorLogging = new ErrorLoggingService(appInsights);
 
-// Initialize Token Management Service
-const tokenManagement = new TokenManagementService(appInsights);
 
 // Initialize GDPR Compliance Service
 const gdprCompliance = new GDPRComplianceService(appInsights);
@@ -253,13 +250,7 @@ auditLogging.initialize().catch(error => {
 // Apply session tracking middleware
 app.use(sessionManagement.createSessionMiddleware());
 
-// Apply token management middleware
-app.use(tokenManagement.createTokenMiddleware());
 
-// Apply automatic token refresh middleware (if enabled)
-if (azureConfig.enableAutomaticTokenRefresh) {
-  app.use(tokenManagement.createAutoRefreshMiddleware());
-}
 
 // Apply CSRF token generation (for form-based requests)
 app.use(csrfProtection.generateTokenMiddleware());
@@ -283,7 +274,7 @@ const upload = multer({
 app.use('/auth', authRoutes);
 
 // Enhanced health check endpoint with authentication status
-app.get('/health', optionalJwtAuthMiddleware(), (req, res) => {
+app.get('/health', optionalSwaAuthMiddleware(), (req, res) => {
   const healthStatus = {
     status: 'OK',
     message: 'TaktMate Backend is running',
@@ -322,7 +313,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Enhanced test endpoint with authentication info
-app.get('/test', optionalJwtAuthMiddleware(), (req, res) => {
+app.get('/test', optionalSwaAuthMiddleware(), (req, res) => {
   const testResponse = {
     status: 'OK', 
     message: 'Backend is working',
@@ -554,142 +545,14 @@ app.post('/api/session/terminate-all',
   }
 );
 
-// Token refresh endpoint (authenticated)
-app.post('/api/token/refresh', 
-  jwtAuthMiddleware(),
-  inputValidator.createValidationMiddleware({
-    body: ValidationRules.tokenRefresh()
-  }),
-  async (req, res) => {
-    try {
-      const { refreshToken } = req.body;
-      
-      if (!refreshToken) {
-        return res.status(400).json({
-          success: false,
-          error: 'Refresh token is required',
-          code: 'MISSING_REFRESH_TOKEN'
-        });
-      }
-      
-      // Refresh the token
-      const newTokenSet = await tokenManagement.refreshToken(refreshToken, {
-        scope: req.body.scope || azureConfig.scope
-      });
-      
-      res.json({
-        success: true,
-        tokens: {
-          accessToken: newTokenSet.accessToken,
-          idToken: newTokenSet.idToken,
-          refreshToken: newTokenSet.refreshToken,
-          tokenType: newTokenSet.tokenType,
-          expiresIn: newTokenSet.expiresIn,
-          expiresAt: new Date(newTokenSet.expiresAt).toISOString(),
-          scope: newTokenSet.scope
-        },
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('❌ Token refresh error:', error.message);
-      res.status(400).json({
-        success: false,
-        error: 'Token refresh failed',
-        message: error.message,
-        code: 'TOKEN_REFRESH_FAILED'
-      });
-    }
-  }
-);
+// Token refresh endpoint - DISABLED: SWA handles token management automatically
+// app.post('/api/token/refresh', ...
 
-// Token validation endpoint (authenticated)
-app.post('/api/token/validate', 
-  jwtAuthMiddleware(),
-  inputValidator.createValidationMiddleware({
-    body: ValidationRules.tokenValidation()
-  }),
-  async (req, res) => {
-    try {
-      const { token, tokenType } = req.body;
-      
-      if (!token) {
-        return res.status(400).json({
-          success: false,
-          error: 'Token is required',
-          code: 'MISSING_TOKEN'
-        });
-      }
-      
-      // Validate the token
-      const validationResult = await tokenManagement.validateToken(token, {
-        expectedTokenType: tokenType
-      });
-      
-      res.json({
-        success: true,
-        validation: {
-          valid: validationResult.valid,
-          tokenType: validationResult.tokenType,
-          expiresAt: new Date(validationResult.expiresAt).toISOString(),
-          issuedAt: new Date(validationResult.issuedAt).toISOString(),
-          validatedAt: new Date(validationResult.validatedAt).toISOString(),
-          validationDuration: validationResult.validationDuration,
-          user: validationResult.user
-        },
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('❌ Token validation error:', error.message);
-      res.status(400).json({
-        success: false,
-        error: 'Token validation failed',
-        message: error.message,
-        code: 'TOKEN_VALIDATION_FAILED'
-      });
-    }
-  }
-);
+// Token validation endpoint - DISABLED: SWA handles token validation automatically
+// app.post('/api/token/validate', ...
 
-// Token expiration info endpoint (authenticated)
-app.get('/api/token/expiration', 
-  jwtAuthMiddleware(),
-  (req, res) => {
-    try {
-      const token = req.headers.authorization?.replace('Bearer ', '');
-      
-      if (!token) {
-        return res.status(400).json({
-          success: false,
-          error: 'Authorization token is required',
-          code: 'MISSING_AUTHORIZATION_TOKEN'
-        });
-      }
-      
-      const expirationInfo = tokenManagement.getTokenExpirationInfo(token);
-      
-      if (!expirationInfo) {
-        return res.status(400).json({
-          success: false,
-          error: 'Unable to parse token expiration information',
-          code: 'INVALID_TOKEN_FORMAT'
-        });
-      }
-      
-      res.json({
-        success: true,
-        expiration: expirationInfo,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('❌ Token expiration info error:', error.message);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to retrieve token expiration information',
-        code: 'EXPIRATION_INFO_ERROR'
-      });
-    }
-  }
-);
+// Token expiration info endpoint - DISABLED: SWA handles token lifecycle automatically
+// app.get('/api/token/expiration', ...
 
 // GDPR data export endpoint (authenticated)
 app.get('/api/gdpr/export', 
@@ -2519,7 +2382,7 @@ app.get('/health/cors', (req, res) => {
 });
 
 // API status endpoint
-app.get('/api/status', optionalJwtAuthMiddleware(), (req, res) => {
+app.get('/api/status', optionalSwaAuthMiddleware(), (req, res) => {
   const stats = fileStore.getStats();
   
   const statusResponse = {
@@ -2559,10 +2422,20 @@ app.post('/upload',
   rateLimitSecurity.createRateLimiter('upload'),
   rateLimitSecurity.createSlowDown('upload'),
   csrfProtection.createCSRFProtection(), // Re-enabled with fixed origin validation
-  jwtAuthMiddleware(), // Re-enabled with production-ready JWT implementation
+  swaAuthMiddleware(), // Updated to use SWA authentication
   upload.single('csvFile'), 
   async (req, res) => {
   const startTime = Date.now();
+  
+  console.log('🔍 Upload endpoint hit:', {
+    method: req.method,
+    headers: Object.keys(req.headers),
+    hasFile: !!req.file,
+    fileName: req.file?.originalname,
+    fileSize: req.file?.size,
+    userId: req.user?.id,
+    userEmail: req.user?.email
+  });
   
   try {
     if (azureConfig.debugAuth) {
@@ -2879,7 +2752,7 @@ app.post('/upload',
 app.post('/chat', 
   rateLimitSecurity.createRateLimiter('chat'),
   rateLimitSecurity.createSlowDown('chat'),
-  jwtAuthMiddleware(), 
+  swaAuthMiddleware(), // Updated to use SWA authentication 
   ...inputValidator.createValidationMiddleware(ValidationRules.chatMessage),
   async (req, res) => {
   const startTime = Date.now();
@@ -3254,7 +3127,7 @@ ${csvString}`;
 // File management endpoints
 
 // Get user's files
-app.get('/api/files', jwtAuthMiddleware(), (req, res) => {
+app.get('/api/files', swaAuthMiddleware(), (req, res) => {
   const startTime = Date.now();
   
   try {
@@ -3334,7 +3207,7 @@ app.get('/api/files', jwtAuthMiddleware(), (req, res) => {
 });
 
 // Get specific file metadata
-app.get('/api/files/:fileId', jwtAuthMiddleware(), (req, res) => {
+app.get('/api/files/:fileId', swaAuthMiddleware(), (req, res) => {
   const startTime = Date.now();
   
   try {
@@ -3412,7 +3285,7 @@ app.get('/api/files/:fileId', jwtAuthMiddleware(), (req, res) => {
 });
 
 // Delete a file
-app.delete('/api/files/:fileId', jwtAuthMiddleware(), (req, res) => {
+app.delete('/api/files/:fileId', swaAuthMiddleware(), (req, res) => {
   const startTime = Date.now();
   
   try {
@@ -3496,7 +3369,7 @@ app.delete('/api/files/:fileId', jwtAuthMiddleware(), (req, res) => {
 });
 
 // Get file storage statistics for user
-app.get('/api/files/stats/user', jwtAuthMiddleware(), (req, res) => {
+app.get('/api/files/stats/user', swaAuthMiddleware(), (req, res) => {
   try {
     const userFiles = fileStore.getUserFiles(req.user.id);
     const globalStats = fileStore.getStats();

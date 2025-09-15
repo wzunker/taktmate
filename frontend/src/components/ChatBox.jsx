@@ -23,6 +23,8 @@ const ChatBox = ({ fileData }) => {
         type: 'system',
         content: `CSV file "${fileData.filename}" uploaded successfully! It contains ${fileData.rowCount} rows with columns: ${fileData.headers.join(', ')}. Ask me anything about this data!`
       }]);
+    } else {
+      setMessages([]);
     }
   }, [fileData]);
 
@@ -84,7 +86,8 @@ const ChatBox = ({ fileData }) => {
 
   if (!fileData) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Chat with Your Data</h2>
         <div className="text-center text-gray-500">
           <div className="text-4xl mb-4">💬</div>
           <h3 className="text-lg font-medium mb-2">Ready to Chat</h3>
