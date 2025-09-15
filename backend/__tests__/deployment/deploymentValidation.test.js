@@ -91,10 +91,9 @@ describe('Deployment Pipeline Validation', () => {
       const requiredFiles = [
         'index.js',
         'package.json',
-        'config/entraExternalId.js',
         'services/gdprComplianceService.js',
         'services/auditLoggingService.js',
-        'middleware/jwtAuth.js'
+        'middleware/swaAuth.js'
       ];
 
       const missingFiles = [];
