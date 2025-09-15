@@ -27,10 +27,6 @@
       "allowedRoles": ["anonymous"]
     },
     {
-      "route": "/login",
-      "redirect": "/.auth/login/entraExternalId?post_login_redirect_uri=/"
-    },
-    {
       "route": "/logout",
       "redirect": "/.auth/logout"
     },
