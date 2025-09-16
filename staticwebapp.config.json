@@ -4,8 +4,8 @@
   },
   "routes": [
     {
-      "route": "/.auth/*",
-      "allowedRoles": ["anonymous"]
+      "route": "/*",
+      "allowedRoles": ["authenticated"]
     },
     {
       "route": "/login",
@@ -14,10 +14,6 @@
     {
       "route": "/logout",
       "redirect": "/.auth/logout"
-    },
-    {
-      "route": "/*",
-      "allowedRoles": ["authenticated"]
     }
   ],
   "responseOverrides": {
@@ -36,11 +32,11 @@
               "clientSecretSettingName": "ENTRA_EXTERNAL_ID_CLIENT_SECRET"
             },
             "openIdConnectConfiguration": {
-              "wellKnownOpenIdConfiguration": "https://taktmate.ciamlogin.com/7d673488-6daf-4406-b9ce-d2d1f2b5c0db/v2.0/.well-known/openid-configuration"
+              "wellKnownOpenIdConfiguration": "https://taktmate.ciamlogin.com/7d673488-6daf-4406-b9ce-d2d1f2b5c0db/v2.0/.well-known/openid-configuration?appid=3f1869f7-716b-4885-ac8a-86e78515f3a4"
             }
           },
           "login": {
-            "nameClaimType": "name"
+            "nameClaimType": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"
           }
         }
       }
