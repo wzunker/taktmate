@@ -3,7 +3,6 @@ import FileUpload from './components/FileUpload';
 import ChatBox from './components/ChatBox';
 import DataTable from './components/DataTable';
 import UserProfile from './components/UserProfile';
-import DebugAuth from './components/DebugAuth';
 import useAuth from './hooks/useAuth';
 
 function App() {
@@ -68,8 +67,6 @@ function App() {
         </div>
       </header>
 
-      {/* Debug Section - Remove this after debugging */}
-      <DebugAuth />
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
