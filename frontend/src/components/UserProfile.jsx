@@ -76,7 +76,7 @@ const UserProfile = ({
         <div className="text-sm text-gray-700">
           Welcome, <span className="font-medium">{displayName}</span>
         </div>
-        {email && email !== displayName && email !== 'unknown' && (
+        {email && email !== displayName && (
           <div className="text-xs text-gray-500 truncate">{email}</div>
         )}
       </div>

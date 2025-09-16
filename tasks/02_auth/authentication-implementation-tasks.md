@@ -1,5 +1,7 @@
 # Microsoft Entra External ID Authentication Implementation Tasks
 
+- Finished
+
 ## Overview
 This document outlines the tasks required to implement Microsoft Entra External ID authentication for the TaktMate web application. The implementation will ensure that unauthenticated users are redirected through a custom sign-in/sign-up flow before accessing the main application, with proper logout functionality.
 
@@ -206,7 +208,7 @@ This document outlines the tasks required to implement Microsoft Entra External 
 **Priority:** High  
 **Estimated Time:** 30 minutes
 
-- [ ] **Create SWA Header Validation Middleware**: Parse Azure Static Web Apps authentication headers
+- [X] **Create SWA Header Validation Middleware**: Parse Azure Static Web Apps authentication headers
   - Create `middleware/auth.js`
   - Parse `x-ms-client-principal` header from SWA proxy
   - Extract user information from SWA-provided headers
