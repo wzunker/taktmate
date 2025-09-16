@@ -232,16 +232,99 @@ const FileUpload = ({ onFileUploaded }) => {
         </div>
 
         {files.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Selected Files:</p>
-            {files.map((file, index) => (
-              <div key={index} className="flex items-center justify-between text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
-                <div>
-                  <span className="font-medium">{file.name}</span>
-                  <span className="ml-2 text-gray-500">({(file.size / 1024).toFixed(1)} KB)</span>
+          <div className="border border-gray-200 rounded-lg bg-white">
+            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+              <h3 className="text-sm font-medium text-gray-900">
+                Selected Files ({files.length}/{MAX_FILES})
+              </h3>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {files.map((file, index) => (
+                <div key={index} className="px-4 py-3 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3 flex-1 min-w-0">
+                      {/* File Icon */}
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                          <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      </div>
+                      
+                      {/* File Details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {file.name}
+                          </p>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            CSV
+                          </span>
+                        </div>
+                        <div className="flex items-center mt-1 space-x-4 text-xs text-gray-500">
+                          <span>{(file.size / 1024).toFixed(1)} KB</span>
+                          <span>•</span>
+                          <span>{new Date().toLocaleDateString()}</span>
+                          <span>•</span>
+                          <span className="inline-flex items-center">
+                            <div className="w-2 h-2 bg-yellow-400 rounded-full mr-1"></div>
+                            Ready to upload
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Action Buttons Placeholder */}
+                    <div className="flex items-center space-x-2 ml-4">
+                      <button
+                        type="button"
+                        className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                        title="View file (coming soon)"
+                        disabled
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                        title="Download file (coming soon)"
+                        disabled
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                        title="Remove file (coming soon)"
+                        disabled
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
+            
+            {/* File List Footer */}
+            <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span>
+                  Total size: {(files.reduce((total, file) => total + file.size, 0) / 1024).toFixed(1)} KB
+                </span>
+                <span>
+                  {MAX_FILES - files.length} slot{MAX_FILES - files.length !== 1 ? 's' : ''} remaining
+                </span>
               </div>
-            ))}
+            </div>
           </div>
         )}
 
