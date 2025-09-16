@@ -33,11 +33,27 @@ const FileUpload = ({ onFileUploaded }) => {
 
     try {
       console.log('Uploading file:', file.name, file.size);
-      // Use relative path to go through SWA proxy which injects auth headers
-      const response = await axios.post('/api/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      
+      // Get auth info from SWA
+      const authResponse = await fetch('/.auth/me');
+      const authData = await authResponse.json();
+      
+      if (!authData.clientPrincipal) {
+        setError('Authentication required. Please log in.');
+        return;
+      }
+      
+      // Call backend directly with SWA auth data
+      const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
+      
+      // Create headers with auth data
+      const authHeaders = {
+        'Content-Type': 'multipart/form-data',
+        'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
+      };
+      
+      const response = await axios.post(`${backendURL}/api/upload`, formData, {
+        headers: authHeaders,
         timeout: 30000, // 30 second timeout
       });
       console.log('Upload response:', response.data);

@@ -37,10 +37,29 @@ const ChatBox = ({ fileData }) => {
     setMessages(newMessages);
 
     try {
-      // Use relative path to go through SWA proxy which injects auth headers
-      const response = await axios.post('/api/chat', {
+      // Get auth info from SWA
+      const authResponse = await fetch('/.auth/me');
+      const authData = await authResponse.json();
+      
+      if (!authData.clientPrincipal) {
+        setMessages(prev => [...prev, { 
+          type: 'error', 
+          content: 'Authentication required. Please refresh the page and log in.'
+        }]);
+        return;
+      }
+      
+      // Call backend directly with SWA auth data
+      const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
+      
+      const response = await axios.post(`${backendURL}/api/chat`, {
         fileId: fileData.fileId,
         message: userMessage
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
+        }
       });
 
       if (response.data.success) {
