@@ -44,9 +44,11 @@ const UserProfile = ({
             {email && email !== displayName && (
               <p className="text-sm text-gray-500 mt-1">{email}</p>
             )}
-            <p className="text-xs text-gray-400 mt-1">
-              via {user.identityProvider || 'External ID'}
-            </p>
+            {user.identityProvider && user.identityProvider !== 'unknown' && (
+              <p className="text-xs text-gray-400 mt-1">
+                via {user.identityProvider}
+              </p>
+            )}
           </div>
           
           {/* Logout Button */}
