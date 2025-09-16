@@ -4,6 +4,7 @@ import ChatBox from './components/ChatBox';
 import DataTable from './components/DataTable';
 import UserProfile from './components/UserProfile';
 import DebugAuth from './components/DebugAuth';
+import AuthDebugger from './components/AuthDebugger';
 import useAuth from './hooks/useAuth';
 
 function App() {
@@ -70,6 +71,7 @@ function App() {
 
       {/* Debug Section - Remove this after debugging */}
       <DebugAuth />
+      <AuthDebugger />
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

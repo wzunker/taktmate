@@ -59,6 +59,40 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Debug endpoint to inspect headers and auth state
+app.get('/api/debug-auth', (req, res) => {
+  const clientPrincipalHeader = req.headers['x-ms-client-principal'];
+  let parsedPrincipal = null;
+  
+  if (clientPrincipalHeader) {
+    try {
+      const decoded = Buffer.from(clientPrincipalHeader, 'base64').toString('utf8');
+      parsedPrincipal = JSON.parse(decoded);
+    } catch (e) {
+      parsedPrincipal = { error: 'Failed to parse client principal', raw: clientPrincipalHeader };
+    }
+  }
+
+  res.json({
+    timestamp: new Date().toISOString(),
+    headers: {
+      'x-ms-client-principal': clientPrincipalHeader ? 'Present' : 'Missing',
+      'x-forwarded-host': req.headers['x-forwarded-host'],
+      'x-forwarded-proto': req.headers['x-forwarded-proto'],
+      'user-agent': req.headers['user-agent'],
+      'cookie': req.headers.cookie ? 'Present' : 'Missing'
+    },
+    clientPrincipal: parsedPrincipal,
+    requestInfo: {
+      method: req.method,
+      url: req.url,
+      originalUrl: req.originalUrl,
+      ip: req.ip,
+      ips: req.ips
+    }
+  });
+});
+
 // Test upload endpoint
 app.get('/api/test', (req, res) => {
   res.json({ 
