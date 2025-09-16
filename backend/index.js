@@ -83,6 +83,15 @@ app.get('/api/test', (req, res) => {
 });
 
 
+// Handle preflight OPTIONS request for upload
+app.options('/api/upload', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-ms-client-principal');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
+
 // Upload CSV endpoint
 app.post('/api/upload', requireAuth, upload.single('csvFile'), async (req, res) => {
   try {
@@ -130,6 +139,15 @@ app.post('/api/upload', requireAuth, upload.single('csvFile'), async (req, res) 
     }
     res.status(500).json({ error: 'Failed to process CSV file: ' + error.message });
   }
+});
+
+// Handle preflight OPTIONS request for chat
+app.options('/api/chat', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-ms-client-principal');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
 });
 
 // Chat endpoint
