@@ -40,7 +40,7 @@ Deploy TaktMate to Azure with no authentication, using existing Azure resources:
   - `NODE_ENV=production` ✅ Already configured
   - `PORT=80` ✅ Already configured
 
-- [ ] **Required New Settings for TaktMate (Option B - Key Vault Reference):**
+- [X] **Required New Settings for TaktMate (Option B - Key Vault Reference):**
   
   **Step 1: Add OpenAI API Key to Key Vault (if not already there):**
   
@@ -74,7 +74,7 @@ Deploy TaktMate to Azure with no authentication, using existing Azure resources:
   - Value: `@Microsoft.KeyVault(VaultName=TaktMate-KeyVault;SecretName=OpenAI-API-Key)`
   - Click "Apply"
 
-- [ ] **Update CORS_ORIGIN setting:**
+- [X] **Update CORS_ORIGIN setting:**
   - Current `FRONTEND_URL` can be renamed to `CORS_ORIGIN` for clarity
   - Or add `CORS_ORIGIN` as new setting with same value
 
@@ -82,29 +82,24 @@ Deploy TaktMate to Azure with no authentication, using existing Azure resources:
   - Managed identity appears to be set up
   - Key Vault URL is already configured
 
-### Task 1.3: Deploy Backend to App Service
-- [ ] **Test backend locally first**
-  ```bash
-  cd backend
-  npm install
-  npm start
-  # Test http://localhost:3001/api/health
-  ```
+### Task 1.3: Deploy Backend to App Service (GitHub Actions)
+- [x] **Create GitHub Actions workflow**
+  - Created `.github/workflows/deploy-backend.yml`
+  - Automated deployment on push to main branch
+  - Triggers on backend changes only
 
-- [ ] **Deploy using ZIP deployment**
-  ```bash
-  cd backend
-  zip -r ../backend.zip .
-  cd ..
-  az webapp deploy \
-    --resource-group taktmate \
-    --name taktmate-backend-api \
-    --src-path backend.zip
-  ```
+- [ ] **Set up Azure deployment credentials**
+  - [ ] Get publish profile from Azure App Service
+  - [ ] Add `AZURE_WEBAPP_PUBLISH_PROFILE_BACKEND` to GitHub secrets
+
+- [ ] **Deploy by pushing to main branch**
+  - [ ] Commit and push changes
+  - [ ] GitHub Actions will automatically deploy
+  - [ ] Monitor deployment in GitHub Actions tab
 
 - [ ] **Verify backend deployment**
-  - [ ] Test: `https://taktmate-backend-api.azurewebsites.net/api/health`
-  - [ ] Check Azure Portal logs for any errors
+  - [ ] Test: `https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net/api/health`
+  - [ ] Check GitHub Actions logs for deployment status
   - [ ] Verify all endpoints respond correctly
 
 ---
@@ -143,24 +138,20 @@ Deploy TaktMate to Azure with no authentication, using existing Azure resources:
   - [ ] Remove Entra External ID related variables (no longer needed)
   - [ ] Keep `REACT_APP_API_URL` if needed for development
 
-### Task 2.2: Deploy Frontend to Static Web Apps
-- [ ] **Option A: GitHub Actions (Recommended)**
-  - [ ] Connect Static Web App to GitHub repository
-  - [ ] Configure build settings:
-    - App location: `frontend`
-    - Output location: `build`
-  - [ ] Commit and push to trigger deployment
+### Task 2.2: Deploy Frontend to Static Web Apps (GitHub Actions)
+- [x] **Create GitHub Actions workflow**
+  - Created `.github/workflows/deploy-frontend.yml`
+  - Automated deployment on push to main branch
+  - Triggers on frontend changes only
 
-- [ ] **Option B: Manual deployment with SWA CLI**
-  ```bash
-  cd frontend
-  npm ci
-  npm run build
-  npx @azure/static-web-apps-cli deploy \
-    --app-name taktmate-frontend \
-    --app-location . \
-    --output-location build
-  ```
+- [ ] **Set up Azure Static Web Apps credentials**
+  - [ ] Get API token from Azure Static Web Apps
+  - [ ] Add `AZURE_STATIC_WEB_APPS_API_TOKEN` to GitHub secrets
+
+- [ ] **Deploy by pushing to main branch**
+  - [ ] Commit and push changes
+  - [ ] GitHub Actions will automatically deploy
+  - [ ] Monitor deployment in GitHub Actions tab
 
 - [ ] **Verify frontend deployment**
   - [ ] Test Static Web App URL loads correctly
