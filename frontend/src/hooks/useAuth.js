@@ -21,7 +21,16 @@ const useAuth = () => {
   const getUserDisplayName = () => {
     if (!user) return null;
     
-    // Try to get name from claims first
+    // Try to get First Name from External ID user flow attributes
+    const firstNameClaim = user.claims?.find(claim => 
+      claim.typ === 'FirstName' ||
+      claim.typ === 'given_name' ||
+      claim.typ === 'extension_FirstName'
+    );
+    
+    if (firstNameClaim) return firstNameClaim.val;
+    
+    // Try to get standard name claims
     const nameClaim = user.claims?.find(claim => 
       claim.typ === 'name' || 
       claim.typ === 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name' ||
@@ -31,7 +40,7 @@ const useAuth = () => {
     if (nameClaim) return nameClaim.val;
     
     // Fallback to user details or email
-    return user.name || user.email || 'User';
+    return user.name || user.userDetails || 'User';
   };
 
   // Helper function to get user email
@@ -62,6 +71,24 @@ const useAuth = () => {
     
     const claim = user.claims.find(claim => claim.typ === claimType);
     return claim ? claim.val : null;
+  };
+
+  // Helper function to get full name (First + Last)
+  const getFullName = () => {
+    if (!user) return null;
+    
+    const firstName = getClaimValue('FirstName') || getClaimValue('given_name') || getClaimValue('extension_FirstName');
+    const lastName = getClaimValue('LastName') || getClaimValue('family_name') || getClaimValue('extension_LastName');
+    
+    if (firstName && lastName) {
+      return `${firstName} ${lastName}`;
+    } else if (firstName) {
+      return firstName;
+    } else if (lastName) {
+      return lastName;
+    }
+    
+    return getUserDisplayName();
   };
 
   // Helper function to check if authentication is required
@@ -95,6 +122,7 @@ const useAuth = () => {
     // Helper functions
     getUserDisplayName,
     getUserEmail,
+    getFullName,
     hasRole,
     getClaimValue,
     requireAuth,
@@ -103,6 +131,7 @@ const useAuth = () => {
     isLoggedIn: isAuthenticated,
     isLoggedOut: !isAuthenticated && !isLoading,
     displayName: getUserDisplayName(),
+    fullName: getFullName(),
     email: getUserEmail()
   };
 };
