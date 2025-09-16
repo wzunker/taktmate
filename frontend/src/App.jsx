@@ -8,7 +8,7 @@ import useAuth from './hooks/useAuth';
 
 function App() {
   const [fileData, setFileData] = useState(null);
-  const { isAuthenticated, isLoading, user, displayName, logout, error } = useAuth();
+  const { isAuthenticated, isLoading, error } = useAuth();
 
   const handleFileUploaded = (uploadedFileData) => {
     setFileData(uploadedFileData);
