@@ -39,8 +39,8 @@ const useAuth = () => {
     
     // Try to get First Name from External ID user flow attributes
     const firstNameClaim = user.claims?.find(claim => 
-      claim.typ === 'FirstName' ||
       claim.typ === 'given_name' ||
+      claim.typ === 'FirstName' ||
       claim.typ === 'extension_FirstName' ||
       claim.typ.toLowerCase().includes('firstname') ||
       claim.typ.toLowerCase().includes('given')
@@ -102,8 +102,8 @@ const useAuth = () => {
   const getFullName = () => {
     if (!user) return null;
     
-    const firstName = getClaimValue('FirstName') || getClaimValue('given_name') || getClaimValue('extension_FirstName');
-    const lastName = getClaimValue('LastName') || getClaimValue('family_name') || getClaimValue('extension_LastName');
+    const firstName = getClaimValue('given_name') || getClaimValue('FirstName') || getClaimValue('extension_FirstName');
+    const lastName = getClaimValue('family_name') || getClaimValue('LastName') || getClaimValue('extension_LastName');
     
     if (firstName && lastName) {
       return `${firstName} ${lastName}`;
