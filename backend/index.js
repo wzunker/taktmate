@@ -52,7 +52,7 @@ const upload = multer({
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ 
-    status: 'OK', 
+    status: 'OK',
     message: 'TaktMate Backend is running',
     timestamp: new Date().toISOString()
   });
@@ -67,7 +67,6 @@ app.get('/api/test', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
-
 
 // Preflight requests
 app.options('*', (req, res) => {
@@ -204,7 +203,7 @@ ${csvString}`;
 
   } catch (error) {
     console.error('Chat error:', error.message);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       error: 'Failed to process chat message. Please try again.' 
     });
