@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaktMate Auth Debug</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: #00ff00;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #00ffff;
+            text-align: center;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            background-color: #222;
+        }
+        .button {
+            background-color: #333;
+            color: #00ff00;
+            border: 1px solid #555;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .button:hover {
+            background-color: #444;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 8px;
+            border-left: 3px solid #00ff00;
+            background-color: #1a1a1a;
+            font-size: 12px;
+        }
+        .log-event {
+            color: #ffff00;
+            font-weight: bold;
+        }
+        .log-timestamp {
+            color: #888;
+        }
+        .log-data {
+            color: #00ffff;
+            margin-left: 20px;
+        }
+        pre {
+            background-color: #111;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .status.success { background-color: #004400; border: 1px solid #00ff00; }
+        .status.error { background-color: #440000; border: 1px solid #ff0000; color: #ff0000; }
+        .status.warning { background-color: #444400; border: 1px solid #ffff00; color: #ffff00; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 TaktMate Authentication Debug Console</h1>
+        
+        <div class="section">
+            <h3>Controls</h3>
+            <button class="button" onclick="refreshLogs()">🔄 Refresh Logs</button>
+            <button class="button" onclick="clearLogs()">🗑️ Clear Logs</button>
+            <button class="button" onclick="exportLogs()">💾 Export Logs</button>
+            <button class="button" onclick="testLogin()">🔐 Test Login</button>
+            <button class="button" onclick="testLogout()">🚪 Test Logout</button>
+            <button class="button" onclick="testAuthMe()">❓ Test /.auth/me</button>
+        </div>
+
+        <div class="section">
+            <h3>Current Status</h3>
+            <div id="status">Loading...</div>
+        </div>
+
+        <div class="section">
+            <h3>Frontend Logs (localStorage)</h3>
+            <div id="frontend-logs">Loading...</div>
+        </div>
+
+        <div class="section">
+            <h3>Backend Logs (Server)</h3>
+            <div id="backend-logs">Loading...</div>
+        </div>
+
+        <div class="section">
+            <h3>Auth State Debug</h3>
+            <div id="auth-debug">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        let refreshInterval;
+
+        async function refreshLogs() {
+            await Promise.all([
+                loadFrontendLogs(),
+                loadBackendLogs(),
+                loadAuthDebug(),
+                updateStatus()
+            ]);
+        }
+
+        function loadFrontendLogs() {
+            try {
+                const logs = JSON.parse(localStorage.getItem('taktmate_auth_debug_log') || '[]');
+                const container = document.getElementById('frontend-logs');
+                
+                if (logs.length === 0) {
+                    container.innerHTML = '<div class="status warning">No frontend logs found</div>';
+                    return;
+                }
+
+                container.innerHTML = logs.slice(-20).reverse().map(log => `
+                    <div class="log-entry">
+                        <span class="log-timestamp">[${log.timestamp}]</span>
+                        <span class="log-event">${log.event}</span>
+                        <div class="log-data">${JSON.stringify(log, null, 2)}</div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                document.getElementById('frontend-logs').innerHTML = 
+                    `<div class="status error">Error loading frontend logs: ${e.message}</div>`;
+            }
+        }
+
+        async function loadBackendLogs() {
+            try {
+                const response = await fetch('/api/debug-logs');
+                const data = await response.json();
+                const container = document.getElementById('backend-logs');
+                
+                if (data.logs.length === 0) {
+                    container.innerHTML = '<div class="status warning">No backend logs found</div>';
+                    return;
+                }
+
+                container.innerHTML = data.logs.slice(-20).reverse().map(log => `
+                    <div class="log-entry">
+                        <span class="log-timestamp">[${log.serverTimestamp}]</span>
+                        <span class="log-event">${log.event}</span>
+                        <div class="log-data">${JSON.stringify(log, null, 2)}</div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                document.getElementById('backend-logs').innerHTML = 
+                    `<div class="status error">Error loading backend logs: ${e.message}</div>`;
+            }
+        }
+
+        async function loadAuthDebug() {
+            try {
+                const response = await fetch('/api/debug-auth');
+                const data = await response.json();
+                document.getElementById('auth-debug').innerHTML = `
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (e) {
+                document.getElementById('auth-debug').innerHTML = 
+                    `<div class="status error">Error loading auth debug: ${e.message}</div>`;
+            }
+        }
+
+        async function updateStatus() {
+            const status = document.getElementById('status');
+            const currentUrl = window.location.href;
+            const timestamp = new Date().toISOString();
+            
+            try {
+                const authResponse = await fetch('/.auth/me');
+                const authData = await authResponse.json();
+                const isAuthenticated = !!authData.clientPrincipal;
+                
+                status.innerHTML = `
+                    <div class="status ${isAuthenticated ? 'success' : 'warning'}">
+                        <strong>Authentication Status:</strong> ${isAuthenticated ? 'AUTHENTICATED' : 'NOT AUTHENTICATED'}
+                    </div>
+                    <div><strong>Current URL:</strong> ${currentUrl}</div>
+                    <div><strong>Timestamp:</strong> ${timestamp}</div>
+                    <div><strong>User Agent:</strong> ${navigator.userAgent}</div>
+                `;
+            } catch (e) {
+                status.innerHTML = `
+                    <div class="status error">
+                        <strong>Error checking auth status:</strong> ${e.message}
+                    </div>
+                    <div><strong>Current URL:</strong> ${currentUrl}</div>
+                    <div><strong>Timestamp:</strong> ${timestamp}</div>
+                `;
+            }
+        }
+
+        async function clearLogs() {
+            // Clear frontend logs
+            localStorage.removeItem('taktmate_auth_debug_log');
+            
+            // Clear backend logs
+            try {
+                await fetch('/api/debug-logs', { method: 'DELETE' });
+            } catch (e) {
+                console.error('Failed to clear backend logs:', e);
+            }
+            
+            await refreshLogs();
+        }
+
+        function exportLogs() {
+            const frontendLogs = JSON.parse(localStorage.getItem('taktmate_auth_debug_log') || '[]');
+            
+            fetch('/api/debug-logs')
+                .then(response => response.json())
+                .then(backendData => {
+                    const exportData = {
+                        timestamp: new Date().toISOString(),
+                        url: window.location.href,
+                        userAgent: navigator.userAgent,
+                        frontendLogs,
+                        backendLogs: backendData.logs
+                    };
+                    
+                    const dataStr = JSON.stringify(exportData, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                    
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(dataBlob);
+                    link.download = `taktmate-auth-debug-${new Date().toISOString().slice(0, 19)}.json`;
+                    link.click();
+                })
+                .catch(e => {
+                    // Export just frontend logs if backend fails
+                    const exportData = { frontendLogs, error: e.message };
+                    const dataStr = JSON.stringify(exportData, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                    
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(dataBlob);
+                    link.download = `taktmate-auth-debug-frontend-only-${new Date().toISOString().slice(0, 19)}.json`;
+                    link.click();
+                });
+        }
+
+        function testLogin() {
+            window.location.href = '/.auth/login/entraExternalId';
+        }
+
+        function testLogout() {
+            window.location.href = '/.auth/logout';
+        }
+
+        async function testAuthMe() {
+            try {
+                const response = await fetch('/.auth/me');
+                const data = await response.json();
+                alert(`/.auth/me response:\n${JSON.stringify(data, null, 2)}`);
+            } catch (e) {
+                alert(`Error testing /.auth/me: ${e.message}`);
+            }
+        }
+
+        // Auto-refresh every 5 seconds
+        function startAutoRefresh() {
+            refreshInterval = setInterval(refreshLogs, 5000);
+        }
+
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        }
+
+        // Initialize
+        refreshLogs();
+        startAutoRefresh();
+
+        // Stop auto-refresh when page is hidden
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else {
+                startAutoRefresh();
+            }
+        });
+    </script>
+</body>
+</html>

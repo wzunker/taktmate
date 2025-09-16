@@ -93,6 +93,58 @@ app.get('/api/debug-auth', (req, res) => {
   });
 });
 
+// In-memory storage for debug logs
+const debugLogs = [];
+const MAX_DEBUG_LOGS = 1000;
+
+// Endpoint to receive debug logs from frontend
+app.post('/api/debug-log', (req, res) => {
+  try {
+    const logEntry = {
+      ...req.body,
+      serverTimestamp: new Date().toISOString(),
+      clientIP: req.ip,
+      userAgent: req.headers['user-agent']
+    };
+
+    // Add to in-memory storage
+    debugLogs.push(logEntry);
+    
+    // Keep only last N entries
+    if (debugLogs.length > MAX_DEBUG_LOGS) {
+      debugLogs.splice(0, debugLogs.length - MAX_DEBUG_LOGS);
+    }
+
+    // Log to server console
+    console.log(`🔍 AUTH_DEBUG [${logEntry.event}]:`, logEntry);
+
+    res.json({ status: 'logged', timestamp: logEntry.serverTimestamp });
+  } catch (error) {
+    console.error('Error processing debug log:', error);
+    res.status(500).json({ error: 'Failed to process log' });
+  }
+});
+
+// Endpoint to retrieve all debug logs
+app.get('/api/debug-logs', (req, res) => {
+  res.json({
+    logs: debugLogs,
+    count: debugLogs.length,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Endpoint to clear debug logs
+app.delete('/api/debug-logs', (req, res) => {
+  const clearedCount = debugLogs.length;
+  debugLogs.length = 0;
+  res.json({
+    message: 'Debug logs cleared',
+    clearedCount,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Test upload endpoint
 app.get('/api/test', (req, res) => {
   res.json({ 
