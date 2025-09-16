@@ -200,97 +200,114 @@ This document outlines the tasks required to implement Microsoft Entra External 
 
 ---
 
-### Phase 3: Backend Security Implementation
+### Phase 3: Backend Security Implementation (Simplified SWA Approach)
 
-#### Task 7: Install Authentication Dependencies
+#### Task 7: Create SWA Authentication Middleware
 **Priority:** High  
-**Estimated Time:** 15 minutes
+**Estimated Time:** 30 minutes
 
-- [ ] **Install JWT Validation Libraries**: Add necessary packages for token validation
-  - Install `jsonwebtoken` for JWT token validation
-  - Install `jwks-rsa` for retrieving public keys from Microsoft
-  - Install `axios` if not already present for HTTP requests
-  - Update `package.json` dependencies
-
-**Command:**
-```bash
-cd backend
-npm install jsonwebtoken jwks-rsa axios
-```
-
-**Acceptance Criteria:**
-- All required authentication libraries are installed
-- Package.json is updated with new dependencies
-
----
-
-#### Task 8: Create Authentication Middleware
-**Priority:** High  
-**Estimated Time:** 120 minutes
-
-- [ ] **Create Token Validation Middleware**: Implement JWT token validation
+- [ ] **Create SWA Header Validation Middleware**: Parse Azure Static Web Apps authentication headers
   - Create `middleware/auth.js`
-  - Validate JWT tokens from Authorization header or SWA headers
-  - Verify token signature using Microsoft's public keys
-  - Extract user information from validated tokens
+  - Parse `x-ms-client-principal` header from SWA proxy
+  - Extract user information from SWA-provided headers
+  - Handle unauthenticated requests gracefully
 
-- [ ] **Implement JWKS Client**: Set up client for retrieving Microsoft public keys
-  - Configure JWKS client for Microsoft Entra External ID
-  - Handle key rotation and caching
-  - Implement proper error handling
+**Why This Approach:**
+- ✅ **Simpler**: No JWT validation, JWKS clients, or token management needed
+- ✅ **Secure**: SWA handles all token validation before proxying requests
+- ✅ **No CORS issues**: All traffic flows through SWA domain
+- ✅ **Automatic refresh**: SWA manages token lifecycle automatically
+- ✅ **Fast implementation**: Minimal code, maximum security
 
-**Middleware Features:**
+**Middleware Implementation:**
 ```javascript
-// auth.js should provide:
-// - validateToken: middleware function
-// - extractUserInfo: utility function
-// - handleAuthError: error handling
+// middleware/auth.js
+function requireAuth(req, res, next) {
+  const header = req.headers['x-ms-client-principal'];
+  if (!header) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+
+  try {
+    const encoded = Buffer.from(header, 'base64').toString('utf8');
+    req.user = JSON.parse(encoded);
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid authentication" });
+  }
+}
+
+module.exports = { requireAuth };
 ```
 
-**Key Configuration for External ID:**
-- JWKS URI: `https://taktmate.ciamlogin.com/7d673488-6daf-4406-b9ce-d2d1f2b5c0db/discovery/v2.0/keys?appid=3f1869f7-716b-4885-ac8a-86e78515f3a4`
-- Issuer: `https://7d673488-6daf-4406-b9ce-d2d1f2b5c0db.ciamlogin.com/7d673488-6daf-4406-b9ce-d2d1f2b5c0db/v2.0`
-- Audience: Your client ID (`ENTRA_EXTERNAL_ID_CLIENT_ID`)
-- **Note**: These URLs come from your External ID OpenID configuration, not regular Entra ID endpoints
+**SWA User Object Structure:**
+```json
+{
+  "identityProvider": "entraExternalId",
+  "userId": "12345678-90ab-cdef-1234-567890abcdef",
+  "userDetails": "user@example.com",
+  "userRoles": ["authenticated"],
+  "claims": [...]
+}
+```
 
 **Acceptance Criteria:**
-- Middleware properly validates JWT tokens from Microsoft Entra External ID
-- Invalid tokens are rejected with appropriate error messages
+- Middleware properly parses SWA authentication headers
 - User information is extracted and made available to route handlers
-- Error handling is robust and secure
+- Unauthenticated requests are properly rejected
+- Error handling is robust and user-friendly
 
 ---
 
-#### Task 9: Update API Endpoints with Authentication
+#### Task 8: Update API Endpoints with SWA Authentication
 **Priority:** High  
-**Estimated Time:** 60 minutes
+**Estimated Time:** 45 minutes
 
-- [ ] **Apply Authentication Middleware**: Add auth middleware to protected endpoints
+- [ ] **Apply SWA Authentication Middleware**: Add auth middleware to protected endpoints
   - Update `/api/upload` endpoint to require authentication
   - Update `/api/chat` endpoint to require authentication
   - Keep `/api/health` and `/api/test` endpoints public for monitoring
 
-- [ ] **Update CORS Configuration**: Ensure CORS settings work with authentication
-  - Update CORS origin to include Static Web App domain
-  - Ensure credentials are properly handled
-  - Add necessary headers for authentication
+- [ ] **Simplify CORS Configuration**: Update CORS for SWA proxy pattern
+  - CORS configuration can be simplified since all requests come through SWA
+  - Ensure SWA domain is included in allowed origins
+  - Remove complex authentication headers (SWA handles this)
 
 - [ ] **Add User Context to Requests**: Include user information in request processing
   - Add user ID to file storage for multi-user support
   - Log user actions for audit purposes
-  - Implement user-specific data isolation if needed
+  - Implement user-specific data isolation using SWA user context
+
+**Implementation Example:**
+```javascript
+const { requireAuth } = require('./middleware/auth');
+
+// Protected endpoints
+app.post('/api/upload', requireAuth, (req, res) => {
+  const user = req.user; // From SWA headers
+  console.log(`User ${user.userDetails} uploading file`);
+  // ... existing upload logic
+});
+
+app.post('/api/chat', requireAuth, (req, res) => {
+  const user = req.user;
+  console.log(`User ${user.userDetails} sending chat message`);
+  // ... existing chat logic
+});
+```
 
 **Acceptance Criteria:**
-- All protected API endpoints require valid authentication
+- All protected API endpoints require valid SWA authentication
 - Unauthenticated requests are properly rejected
-- User context is available in API handlers
-- CORS configuration supports authenticated requests
+- User context from SWA headers is available in API handlers
+- CORS configuration works with SWA proxy pattern
+- User actions are properly logged and isolated
 
 ---
 
 ### Phase 4: Testing and Validation
 
-#### Task 10: Implement Comprehensive Testing
+#### Task 9: Implement Comprehensive Testing
 **Priority:** High  
 **Estimated Time:** 90 minutes
 
@@ -333,7 +350,7 @@ npm install jsonwebtoken jwks-rsa axios
 
 ### Phase 5: Documentation and Deployment
 
-#### Task 11: Update Documentation
+#### Task 10: Update Documentation
 **Priority:** Medium  
 **Estimated Time:** 45 minutes
 
@@ -359,7 +376,7 @@ npm install jsonwebtoken jwks-rsa axios
 
 ---
 
-#### Task 12: Final Deployment and Validation
+#### Task 11: Final Deployment and Validation
 **Priority:** Critical  
 **Estimated Time:** 30 minutes
 
@@ -428,7 +445,40 @@ npm install jsonwebtoken jwks-rsa axios
 - **Route protection**: Same `allowedRoles: ["authenticated"]` and `401` override logic  
 - **Environment variables**: Same `ENTRA_EXTERNAL_ID_CLIENT_ID` and `ENTRA_EXTERNAL_ID_CLIENT_SECRET`
 - **Frontend integration**: Still uses `/.auth/me`, `/.auth/logout` endpoints
-- **Backend token validation**: Still validates JWT tokens (with External ID issuer/keys)
+- **Backend authentication**: Simplified to use SWA headers instead of JWT validation
+
+### Azure Static Web Apps Authentication Approach
+
+#### 🚀 Why Use SWA Header Authentication:
+
+1. **Simplified Backend**: No need for JWT libraries, JWKS clients, or token validation logic
+2. **Automatic Security**: SWA validates all tokens before proxying requests to backend
+3. **No CORS Complexity**: All requests flow through SWA domain, eliminating CORS issues
+4. **Session Management**: SWA handles token refresh and session lifecycle automatically
+5. **Faster Development**: Minimal code required for robust authentication
+
+#### 🔧 How SWA Authentication Works:
+
+1. User authenticates via External ID through SWA
+2. SWA validates and manages the authentication session
+3. For API calls, SWA adds `x-ms-client-principal` header to requests
+4. Backend middleware parses this header to get user context
+5. No direct token validation needed in backend
+
+#### 📋 SWA Authentication Headers:
+
+- `x-ms-client-principal`: Base64-encoded JSON with user information
+- Contains: `identityProvider`, `userId`, `userDetails`, `userRoles`, `claims`
+- Automatically injected by SWA for authenticated users
+- Empty/missing for unauthenticated requests
+
+#### ⚡ Alternative: Full JWT Validation
+
+If you need your backend to accept direct API calls (bypassing SWA), you can implement full JWT validation as a Phase 4 enhancement. This would involve:
+- Installing `jsonwebtoken` and `jwks-rsa` packages
+- Validating tokens against External ID JWKS endpoint
+- Handling token expiry and refresh logic
+- Managing CORS for direct API access
 
 ### Environment Variables Required
 
@@ -481,6 +531,6 @@ npm install jsonwebtoken jwks-rsa axios
 
 ---
 
-**Total Estimated Implementation Time**: 8-10 hours
+**Total Estimated Implementation Time**: 5-6 hours (reduced due to SWA simplified approach)
 **Recommended Implementation Order**: Complete phases sequentially, testing thoroughly after each phase
 **Critical Dependencies**: Azure Static Web App Standard plan, Microsoft Entra External ID tenant setup
