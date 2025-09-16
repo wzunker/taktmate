@@ -29,6 +29,14 @@ const useAuth = () => {
       identityProvider: user.identityProvider
     });
     
+    // Debug: Log each claim individually
+    if (user.claims) {
+      console.log('📋 All claims:');
+      user.claims.forEach((claim, index) => {
+        console.log(`  ${index + 1}. ${claim.typ}: "${claim.val}"`);
+      });
+    }
+    
     // Try to get First Name from External ID user flow attributes
     const firstNameClaim = user.claims?.find(claim => 
       claim.typ === 'FirstName' ||
