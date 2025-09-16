@@ -3,6 +3,9 @@
     "rewrite": "/index.html"
   },
   "forwardingGateway": {
+    "requiredHeaders": {
+      "x-ms-client-principal": ""
+    },
     "allowedForwardedHosts": ["taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net"]
   },
   "routes": [
@@ -13,6 +16,7 @@
     {
       "route": "/api/*",
       "allowedRoles": ["authenticated"],
+      "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       "rewrite": "https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net/api/{*}"
     },
     {
