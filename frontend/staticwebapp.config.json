@@ -2,10 +2,18 @@
   "navigationFallback": {
     "rewrite": "/index.html"
   },
+  "forwardingGateway": {
+    "allowedForwardedHosts": ["taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net"]
+  },
   "routes": [
     {
       "route": "/.auth/*",
       "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/api/*",
+      "allowedRoles": ["authenticated"],
+      "rewrite": "https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net/api/{*}"
     },
     {
       "route": "/login",
