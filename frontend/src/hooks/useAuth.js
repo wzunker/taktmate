@@ -21,14 +21,27 @@ const useAuth = () => {
   const getUserDisplayName = () => {
     if (!user) return null;
     
+    // Debug: Log all available claims to console
+    console.log('🔍 User claims debug:', {
+      user,
+      claims: user.claims,
+      userDetails: user.userDetails,
+      identityProvider: user.identityProvider
+    });
+    
     // Try to get First Name from External ID user flow attributes
     const firstNameClaim = user.claims?.find(claim => 
       claim.typ === 'FirstName' ||
       claim.typ === 'given_name' ||
-      claim.typ === 'extension_FirstName'
+      claim.typ === 'extension_FirstName' ||
+      claim.typ.toLowerCase().includes('firstname') ||
+      claim.typ.toLowerCase().includes('given')
     );
     
-    if (firstNameClaim) return firstNameClaim.val;
+    if (firstNameClaim) {
+      console.log('✅ Found first name claim:', firstNameClaim);
+      return firstNameClaim.val;
+    }
     
     // Try to get standard name claims
     const nameClaim = user.claims?.find(claim => 
@@ -37,8 +50,12 @@ const useAuth = () => {
       claim.typ === 'preferred_username'
     );
     
-    if (nameClaim) return nameClaim.val;
+    if (nameClaim) {
+      console.log('✅ Found name claim:', nameClaim);
+      return nameClaim.val;
+    }
     
+    console.log('❌ No name claims found, using fallback');
     // Fallback to user details or email
     return user.name || user.userDetails || 'User';
   };
