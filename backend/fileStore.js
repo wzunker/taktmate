@@ -5,11 +5,12 @@ class FileStore {
   }
 
   // Store parsed CSV data
-  store(fileId, filename, rows) {
+  store(fileId, filename, rows, userId = null) {
     this.files.set(fileId, {
       filename,
       rows,
-      uploadedAt: new Date()
+      uploadedAt: new Date(),
+      userId
     });
     return fileId;
   }

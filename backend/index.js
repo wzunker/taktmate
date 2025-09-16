@@ -6,6 +6,7 @@ require('dotenv').config();
 
 const fileStore = require('./fileStore');
 const { parseCsv, formatCsvForPrompt } = require('./processCsv');
+const { requireAuth, optionalAuth } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -25,11 +26,11 @@ app.use(cors({
   origin: [
     'http://localhost:3000', 
     'http://127.0.0.1:3000',
-    process.env.CORS_ORIGIN || 'https://taktmate-frontend.azurestaticapps.net'
+    process.env.CORS_ORIGIN || 'https://orange-flower-0b350780f.1.azurestaticapps.net'
   ].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-ms-client-principal']
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -77,13 +78,10 @@ app.options('*', (req, res) => {
 });
 
 // Upload CSV endpoint
-app.post('/api/upload', (req, res, next) => {
-  console.log('Upload request received');
-  console.log('Headers:', req.headers);
-  next();
-}, upload.single('csvFile'), async (req, res) => {
+app.post('/api/upload', requireAuth, upload.single('csvFile'), async (req, res) => {
   try {
-    console.log('File upload processed');
+    const user = req.user; // From SWA authentication middleware
+    console.log(`File upload request from user: ${user.email} (ID: ${user.id})`);
     console.log('req.file:', req.file ? 'File received' : 'No file');
     
     if (!req.file) {
@@ -93,7 +91,7 @@ app.post('/api/upload', (req, res, next) => {
 
     const filename = req.file.originalname;
     const buffer = req.file.buffer;
-    console.log(`Processing file: ${filename}, size: ${buffer.length} bytes`);
+    console.log(`Processing file: ${filename}, size: ${buffer.length} bytes for user ${user.email}`);
 
     // Parse CSV
     const rows = await parseCsv(buffer);
@@ -103,12 +101,12 @@ app.post('/api/upload', (req, res, next) => {
       return res.status(400).json({ error: 'CSV file is empty or invalid' });
     }
 
-    // Generate unique file ID
-    const fileId = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
+    // Generate unique file ID with user context
+    const fileId = `${user.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    // Store in memory
-    fileStore.store(fileId, filename, rows);
-    console.log(`File stored with ID: ${fileId}`);
+    // Store in memory with user context
+    fileStore.store(fileId, filename, rows, user.id);
+    console.log(`File stored with ID: ${fileId} for user ${user.email}`);
 
     res.json({
       success: true,
@@ -129,8 +127,10 @@ app.post('/api/upload', (req, res, next) => {
 });
 
 // Chat endpoint
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', requireAuth, async (req, res) => {
   try {
+    const user = req.user; // From SWA authentication middleware
+    
     // Debug flag - set DEBUG_PROMPTS=true in environment to enable
     const DEBUG_PROMPTS = process.env.DEBUG_PROMPTS === 'true';
     
@@ -140,10 +140,18 @@ app.post('/api/chat', async (req, res) => {
       return res.status(400).json({ error: 'fileId and message are required' });
     }
 
+    console.log(`Chat request from user: ${user.email} for file: ${fileId}`);
+
     // Retrieve CSV data
     const fileData = fileStore.get(fileId);
     if (!fileData) {
       return res.status(404).json({ error: 'File not found. Please upload a CSV file first.' });
+    }
+
+    // Basic security check: ensure user can only access their own files
+    if (fileId.startsWith(user.id + '_') === false) {
+      console.log(`Access denied: User ${user.email} attempted to access file ${fileId}`);
+      return res.status(403).json({ error: 'Access denied. You can only chat with your own uploaded files.' });
     }
 
     // Format CSV data for GPT prompt
@@ -165,11 +173,13 @@ ${csvString}`;
     // DEBUG: Log the full prompt if debug mode is enabled
     if (DEBUG_PROMPTS) {
       console.log('\n' + '='.repeat(80));
-      console.log('🔍 FULL PROMPT DEBUG');
+      console.log('FULL PROMPT DEBUG');
       console.log('='.repeat(80));
-      console.log('📋 SYSTEM MESSAGE:');
+      console.log(`User: ${user.email} (${user.id})`);
+      console.log(`File: ${fileData.filename} (${fileId})`);
+      console.log('SYSTEM MESSAGE:');
       console.log(systemPrompt);
-      console.log('\n📝 USER MESSAGE:');
+      console.log('\nUSER MESSAGE:');
       console.log(message);
       console.log('='.repeat(80) + '\n');
     }
@@ -189,10 +199,12 @@ ${csvString}`;
 
     // DEBUG: Log the response if debug mode is enabled
     if (DEBUG_PROMPTS) {
-      console.log('💬 GPT RESPONSE:');
+      console.log('GPT RESPONSE:');
       console.log(reply);
       console.log('='.repeat(80) + '\n');
     }
+
+    console.log(`Chat response sent to user: ${user.email}`);
 
     res.json({
       success: true,
@@ -202,7 +214,7 @@ ${csvString}`;
     });
 
   } catch (error) {
-    console.error('Chat error:', error.message);
+    console.error(`Chat error for user ${req.user?.email || 'unknown'}:`, error.message);
     res.status(500).json({
       success: false,
       error: 'Failed to process chat message. Please try again.' 
@@ -227,5 +239,5 @@ app.listen(PORT, () => {
   
   // Show debug status on startup
   const DEBUG_PROMPTS = process.env.DEBUG_PROMPTS === 'true';
-  console.log(`🔍 Debug prompts: ${DEBUG_PROMPTS ? 'ENABLED' : 'DISABLED'} (set DEBUG_PROMPTS=true to enable)`);
+  console.log(`Debug prompts: ${DEBUG_PROMPTS ? 'ENABLED' : 'DISABLED'} (set DEBUG_PROMPTS=true to enable)`);
 });
