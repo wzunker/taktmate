@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const AuthDebugger = () => {
   const [debugData, setDebugData] = useState({
@@ -38,7 +38,7 @@ const AuthDebugger = () => {
   }, []);
 
   // Fetch auth status
-  const fetchAuthStatus = async () => {
+  const fetchAuthStatus = useCallback(async () => {
     try {
       const response = await fetch('/.auth/me', {
         method: 'GET',
@@ -74,7 +74,7 @@ const AuthDebugger = () => {
         }
       }));
     }
-  };
+  }, []);
 
   // Get cookies
   const getCookies = () => {
@@ -87,7 +87,7 @@ const AuthDebugger = () => {
   };
 
   // Test different auth endpoints
-  const testEndpoint = async (endpoint) => {
+  const testEndpoint = useCallback(async (endpoint) => {
     try {
       const response = await fetch(endpoint, {
         method: 'GET',
@@ -106,9 +106,9 @@ const AuthDebugger = () => {
         error: error.message
       };
     }
-  };
+  }, []);
 
-  const runFullDiagnostic = async () => {
+  const runFullDiagnostic = useCallback(async () => {
     console.log('🔍 Starting comprehensive auth diagnostic...');
     
     const endpoints = [
@@ -134,11 +134,11 @@ const AuthDebugger = () => {
 
     // Also fetch auth status
     await fetchAuthStatus();
-  };
+  }, [fetchAuthStatus, testEndpoint]);
 
   useEffect(() => {
     runFullDiagnostic();
-  }, []);
+  }, [runFullDiagnostic]);
 
   const clearHistory = () => {
     setDebugData(prev => ({
