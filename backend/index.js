@@ -51,7 +51,17 @@ const upload = multer({
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'TaktMate Backend is running' });
+  const hasApiKey = !!process.env.OPENAI_API_KEY;
+  const apiKeyLength = process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0;
+  res.json({ 
+    status: 'OK', 
+    message: 'TaktMate Backend is running',
+    debug: {
+      hasApiKey,
+      apiKeyLength,
+      nodeEnv: process.env.NODE_ENV
+    }
+  });
 });
 
 // Test upload endpoint
