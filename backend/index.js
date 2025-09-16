@@ -10,13 +10,14 @@ const { parseCsv, formatCsvForPrompt } = require('./processCsv');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Initialize Azure OpenAI
+// Initialize Azure OpenAI - temporarily test with direct key
+const apiKey = process.env.OPENAI_API_KEY_DIRECT || process.env.OPENAI_API_KEY;
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: apiKey,
   baseURL: 'https://taktmate.openai.azure.com/openai/deployments/gpt-4.1',
   defaultQuery: { 'api-version': '2025-01-01-preview' },
   defaultHeaders: {
-    'api-key': process.env.OPENAI_API_KEY,
+    'api-key': apiKey,
   },
 });
 
@@ -52,13 +53,20 @@ const upload = multer({
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   const hasApiKey = !!process.env.OPENAI_API_KEY;
+  const hasDirectKey = !!process.env.OPENAI_API_KEY_DIRECT;
   const apiKeyLength = process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0;
+  const directKeyLength = process.env.OPENAI_API_KEY_DIRECT ? process.env.OPENAI_API_KEY_DIRECT.length : 0;
+  const usingDirect = !!process.env.OPENAI_API_KEY_DIRECT;
+  
   res.json({ 
     status: 'OK', 
     message: 'TaktMate Backend is running',
     debug: {
       hasApiKey,
+      hasDirectKey,
       apiKeyLength,
+      directKeyLength,
+      usingDirect,
       nodeEnv: process.env.NODE_ENV
     }
   });
