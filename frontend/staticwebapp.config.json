@@ -3,9 +3,6 @@
     "rewrite": "/index.html"
   },
   "forwardingGateway": {
-    "requiredHeaders": {
-      "x-ms-client-principal": ""
-    },
     "allowedForwardedHosts": ["taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net"]
   },
   "routes": [
