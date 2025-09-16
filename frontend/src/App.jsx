@@ -34,6 +34,52 @@ function App() {
     setActiveFileId(fileId);
   };
 
+  const handleFileDownload = (file) => {
+    // Convert the file data back to CSV format and trigger download
+    if (file.originalFile) {
+      // If we have the original file, download that
+      const url = URL.createObjectURL(file.originalFile);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = file.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } else {
+      // Otherwise, reconstruct CSV from data
+      const csvContent = convertDataToCSV(file.data, file.headers);
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = file.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const convertDataToCSV = (data, headers) => {
+    if (!data || data.length === 0) return '';
+    
+    // Create CSV content
+    const csvHeaders = headers ? headers.join(',') : Object.keys(data[0]).join(',');
+    const csvRows = data.map(row => {
+      const values = headers ? headers.map(header => row[header] || '') : Object.values(row);
+      return values.map(value => {
+        // Escape values that contain commas, quotes, or newlines
+        if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
+      }).join(',');
+    });
+    
+    return [csvHeaders, ...csvRows].join('\n');
+  };
+
   // Get the currently active file data
   const activeFileData = uploadedFiles.find(file => file.fileId === activeFileId) || null;
 
@@ -132,8 +178,9 @@ function App() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center space-x-2">
                               <button
-                                onClick={() => handleFileSelected(file.fileId)}
-                                className="text-sm font-medium text-gray-900 truncate hover:text-blue-600 transition-colors cursor-pointer"
+                                onClick={() => handleFileDownload(file)}
+                                className="text-sm font-medium text-gray-900 truncate hover:text-blue-600 transition-colors cursor-pointer text-left"
+                                title="Click to download file"
                               >
                                 {file.filename}
                               </button>
@@ -178,9 +225,9 @@ function App() {
                           </button>
                           <button
                             type="button"
-                            className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                            title="Download file (coming soon)"
-                            disabled
+                            onClick={() => handleFileDownload(file)}
+                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                            title="Download file"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
