@@ -23,11 +23,23 @@ const openai = new OpenAI({
 
 // Middleware
 app.use(cors({
-  origin: [
-    'http://localhost:3000', 
-    'http://127.0.0.1:3000',
-    process.env.CORS_ORIGIN || 'https://orange-flower-0b350780f.1.azurestaticapps.net'
-  ].filter(Boolean),
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:3000', 
+      'http://127.0.0.1:3000',
+      'https://orange-flower-0b350780f.1.azurestaticapps.net'
+    ];
+    
+    // Allow any Azure Static Web Apps origin or the specific origins
+    if (allowedOrigins.includes(origin) || origin.includes('azurestaticapps.net')) {
+      return callback(null, true);
+    }
+    
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-ms-client-principal']
@@ -70,13 +82,6 @@ app.get('/api/test', (req, res) => {
   });
 });
 
-// Preflight requests
-app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
-  res.sendStatus(200);
-});
 
 // Upload CSV endpoint
 app.post('/api/upload', requireAuth, upload.single('csvFile'), async (req, res) => {
