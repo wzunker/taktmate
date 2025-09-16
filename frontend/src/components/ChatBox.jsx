@@ -37,7 +37,7 @@ const ChatBox = ({ fileData }) => {
     setMessages(newMessages);
 
     try {
-      const response = await axios.post('http://localhost:3001/chat', {
+      const response = await axios.post('/api/chat', {
         fileId: fileData.fileId,
         message: userMessage
       });
