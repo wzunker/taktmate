@@ -12,17 +12,21 @@ const PORT = process.env.PORT || 3001;
 
 // Initialize Azure OpenAI
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'BT4uTZtbBEx9a6ulvMS4w9m8qmJsZPl0lIosOOCu2dOsn2G1DLH5JQQJ99BHACYeBjFXJ3w3AAABACOGB5lu',
+  apiKey: process.env.OPENAI_API_KEY,
   baseURL: 'https://taktmate.openai.azure.com/openai/deployments/gpt-4.1',
   defaultQuery: { 'api-version': '2025-01-01-preview' },
   defaultHeaders: {
-    'api-key': process.env.OPENAI_API_KEY || 'BT4uTZtbBEx9a6ulvMS4w9m8qmJsZPl0lIosOOCu2dOsn2G1DLH5JQQJ99BHACYeBjFXJ3w3AAABACOGB5lu',
+    'api-key': process.env.OPENAI_API_KEY,
   },
 });
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: [
+    'http://localhost:3000', 
+    'http://127.0.0.1:3000',
+    process.env.CORS_ORIGIN || 'https://taktmate-frontend.azurestaticapps.net'
+  ].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -46,12 +50,12 @@ const upload = multer({
 });
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'TaktMate Backend is running' });
 });
 
 // Test upload endpoint
-app.get('/test', (req, res) => {
+app.get('/api/test', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'Backend is working',
@@ -69,7 +73,7 @@ app.options('*', (req, res) => {
 });
 
 // Upload CSV endpoint
-app.post('/upload', (req, res, next) => {
+app.post('/api/upload', (req, res, next) => {
   console.log('Upload request received');
   console.log('Headers:', req.headers);
   next();
@@ -121,7 +125,7 @@ app.post('/upload', (req, res, next) => {
 });
 
 // Chat endpoint
-app.post('/chat', async (req, res) => {
+app.post('/api/chat', async (req, res) => {
   try {
     // Debug flag - set DEBUG_PROMPTS=true in environment to enable
     const DEBUG_PROMPTS = process.env.DEBUG_PROMPTS === 'true';

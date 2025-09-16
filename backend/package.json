@@ -18,6 +18,9 @@
   "devDependencies": {
     "nodemon": "^3.0.2"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "keywords": ["csv", "chat", "gpt-5", "mvp"],
   "author": "TaktMate",
   "license": "MIT"
