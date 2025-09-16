@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3001;
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: 'https://taktmate.openai.azure.com/openai/deployments/gpt-4.1',
-  defaultQuery: { 'api-version': '2025-01-01-preview' },
+  defaultQuery: { 'api-version': '2024-08-01-preview' },
   defaultHeaders: {
     'api-key': process.env.OPENAI_API_KEY,
   },
