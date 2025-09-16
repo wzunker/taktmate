@@ -19,7 +19,7 @@ This document outlines the tasks required to implement Microsoft Entra External 
 **Priority:** Critical  
 **Estimated Time:** 15 minutes
 
-- [ ] **Verify Standard Plan**: Confirm Azure Static Web App is on Standard plan (required for custom authentication)
+- [X] **Verify Standard Plan**: Confirm Azure Static Web App is on Standard plan (required for custom authentication)
   - Navigate to Azure Portal → Static Web Apps → Your App → Plan/Pricing tier
   - If on Free/Basic plan, upgrade to Standard plan
   - Document the current plan status
@@ -34,11 +34,11 @@ This document outlines the tasks required to implement Microsoft Entra External 
 **Priority:** Critical  
 **Estimated Time:** 45 minutes
 
-- [ ] **Update Configuration File**: Replace current `staticwebapp.config.json` with Microsoft Entra External ID configuration
+- [X] **Update Configuration File**: Replace current `staticwebapp.config.json` with Microsoft Entra External ID configuration
   - Current config only allows anonymous access - needs complete rewrite
-  - Add OpenID Connect identity provider configuration
+  - **IMPORTANT**: Use `customOpenIdConnectProviders` (not `azureActiveDirectory`) since External ID with custom user flows is treated as a custom OIDC provider
   - Configure route protection for authenticated users only
-  - Set up login/logout routes
+  - Set up login/logout routes with correct provider name
 
 **Configuration Details:**
 ```json
@@ -101,12 +101,12 @@ This document outlines the tasks required to implement Microsoft Entra External 
 **Priority:** Critical  
 **Estimated Time:** 20 minutes
 
-- [ ] **Confirm Static Web App Environment Variables**: Verify all required environment variables are set
+- [X] **Confirm Static Web App Environment Variables**: Verify all required environment variables are set
   - `ENTRA_EXTERNAL_ID_CLIENT_ID`
   - `ENTRA_EXTERNAL_ID_CLIENT_SECRET`
   - Ensure variable names exactly match those in `staticwebapp.config.json`
   
-- [ ] **Verify Backend Environment Variables**: Confirm backend has access to:
+- [X] **Verify Backend Environment Variables**: Confirm backend has access to:
   - `ENTRA_EXTERNAL_ID_CLIENT_ID`
   - `ENTRA_EXTERNAL_ID_CLIENT_SECRET`
   - `ENTRA_EXTERNAL_ID_TENANT_ID`
@@ -253,10 +253,11 @@ npm install jsonwebtoken jwks-rsa axios
 // - handleAuthError: error handling
 ```
 
-**Key Configuration:**
-- JWKS URI: `https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/discovery/v2.0/keys`
-- Issuer: `https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/v2.0`
-- Audience: Your client ID
+**Key Configuration for External ID:**
+- JWKS URI: `https://taktmate.ciamlogin.com/7d673488-6daf-4406-b9ce-d2d1f2b5c0db/discovery/v2.0/keys?appid=3f1869f7-716b-4885-ac8a-86e78515f3a4`
+- Issuer: `https://7d673488-6daf-4406-b9ce-d2d1f2b5c0db.ciamlogin.com/7d673488-6daf-4406-b9ce-d2d1f2b5c0db/v2.0`
+- Audience: Your client ID (`ENTRA_EXTERNAL_ID_CLIENT_ID`)
+- **Note**: These URLs come from your External ID OpenID configuration, not regular Entra ID endpoints
 
 **Acceptance Criteria:**
 - Middleware properly validates JWT tokens from Microsoft Entra External ID
@@ -405,6 +406,36 @@ npm install jsonwebtoken jwks-rsa axios
 
 **Important Note**: Since you're using Microsoft Entra External ID with custom user flows, the configuration uses `customOpenIdConnectProviders` rather than the standard `azureActiveDirectory` provider. This allows for proper integration with your TaktMateSignUpSignIn user flow.
 
+### Microsoft Entra External ID vs Regular Entra ID - Key Differences
+
+#### 🔑 What Changes with External ID + Custom User Flows:
+
+1. **Auth Provider Configuration**:
+   - ❌ **Don't use**: `"azureActiveDirectory": { ... }`
+   - ✅ **Use**: `"customOpenIdConnectProviders": { "entraExternalId": { ... } }`
+   - External ID with custom user flows is treated as a **custom OIDC provider**, not first-party AAD
+
+2. **Well-Known Configuration URL**:
+   - ❌ **Regular Entra ID**: `https://login.microsoftonline.com/<TENANT_ID>/v2.0/.well-known/openid-configuration`
+   - ✅ **External ID**: `https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/v2.0/.well-known/openid-configuration?appid=<APP_ID>`
+   - The `appid=` parameter ensures integration with your specific app registration
+
+3. **Login/Logout Endpoints**:
+   - Login URL: `/.auth/login/entraExternalId` (matches your chosen provider name)
+   - Callback URI in External ID: `https://<yourswa>.azurestaticapps.net/.auth/login/entraExternalId/callback`
+
+4. **User Flow Integration**:
+   - Your TaktMateSignUpSignIn user flow is automatically used based on the app registration
+   - No need for additional `p=` parameter in the well-known URL when using `appid=`
+
+#### ✅ What Stays the Same:
+
+- **Static Web Apps plan requirement**: Still need Standard plan for custom OIDC
+- **Route protection**: Same `allowedRoles: ["authenticated"]` and `401` override logic  
+- **Environment variables**: Same `ENTRA_EXTERNAL_ID_CLIENT_ID` and `ENTRA_EXTERNAL_ID_CLIENT_SECRET`
+- **Frontend integration**: Still uses `/.auth/me`, `/.auth/logout` endpoints
+- **Backend token validation**: Still validates JWT tokens (with External ID issuer/keys)
+
 ### Environment Variables Required
 
 **Frontend (Static Web App):**
@@ -424,11 +455,20 @@ npm install jsonwebtoken jwks-rsa axios
 - Monitor for suspicious authentication attempts
 
 ### Common Troubleshooting Issues
+
+#### General Issues:
 1. **Redirect URI Mismatch**: Ensure redirect URIs in Azure exactly match the configured endpoints
-2. **Environment Variable Issues**: Verify variable names match exactly between config and Azure settings
+2. **Environment Variable Issues**: Verify variable names match exactly between config and Azure settings  
 3. **Plan Limitations**: Confirm Static Web App is on Standard plan
-4. **Token Validation Errors**: Check issuer and audience configuration in JWT validation
-5. **CORS Issues**: Ensure CORS settings include authentication headers
+4. **CORS Issues**: Ensure CORS settings include authentication headers
+
+#### External ID Specific Issues:
+5. **Provider Configuration**: Using `azureActiveDirectory` instead of `customOpenIdConnectProviders` - External ID requires custom OIDC configuration
+6. **Wrong Well-Known URL**: Using regular Entra ID endpoints instead of External ID ciamlogin.com URLs
+7. **Missing appid Parameter**: Well-known configuration URL must include `?appid=<YOUR_APP_ID>` for proper app registration integration
+8. **Token Validation Errors**: Check issuer configuration - External ID uses tenant-specific issuer URLs (not login.microsoftonline.com)
+9. **User Flow Issues**: Ensure your app registration is properly associated with your TaktMateSignUpSignIn user flow
+10. **Callback URL Format**: Must be `/.auth/login/<PROVIDER_NAME>/callback` where PROVIDER_NAME matches your config (entraExternalId)
 
 ## Success Criteria
 - ✅ Unauthenticated users are automatically redirected to Microsoft Entra External ID login
