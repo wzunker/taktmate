@@ -5,17 +5,60 @@ const FileUpload = ({ onFileUploaded }) => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const validateAndSetFile = (selectedFile) => {
+    if (selectedFile.type === 'text/csv' || selectedFile.name.endsWith('.csv')) {
+      setFile(selectedFile);
+      setError('');
+      return true;
+    } else {
+      setError('Please select a valid CSV file');
+      setFile(null);
+      return false;
+    }
+  };
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
-      if (selectedFile.type === 'text/csv' || selectedFile.name.endsWith('.csv')) {
-        setFile(selectedFile);
-        setError('');
-      } else {
-        setError('Please select a valid CSV file');
-        setFile(null);
-      }
+      validateAndSetFile(selectedFile);
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragOver) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set isDragOver to false if we're leaving the drop zone entirely
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (droppedFiles.length > 0) {
+      const droppedFile = droppedFiles[0];
+      validateAndSetFile(droppedFile);
     }
   };
 
@@ -79,18 +122,50 @@ const FileUpload = ({ onFileUploaded }) => {
       <h2 className="text-xl font-semibold text-gray-800 mb-4">Upload CSV File</h2>
       
       <div className="space-y-4">
-        <div>
-          <label htmlFor="csvFile" className="block text-sm font-medium text-gray-700 mb-2">
-            Select CSV File
-          </label>
-          <input
-            id="csvFile"
-            type="file"
-            accept=".csv"
-            onChange={handleFileChange}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
-            disabled={uploading}
-          />
+        {/* Drag and Drop Zone */}
+        <div
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
+            isDragOver
+              ? 'border-primary-400 bg-primary-50'
+              : 'border-gray-300 hover:border-gray-400'
+          } ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
+        >
+          <div className="space-y-4">
+            <div className="mx-auto w-12 h-12 text-gray-400">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 48 48" aria-hidden="true">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                />
+              </svg>
+            </div>
+            <div>
+              <p className="text-lg font-medium text-gray-900">
+                {isDragOver ? 'Drop your CSV file here' : 'Drag and drop your CSV file here'}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">or</p>
+            </div>
+            <label
+              htmlFor="csvFile"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 cursor-pointer transition-colors"
+            >
+              Browse Files
+            </label>
+            <input
+              id="csvFile"
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              className="hidden"
+              disabled={uploading}
+            />
+          </div>
         </div>
 
         {file && (
