@@ -4,10 +4,6 @@
   },
   "routes": [
     {
-      "route": "/api/*",
-      "rewrite": "https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net/api/{*path}"
-    },
-    {
       "route": "/*",
       "allowedRoles": ["anonymous"]
     }
