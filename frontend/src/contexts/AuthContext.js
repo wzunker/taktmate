@@ -85,12 +85,21 @@ export const AuthProvider = ({ children }) => {
       
       // Check if user is authenticated
       if (response.ok && data.clientPrincipal) {
+        // Extract email from claims
+        const emailClaim = data.clientPrincipal.claims?.find(claim =>
+          claim.typ === 'email' ||
+          claim.typ === 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress' ||
+          claim.typ === 'preferred_username'
+        );
+        
+        const userEmail = emailClaim ? emailClaim.val : data.clientPrincipal.userDetails;
+        
         dispatch({ 
           type: AUTH_ACTIONS.SET_AUTHENTICATED, 
           payload: {
             id: data.clientPrincipal.userId,
             name: data.clientPrincipal.userDetails,
-            email: data.clientPrincipal.userDetails,
+            email: userEmail,
             roles: data.clientPrincipal.userRoles,
             identityProvider: data.clientPrincipal.identityProvider,
             claims: data.clientPrincipal.claims || []
