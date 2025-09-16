@@ -32,8 +32,6 @@ const FileUpload = ({ onFileUploaded }) => {
     formData.append('csvFile', file);
 
     try {
-      console.log('Uploading file:', file.name, file.size);
-      
       // Get auth info from SWA
       const authResponse = await fetch('/.auth/me');
       const authData = await authResponse.json();
@@ -55,10 +53,9 @@ const FileUpload = ({ onFileUploaded }) => {
       const response = await axios.post(`${backendURL}/api/upload`, formData, {
         headers: authHeaders,
         timeout: 30000, // 30 second timeout
-      });
-      console.log('Upload response:', response.data);
+          });
 
-      if (response.data.success) {
+          if (response.data.success) {
         onFileUploaded({
           fileId: response.data.fileId,
           filename: response.data.filename,

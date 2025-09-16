@@ -22,7 +22,6 @@ function requireAuth(req, res, next) {
     
     // If no header is present, the user is not authenticated
     if (!clientPrincipalHeader) {
-      console.log('Authentication required: No x-ms-client-principal header found');
       return res.status(401).json({ 
         error: 'Authentication required',
         message: 'Please log in to access this resource'
@@ -38,7 +37,6 @@ function requireAuth(req, res, next) {
     
     // Validate that we have the expected user information
     if (!clientPrincipal || !clientPrincipal.userId) {
-      console.log('Authentication error: Invalid client principal data');
       return res.status(401).json({ 
         error: 'Invalid authentication',
         message: 'Authentication data is malformed'
@@ -55,9 +53,6 @@ function requireAuth(req, res, next) {
       claims: clientPrincipal.claims || []
     };
 
-    // Log successful authentication (remove in production if needed)
-    console.log(`Authenticated user: ${req.user.email} (ID: ${req.user.id})`);
-    
     // Continue to the next middleware/route handler
     next();
 
@@ -134,7 +129,6 @@ function requireRole(requiredRole) {
       
       // Check if user has the required role
       if (!hasRole(req.user, requiredRole)) {
-        console.log(`Access denied: User ${req.user.email} lacks required role: ${requiredRole}`);
         return res.status(403).json({
           error: 'Insufficient permissions',
           message: `This resource requires the '${requiredRole}' role`

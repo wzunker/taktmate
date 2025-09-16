@@ -96,21 +96,16 @@ app.options('/api/upload', (req, res) => {
 app.post('/api/upload', requireAuth, upload.single('csvFile'), async (req, res) => {
   try {
     const user = req.user; // From SWA authentication middleware
-    console.log(`File upload request from user: ${user.email} (ID: ${user.id})`);
-    console.log('req.file:', req.file ? 'File received' : 'No file');
     
     if (!req.file) {
-      console.log('No file in request');
       return res.status(400).json({ error: 'No CSV file uploaded' });
     }
 
     const filename = req.file.originalname;
     const buffer = req.file.buffer;
-    console.log(`Processing file: ${filename}, size: ${buffer.length} bytes for user ${user.email}`);
 
     // Parse CSV
     const rows = await parseCsv(buffer);
-    console.log(`Parsed ${rows.length} rows`);
     
     if (rows.length === 0) {
       return res.status(400).json({ error: 'CSV file is empty or invalid' });
@@ -121,7 +116,6 @@ app.post('/api/upload', requireAuth, upload.single('csvFile'), async (req, res) 
     
     // Store in memory with user context
     fileStore.store(fileId, filename, rows, user.id);
-    console.log(`File stored with ID: ${fileId} for user ${user.email}`);
 
     res.json({
       success: true,
@@ -155,16 +149,11 @@ app.post('/api/chat', requireAuth, async (req, res) => {
   try {
     const user = req.user; // From SWA authentication middleware
     
-    // Debug flag - set DEBUG_PROMPTS=true in environment to enable
-    const DEBUG_PROMPTS = process.env.DEBUG_PROMPTS === 'true';
-    
     const { fileId, message } = req.body;
 
     if (!fileId || !message) {
       return res.status(400).json({ error: 'fileId and message are required' });
     }
-
-    console.log(`Chat request from user: ${user.email} for file: ${fileId}`);
 
     // Retrieve CSV data
     const fileData = fileStore.get(fileId);
@@ -174,7 +163,6 @@ app.post('/api/chat', requireAuth, async (req, res) => {
 
     // Basic security check: ensure user can only access their own files
     if (fileId.startsWith(user.id + '_') === false) {
-      console.log(`Access denied: User ${user.email} attempted to access file ${fileId}`);
       return res.status(403).json({ error: 'Access denied. You can only chat with your own uploaded files.' });
     }
 
@@ -194,19 +182,6 @@ app.post('/api/chat', requireAuth, async (req, res) => {
 
 ${csvString}`;
 
-    // DEBUG: Log the full prompt if debug mode is enabled
-    if (DEBUG_PROMPTS) {
-      console.log('\n' + '='.repeat(80));
-      console.log('FULL PROMPT DEBUG');
-      console.log('='.repeat(80));
-      console.log(`User: ${user.email} (${user.id})`);
-      console.log(`File: ${fileData.filename} (${fileId})`);
-      console.log('SYSTEM MESSAGE:');
-      console.log(systemPrompt);
-      console.log('\nUSER MESSAGE:');
-      console.log(message);
-      console.log('='.repeat(80) + '\n');
-    }
 
     // Call Azure OpenAI GPT-4.1
     const completion = await openai.chat.completions.create({
@@ -221,14 +196,6 @@ ${csvString}`;
 
     const reply = completion.choices[0].message.content;
 
-    // DEBUG: Log the response if debug mode is enabled
-    if (DEBUG_PROMPTS) {
-      console.log('GPT RESPONSE:');
-      console.log(reply);
-      console.log('='.repeat(80) + '\n');
-    }
-
-    console.log(`Chat response sent to user: ${user.email}`);
 
     res.json({
       success: true,
@@ -258,10 +225,4 @@ app.use((error, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`TaktMate Backend running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
-  console.log(`Note: Using port ${PORT} because port 5000 is used by macOS AirPlay`);
-  
-  // Show debug status on startup
-  const DEBUG_PROMPTS = process.env.DEBUG_PROMPTS === 'true';
-  console.log(`Debug prompts: ${DEBUG_PROMPTS ? 'ENABLED' : 'DISABLED'} (set DEBUG_PROMPTS=true to enable)`);
 });
