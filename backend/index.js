@@ -208,8 +208,23 @@ ${csvString}`;
     });
 
   } catch (error) {
-    console.error('Chat error:', error);
-    res.status(500).json({ error: 'Failed to process chat message: ' + error.message });
+    console.error('Chat error details:', {
+      message: error.message,
+      status: error.status,
+      code: error.code,
+      type: error.type,
+      stack: error.stack
+    });
+    
+    // More specific error messages for debugging
+    let errorMessage = 'Failed to process chat message: ' + error.message;
+    if (error.status === 401) {
+      errorMessage += ' (Check API key and endpoint configuration)';
+    } else if (error.status === 404) {
+      errorMessage += ' (Check deployment name and base URL)';
+    }
+    
+    res.status(500).json({ error: errorMessage });
   }
 });
 
