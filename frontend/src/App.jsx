@@ -142,7 +142,10 @@ function App() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
           {/* File Upload Section */}
-          <FileUpload onFileUploaded={handleFileUploaded} />
+          <FileUpload 
+            onFileUploaded={handleFileUploaded} 
+            uploadedFilesCount={uploadedFiles.length} 
+          />
           
           {/* Uploaded Files Section */}
           {uploadedFiles.length > 0 && (

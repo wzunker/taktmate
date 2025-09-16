@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const FileUpload = ({ onFileUploaded }) => {
+const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -11,10 +11,18 @@ const FileUpload = ({ onFileUploaded }) => {
   const validateAndAddFiles = (newFiles) => {
     const validFiles = [];
     const errors = [];
+    const totalFilesInMemory = uploadedFilesCount;
+    const availableSlots = MAX_FILES - totalFilesInMemory;
 
-    // Check file limit
-    if (files.length >= MAX_FILES) {
-      setError(`Maximum ${MAX_FILES} files allowed`);
+    // Check if we have any slots available
+    if (availableSlots <= 0) {
+      setError(`Maximum ${MAX_FILES} files in memory. Delete some uploaded files to add more.`);
+      return false;
+    }
+
+    // Check if we already have files selected that would fill available slots
+    if (files.length >= availableSlots) {
+      setError(`Can only stage ${availableSlots} file${availableSlots > 1 ? 's' : ''} with ${totalFilesInMemory} already in memory`);
       return false;
     }
 
@@ -25,15 +33,17 @@ const FileUpload = ({ onFileUploaded }) => {
         continue;
       }
 
-      // Check for duplicates
+      // Check for duplicates in selected files
       if (files.some(existingFile => existingFile.name === file.name)) {
-        errors.push(`${file.name} is already uploaded`);
+        errors.push(`${file.name} is already selected`);
         continue;
       }
 
-      // Check file limit
-      if (files.length + validFiles.length >= MAX_FILES) {
-        errors.push(`Cannot add ${file.name} - maximum ${MAX_FILES} files allowed`);
+      // Check combined limit (uploaded + selected + new files)
+      const totalAfterAdding = totalFilesInMemory + files.length + validFiles.length + 1;
+      if (totalAfterAdding > MAX_FILES) {
+        const remainingSlots = MAX_FILES - totalFilesInMemory - files.length;
+        errors.push(`Cannot add ${file.name} - only ${remainingSlots} slot${remainingSlots !== 1 ? 's' : ''} remaining`);
         break;
       }
 
@@ -186,7 +196,7 @@ const FileUpload = ({ onFileUploaded }) => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-gray-800">Upload CSV Files</h2>
         <span className="text-sm text-gray-500">
-          {files.length}/{MAX_FILES} files selected
+          {files.length}/{MAX_FILES - uploadedFilesCount} files selected ({uploadedFilesCount} in memory)
         </span>
       </div>
       
@@ -198,12 +208,12 @@ const FileUpload = ({ onFileUploaded }) => {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
-            files.length >= MAX_FILES
+            uploadedFilesCount >= MAX_FILES || files.length >= (MAX_FILES - uploadedFilesCount)
               ? 'border-gray-200 bg-gray-50'
               : isDragOver
               ? 'border-primary-400 bg-primary-50'
               : 'border-gray-300 hover:border-gray-400'
-          } ${uploading || files.length >= MAX_FILES ? 'opacity-50 pointer-events-none' : ''}`}
+          } ${uploading || uploadedFilesCount >= MAX_FILES || files.length >= (MAX_FILES - uploadedFilesCount) ? 'opacity-50 pointer-events-none' : ''}`}
         >
           <div className="space-y-4">
             <div className="mx-auto w-12 h-12 text-gray-400">
@@ -218,17 +228,19 @@ const FileUpload = ({ onFileUploaded }) => {
             </div>
             <div>
               <p className="text-lg font-medium text-gray-900">
-                {files.length >= MAX_FILES
-                  ? `Maximum ${MAX_FILES} files reached`
+                {uploadedFilesCount >= MAX_FILES
+                  ? `Maximum ${MAX_FILES} files in memory - delete some to add more`
+                  : files.length >= (MAX_FILES - uploadedFilesCount)
+                  ? `Maximum ${MAX_FILES - uploadedFilesCount} files can be staged`
                   : isDragOver
                   ? 'Drop your CSV files here'
                   : 'Drag and drop your CSV files here'}
               </p>
-              {files.length < MAX_FILES && (
+              {uploadedFilesCount < MAX_FILES && files.length < (MAX_FILES - uploadedFilesCount) && (
                 <p className="text-sm text-gray-500 mt-1">or</p>
               )}
             </div>
-            {files.length < MAX_FILES && (
+            {uploadedFilesCount < MAX_FILES && files.length < (MAX_FILES - uploadedFilesCount) && (
               <label
                 htmlFor="csvFile"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 cursor-pointer transition-colors"
@@ -243,7 +255,7 @@ const FileUpload = ({ onFileUploaded }) => {
               multiple
               onChange={handleFileChange}
               className="hidden"
-              disabled={uploading || files.length >= MAX_FILES}
+              disabled={uploading || uploadedFilesCount >= MAX_FILES || files.length >= (MAX_FILES - uploadedFilesCount)}
             />
           </div>
         </div>
@@ -330,7 +342,7 @@ const FileUpload = ({ onFileUploaded }) => {
                   Total size: {(files.reduce((total, file) => total + file.size, 0) / 1024).toFixed(1)} KB
                 </span>
                 <span>
-                  {MAX_FILES - files.length} slot{MAX_FILES - files.length !== 1 ? 's' : ''} remaining
+                  {Math.max(0, MAX_FILES - uploadedFilesCount - files.length)} slot{Math.max(0, MAX_FILES - uploadedFilesCount - files.length) !== 1 ? 's' : ''} remaining
                 </span>
               </div>
             </div>
