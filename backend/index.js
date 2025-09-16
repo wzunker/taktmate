@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3001;
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: 'https://taktmate.openai.azure.com/openai/deployments/gpt-4.1',
-  defaultQuery: { 'api-version': '2024-08-01-preview' },
+  defaultQuery: { 'api-version': '2025-01-01-preview' },
   defaultHeaders: {
     'api-key': process.env.OPENAI_API_KEY,
   },
@@ -72,6 +72,35 @@ app.get('/api/test', (req, res) => {
     cors: 'enabled',
     timestamp: new Date().toISOString()
   });
+});
+
+// Test OpenAI endpoint
+app.get('/api/test-openai', async (req, res) => {
+  try {
+    console.log('Testing OpenAI connection...');
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4.1',
+      messages: [{ role: 'user', content: 'Say "Hello, this is a test!"' }],
+      max_tokens: 50
+    });
+    
+    res.json({
+      status: 'OK',
+      message: 'OpenAI connection working',
+      response: completion.choices[0].message.content
+    });
+  } catch (error) {
+    console.error('OpenAI test error:', error);
+    res.status(500).json({
+      status: 'ERROR',
+      message: error.message,
+      details: {
+        status: error.status,
+        code: error.code,
+        type: error.type
+      }
+    });
+  }
 });
 
 // Preflight requests
