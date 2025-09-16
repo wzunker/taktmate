@@ -51,18 +51,10 @@ const upload = multer({
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  const hasApiKey = !!process.env.OPENAI_API_KEY;
-  const apiKeyLength = process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0;
-  
   res.json({ 
     status: 'OK', 
     message: 'TaktMate Backend is running',
-    debug: {
-      hasApiKey,
-      apiKeyLength,
-      usingKeyVault: true,
-      nodeEnv: process.env.NODE_ENV
-    }
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -76,34 +68,6 @@ app.get('/api/test', (req, res) => {
   });
 });
 
-// Test OpenAI endpoint
-app.get('/api/test-openai', async (req, res) => {
-  try {
-    console.log('Testing OpenAI connection...');
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4.1',
-      messages: [{ role: 'user', content: 'Say "Hello, this is a test!"' }],
-      max_tokens: 50
-    });
-    
-    res.json({
-      status: 'OK',
-      message: 'OpenAI connection working',
-      response: completion.choices[0].message.content
-    });
-  } catch (error) {
-    console.error('OpenAI test error:', error);
-    res.status(500).json({
-      status: 'ERROR',
-      message: error.message,
-      details: {
-        status: error.status,
-        code: error.code,
-        type: error.type
-      }
-    });
-  }
-});
 
 // Preflight requests
 app.options('*', (req, res) => {
@@ -239,23 +203,11 @@ ${csvString}`;
     });
 
   } catch (error) {
-    console.error('Chat error details:', {
-      message: error.message,
-      status: error.status,
-      code: error.code,
-      type: error.type,
-      stack: error.stack
+    console.error('Chat error:', error.message);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to process chat message. Please try again.' 
     });
-    
-    // More specific error messages for debugging
-    let errorMessage = 'Failed to process chat message: ' + error.message;
-    if (error.status === 401) {
-      errorMessage += ' (Check API key and endpoint configuration)';
-    } else if (error.status === 404) {
-      errorMessage += ' (Check deployment name and base URL)';
-    }
-    
-    res.status(500).json({ error: errorMessage });
   }
 });
 
