@@ -21,49 +21,18 @@ const useAuth = () => {
   const getUserDisplayName = () => {
     if (!user) return null;
     
-    // Debug: Log all available claims to console
-    console.log('🔍 User claims debug:', {
-      user,
-      claims: user.claims,
-      userDetails: user.userDetails,
-      identityProvider: user.identityProvider
-    });
-    
-    // Debug: Log each claim individually
-    if (user.claims) {
-      console.log('📋 All claims:');
-      user.claims.forEach((claim, index) => {
-        console.log(`  ${index + 1}. ${claim.typ}: "${claim.val}"`);
-      });
-    }
-    
     // Try to get First Name from External ID user flow attributes
     const firstNameClaim = user.claims?.find(claim => 
+      claim.typ === 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname' ||
       claim.typ === 'given_name' ||
       claim.typ === 'FirstName' ||
-      claim.typ === 'extension_FirstName' ||
-      claim.typ.toLowerCase().includes('firstname') ||
-      claim.typ.toLowerCase().includes('given')
+      claim.typ === 'extension_FirstName'
     );
     
     if (firstNameClaim) {
-      console.log('✅ Found first name claim:', firstNameClaim);
       return firstNameClaim.val;
     }
     
-    // Try to get standard name claims
-    const nameClaim = user.claims?.find(claim => 
-      claim.typ === 'name' || 
-      claim.typ === 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name' ||
-      claim.typ === 'preferred_username'
-    );
-    
-    if (nameClaim) {
-      console.log('✅ Found name claim:', nameClaim);
-      return nameClaim.val;
-    }
-    
-    console.log('❌ No name claims found, using fallback');
     // Fallback to user details or email
     return user.name || user.userDetails || 'User';
   };
@@ -102,8 +71,14 @@ const useAuth = () => {
   const getFullName = () => {
     if (!user) return null;
     
-    const firstName = getClaimValue('given_name') || getClaimValue('FirstName') || getClaimValue('extension_FirstName');
-    const lastName = getClaimValue('family_name') || getClaimValue('LastName') || getClaimValue('extension_LastName');
+    const firstName = getClaimValue('http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname') || 
+                     getClaimValue('given_name') || 
+                     getClaimValue('FirstName') || 
+                     getClaimValue('extension_FirstName');
+    const lastName = getClaimValue('http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname') || 
+                    getClaimValue('family_name') || 
+                    getClaimValue('LastName') || 
+                    getClaimValue('extension_LastName');
     
     if (firstName && lastName) {
       return `${firstName} ${lastName}`;
