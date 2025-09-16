@@ -19,14 +19,39 @@ These variables must be set in Azure App Service Application Settings:
 
 ## Azure App Service Configuration Command
 
+### Already Configured (✅):
+- `APPLICATION_INSIGHTS_CONNECTION_STRING` - Application Insights integration
+- `AZURE_KEY_VAULT_URL` - Key Vault integration  
+- `FRONTEND_URL` - Static Web App URL
+- `NODE_ENV=production` - Production environment
+- `PORT=80` - Azure App Service port
+
+### Still Need to Add (Key Vault Reference - Recommended):
+
+**Step 1: Add secret to Key Vault (if not already there):**
+- Azure Portal → TaktMate-KeyVault → Secrets → Generate/Import
+- Name: `OpenAI-API-Key`
+- Value: Your Azure OpenAI API key
+
+**Step 2: Configure App Service setting:**
 ```bash
 az webapp config appsettings set \
   --resource-group taktmate \
   --name taktmate-backend-api \
   --settings \
-    NODE_ENV=production \
-    OPENAI_API_KEY="<your-azure-openai-key>" \
-    CORS_ORIGIN="https://taktmate-frontend.azurestaticapps.net" \
+    OPENAI_API_KEY="@Microsoft.KeyVault(VaultName=TaktMate-KeyVault;SecretName=OpenAI-API-Key)"
+```
+
+**Alternative: Via Azure Portal:**
+- Go to taktmate-backend-api → Settings → Environment variables
+- Add: `OPENAI_API_KEY` = `@Microsoft.KeyVault(VaultName=TaktMate-KeyVault;SecretName=OpenAI-API-Key)`
+
+### Optional Settings:
+```bash
+az webapp config appsettings set \
+  --resource-group taktmate \
+  --name taktmate-backend-api \
+  --settings \
     DEBUG_PROMPTS=false
 ```
 
