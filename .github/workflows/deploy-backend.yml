@@ -28,18 +28,9 @@ jobs:
         cd backend
         npm ci --production
         
-    - name: Create deployment artifact
-      run: |
-        cd backend
-        # Remove dev dependencies and local files
-        rm -f .env
-        rm -rf node_modules
-        npm ci --production --silent
-        
     - name: Deploy to Azure App Service
       uses: azure/webapps-deploy@v2
       with:
-        app-name: 'taktmate-backend-api'
-        slot-name: 'Production'
+        app-name: ${{ secrets.AZURE_WEBAPP_NAME_PRODUCTION }}
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_PRODUCTION }}
-        package: './backend'
+        package: backend
