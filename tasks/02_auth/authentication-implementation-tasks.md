@@ -68,11 +68,20 @@ This document outlines the tasks required to implement Microsoft Entra External 
   },
   "auth": {
     "identityProviders": {
-      "entraExternalId": {
-        "registration": {
-          "openIdIssuer": "https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/v2.0",
-          "clientIdSettingName": "ENTRA_EXTERNAL_ID_CLIENT_ID",
-          "clientSecretSettingName": "ENTRA_EXTERNAL_ID_CLIENT_SECRET"
+      "customOpenIdConnectProviders": {
+        "entraExternalId": {
+          "registration": {
+            "clientIdSettingName": "ENTRA_EXTERNAL_ID_CLIENT_ID",
+            "clientCredential": {
+              "clientSecretSettingName": "ENTRA_EXTERNAL_ID_CLIENT_SECRET"
+            },
+            "openIdConnectConfiguration": {
+              "wellKnownOpenIdConfiguration": "https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/v2.0/.well-known/openid-configuration?appid=3f1869f7-716b-4885-ac8a-86e78515f3a4"
+            }
+          },
+          "login": {
+            "nameClaimType": "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"
+          }
         }
       }
     }
@@ -388,10 +397,13 @@ npm install jsonwebtoken jwks-rsa axios
 
 ### Key URLs and Endpoints
 - **OpenID Configuration**: `https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/v2.0/.well-known/openid-configuration?appid=3f1869f7-716b-4885-ac8a-86e78515f3a4`
-- **JWKS URI**: `https://taktmate.ciamlogin.com/taktmate.onmicrosoft.com/discovery/v2.0/keys`
+- **JWKS URI**: `https://taktmate.ciamlogin.com/7d673488-6daf-4406-b9ce-d2d1f2b5c0db/discovery/v2.0/keys?appid=3f1869f7-716b-4885-ac8a-86e78515f3a4`
+- **Issuer**: `https://7d673488-6daf-4406-b9ce-d2d1f2b5c0db.ciamlogin.com/7d673488-6daf-4406-b9ce-d2d1f2b5c0db/v2.0`
 - **Login Endpoint**: `/.auth/login/entraExternalId`
 - **Logout Endpoint**: `/.auth/logout`
 - **User Info Endpoint**: `/.auth/me`
+
+**Important Note**: Since you're using Microsoft Entra External ID with custom user flows, the configuration uses `customOpenIdConnectProviders` rather than the standard `azureActiveDirectory` provider. This allows for proper integration with your TaktMateSignUpSignIn user flow.
 
 ### Environment Variables Required
 
