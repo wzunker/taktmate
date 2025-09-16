@@ -2,22 +2,73 @@ import React, { useState } from 'react';
 import FileUpload from './components/FileUpload';
 import ChatBox from './components/ChatBox';
 import DataTable from './components/DataTable';
+import useAuth from './hooks/useAuth';
 
 function App() {
   const [fileData, setFileData] = useState(null);
+  const { isAuthenticated, isLoading, user, displayName, logout, error } = useAuth();
 
   const handleFileUploaded = (uploadedFileData) => {
     setFileData(uploadedFileData);
   };
+
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if there's an authentication error
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+            <h2 className="text-lg font-medium text-red-900 mb-2">Authentication Error</h2>
+            <p className="text-red-700 mb-4">{error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-gray-900">TaktMate</h1>
-            <span className="ml-2 text-sm text-gray-500">CSV Chat MVP</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-gray-900">TaktMate</h1>
+              <span className="ml-2 text-sm text-gray-500">CSV Chat MVP</span>
+            </div>
+            
+            {/* User Info and Logout */}
+            {isAuthenticated && (
+              <div className="flex items-center space-x-4">
+                <div className="text-sm text-gray-700">
+                  Welcome, <span className="font-medium">{displayName}</span>
+                </div>
+                <button
+                  onClick={logout}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
           <p className="mt-1 text-sm text-gray-600">
             Upload a CSV file and chat with your data using AI
