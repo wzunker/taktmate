@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import FileUpload from './components/FileUpload';
 import ChatBox from './components/ChatBox';
 import DataTable from './components/DataTable';
+import UserProfile from './components/UserProfile';
 import useAuth from './hooks/useAuth';
 
 function App() {
@@ -55,19 +56,9 @@ function App() {
               <span className="ml-2 text-sm text-gray-500">CSV Chat MVP</span>
             </div>
             
-            {/* User Info and Logout */}
+            {/* User Profile and Logout */}
             {isAuthenticated && (
-              <div className="flex items-center space-x-4">
-                <div className="text-sm text-gray-700">
-                  Welcome, <span className="font-medium">{displayName}</span>
-                </div>
-                <button
-                  onClick={logout}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm transition-colors"
-                >
-                  Logout
-                </button>
-              </div>
+              <UserProfile />
             )}
           </div>
           <p className="mt-1 text-sm text-gray-600">

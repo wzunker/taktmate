@@ -124,12 +124,12 @@ This document outlines the tasks required to implement Microsoft Entra External 
 **Priority:** High  
 **Estimated Time:** 60 minutes
 
-- [ ] **Create Authentication Context**: Implement React context for authentication state management
+- [X] **Create Authentication Context**: Implement React context for authentication state management
   - Create `src/contexts/AuthContext.js`
   - Provide authentication state and user information
   - Handle loading states during authentication checks
 
-- [ ] **Create useAuth Hook**: Implement custom hook for authentication operations
+- [X] **Create useAuth Hook**: Implement custom hook for authentication operations
   - Create `src/hooks/useAuth.js`
   - Provide methods for checking authentication status
   - Handle login/logout operations
@@ -156,10 +156,10 @@ This document outlines the tasks required to implement Microsoft Entra External 
 **Priority:** High  
 **Estimated Time:** 45 minutes
 
-- [ ] **Wrap App with AuthProvider**: Add authentication context to the app root
-- [ ] **Add Authentication Check**: Implement authentication check on app load
-- [ ] **Add Loading State**: Show loading indicator while checking authentication status
-- [ ] **Update Header**: Add user information and logout button to header
+- [X] **Wrap App with AuthProvider**: Add authentication context to the app root
+- [X] **Add Authentication Check**: Implement authentication check on app load
+- [X] **Add Loading State**: Show loading indicator while checking authentication status
+- [X] **Update Header**: Add user information and logout button to header
 
 **Implementation Details:**
 - Check authentication status on component mount
@@ -179,25 +179,19 @@ This document outlines the tasks required to implement Microsoft Entra External 
 **Priority:** Medium  
 **Estimated Time:** 90 minutes
 
-- [ ] **Create LoginButton Component**: Component for login functionality
-  - Create `src/components/LoginButton.jsx`
-  - Handle redirection to `/.auth/login/entraExternalId`
-  - Include appropriate styling and loading states
-
-- [ ] **Create LogoutButton Component**: Component for logout functionality
+- [X] **Create LogoutButton Component**: Component for logout functionality
   - Create `src/components/LogoutButton.jsx`
   - Handle redirection to `/.auth/logout`
-  - Include confirmation dialog if needed
+  - Include optional confirmation dialog
+  - Support custom styling and loading states
 
-- [ ] **Create UserProfile Component**: Display user information
+- [X] **Create UserProfile Component**: Display user information
   - Create `src/components/UserProfile.jsx`
-  - Show user name, email, and other relevant information
+  - Show user name, email, avatar with initials
   - Include logout functionality
+  - Support horizontal and vertical layouts
 
-- [ ] **Create AuthGuard Component**: Protect routes that require authentication
-  - Create `src/components/AuthGuard.jsx`
-  - Redirect to login if not authenticated
-  - Show loading state while checking authentication
+**Note**: LoginButton component not needed since Azure Static Web Apps automatically redirects unauthenticated users to External ID sign-in. AuthGuard component not needed since route protection is handled by `staticwebapp.config.json`.
 
 **Acceptance Criteria:**
 - All authentication components are properly styled and functional
