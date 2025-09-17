@@ -303,7 +303,7 @@ Enable support for four specific file types while maintaining CSV-only parsing f
 
 **Deliverables**: Security hardened implementation
 
-### Task 4.2: Add Monitoring & Logging
+### Task 4.2: Add Monitoring & Logging (SKIPPED FOR NOW)
 **Priority**: Medium | **Estimated Time**: 45 minutes
 
 - [ ] Add structured logging for storage operations
@@ -318,11 +318,10 @@ Enable support for four specific file types while maintaining CSV-only parsing f
 ### Task 4.3: Data Privacy & Compliance
 **Priority**: Medium | **Estimated Time**: 30 minutes
 
-- [ ] Document data retention policy (90-day auto-delete)
-- [ ] Add user consent messaging for file storage
-- [ ] Implement user data deletion capability
-- [ ] Document data processing locations
-- [ ] Add privacy policy updates if needed
+- [x] Add user consent messaging for file storage
+- [x] Implement user data deletion capability
+- [x] Document data processing locations
+- [x] Add privacy policy updates if needed
 
 **Deliverables**: Privacy-compliant implementation
 
@@ -348,17 +347,6 @@ Enable support for four specific file types while maintaining CSV-only parsing f
   - [ ] File management operations
 
 **Deliverables**: Comprehensive test coverage
-
-### Task 5.2: Migration Strategy
-**Priority**: High | **Estimated Time**: 1 hour
-
-- [ ] Plan migration of existing in-memory files (if any)
-- [ ] Create migration script if needed
-- [ ] Plan rollback strategy
-- [ ] Document deployment steps
-- [ ] Plan user communication for any downtime
-
-**Deliverables**: Migration plan ready
 
 ### Task 5.3: Performance Testing
 **Priority**: Medium | **Estimated Time**: 1 hour

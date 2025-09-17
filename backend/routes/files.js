@@ -446,6 +446,71 @@ router.delete('/:blobName', async (req, res) => {
 });
 
 /**
+ * DELETE /api/files
+ * Delete ALL files for the authenticated user (GDPR compliance)
+ * This is a destructive operation that removes all user data
+ */
+router.delete('/', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    console.log(`GDPR deletion request from user ${userId}: deleting all user data`);
+    
+    // Get list of all user files first
+    const userFiles = await listUserFiles(userId);
+    
+    if (userFiles.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No files found to delete',
+        deletedFiles: [],
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Delete all files
+    const deletedFiles = [];
+    const errors = [];
+    
+    for (const file of userFiles) {
+      try {
+        await deleteBlob(userId, file.name);
+        deletedFiles.push(file.name);
+        console.log(`Successfully deleted file for user ${userId}: ${file.name}`);
+      } catch (error) {
+        console.error(`Failed to delete file ${file.name} for user ${userId}:`, error.message);
+        errors.push({ fileName: file.name, error: error.message });
+      }
+    }
+    
+    // Log the GDPR deletion event
+    console.log(`GDPR deletion completed for user ${userId}: ${deletedFiles.length} files deleted, ${errors.length} errors`);
+    
+    const response = {
+      success: errors.length === 0,
+      message: errors.length === 0 
+        ? `Successfully deleted all ${deletedFiles.length} files`
+        : `Deleted ${deletedFiles.length} files with ${errors.length} errors`,
+      deletedFiles: deletedFiles,
+      errors: errors,
+      totalFilesProcessed: userFiles.length,
+      timestamp: new Date().toISOString()
+    };
+    
+    res.status(errors.length === 0 ? 200 : 207).json(response); // 207 = Multi-Status for partial success
+    
+  } catch (error) {
+    console.error(`Failed to process GDPR deletion for user ${req.user?.id}:`, error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete user data',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
  * GET /api/files/health
  * Health check endpoint for storage connectivity
  */

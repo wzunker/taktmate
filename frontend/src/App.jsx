@@ -388,10 +388,23 @@ function App() {
 
       {/* Footer */}
       <footer className="mt-16 bg-white border-t border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <p className="text-center text-sm text-gray-500">
-            TaktMate MVP - Powered by OpenAI GPT-4
-          </p>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="text-center space-y-2">
+            <p className="text-sm text-gray-500">
+              TaktMate MVP - Powered by OpenAI GPT-4
+            </p>
+            <div className="flex justify-center items-center space-x-4 text-xs text-gray-400">
+              <span>🔒 Enterprise-grade security</span>
+              <span>•</span>
+              <span>📁 Files auto-deleted after 90 days</span>
+              <span>•</span>
+              <span>🛡️ Your data stays private</span>
+            </div>
+            <p className="text-xs text-gray-400 max-w-2xl mx-auto">
+              Files are securely stored in Azure with encryption at rest and in transit. 
+              Data is processed only for document analysis and remains within your private workspace.
+            </p>
+          </div>
         </div>
       </footer>
     </div>
