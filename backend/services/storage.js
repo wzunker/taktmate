@@ -15,9 +15,48 @@ const {
   BlobSASPermissions,
   StorageSharedKeyCredential
 } = require('@azure/storage-blob');
+const crypto = require('crypto');
 
 // Get storage account name from environment variables
 const STORAGE_ACCOUNT_NAME = process.env.STORAGE_ACCOUNT_NAME || 'taktmateblob';
+
+/**
+ * Generate a compliant Azure container name from userId
+ * Azure container naming rules:
+ * - 3-63 characters long
+ * - lowercase letters, numbers, and hyphens only
+ * - cannot start or end with hyphen
+ * - cannot have consecutive hyphens
+ * @param {string} userId - User ID from authentication
+ * @returns {string} Compliant container name
+ */
+function generateContainerName(userId) {
+  if (!userId || typeof userId !== 'string') {
+    throw new Error('Valid userId is required for container naming');
+  }
+  
+  // Create a deterministic hash of the userId for consistent, collision-resistant naming
+  const hash = crypto.createHash('sha256').update(userId).digest('hex');
+  
+  // Take first 32 characters of hash and prefix with 'u-'
+  // This ensures: 3-63 chars, starts with letter, no special chars, deterministic
+  const containerName = `u-${hash.substring(0, 32)}`;
+  
+  // Validate the result (should always pass with our approach, but safety check)
+  if (containerName.length < 3 || containerName.length > 63) {
+    throw new Error(`Generated container name '${containerName}' is invalid length`);
+  }
+  
+  if (!/^[a-z0-9-]+$/.test(containerName)) {
+    throw new Error(`Generated container name '${containerName}' contains invalid characters`);
+  }
+  
+  if (containerName.startsWith('-') || containerName.endsWith('-')) {
+    throw new Error(`Generated container name '${containerName}' starts or ends with hyphen`);
+  }
+  
+  return containerName;
+}
 
 /**
  * Initialize BlobServiceClient with Managed Identity authentication
@@ -39,7 +78,7 @@ function serviceClient() {
 
 /**
  * Ensure user's container exists, create if it doesn't
- * Container naming: u-{userId} (lowercase, compliant with Azure naming rules)
+ * Container naming: u-{hash} (deterministic hash-based naming for compliance)
  * @param {string} userId - User ID from authentication
  * @returns {Promise<ContainerClient>} Container client for user's container
  */
@@ -50,10 +89,10 @@ async function ensureUserContainer(userId) {
     }
 
     const sc = serviceClient();
-    // Ensure container name compliance: lowercase, no special chars except hyphens
-    const containerName = `u-${userId.toLowerCase().replace(/[^a-z0-9-]/g, '')}`;
+    // Generate compliant container name using deterministic hash
+    const containerName = generateContainerName(userId);
     
-    console.log(`Ensuring container exists: ${containerName}`);
+    console.log(`Ensuring container exists: ${containerName} for user: ${userId}`);
     
     const containerClient = sc.getContainerClient(containerName);
     
@@ -287,29 +326,61 @@ async function getBlobContent(userId, blobName) {
 }
 
 /**
- * Health check function to verify storage connectivity
+ * Health check function to verify storage connectivity and SAS capability
+ * Tests the specific functionality we need: User Delegation Key generation
  * @returns {Promise<Object>} Health status object
  */
 async function healthCheck() {
   try {
     const sc = serviceClient();
     
-    // Try to get service properties (lightweight operation to test connectivity)
-    const serviceProperties = await sc.getProperties();
+    // Test User Delegation Key generation (core functionality for SAS tokens)
+    // This is lightweight and tests the actual capability we need
+    const now = new Date();
+    const expiresOn = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes from now
     
+    const userDelegationKey = await sc.getUserDelegationKey(now, expiresOn);
+    
+    // If we get here, managed identity auth and SAS capability are working
     return {
       status: 'healthy',
       storageAccount: STORAGE_ACCOUNT_NAME,
       timestamp: new Date().toISOString(),
-      version: serviceProperties.defaultServiceVersion
+      capabilities: {
+        managedIdentity: 'working',
+        userDelegationKey: 'working',
+        sasGeneration: 'available'
+      },
+      keyInfo: {
+        signedOid: userDelegationKey.signedObjectId,
+        signedStart: userDelegationKey.signedStartsOn,
+        signedExpiry: userDelegationKey.signedExpiresOn
+      }
     };
   } catch (error) {
     console.error('Storage health check failed:', error.message);
+    
+    // Provide specific error context for troubleshooting
+    let errorContext = 'unknown';
+    if (error.message.includes('DefaultAzureCredential')) {
+      errorContext = 'managed_identity_auth';
+    } else if (error.message.includes('getUserDelegationKey')) {
+      errorContext = 'user_delegation_key';
+    } else if (error.message.includes('Storage Blob Data Contributor')) {
+      errorContext = 'rbac_permissions';
+    }
+    
     return {
       status: 'unhealthy',
       storageAccount: STORAGE_ACCOUNT_NAME,
       timestamp: new Date().toISOString(),
-      error: error.message
+      error: error.message,
+      errorContext: errorContext,
+      troubleshooting: {
+        checkManagedIdentity: 'Ensure system-assigned managed identity is enabled',
+        checkRBAC: 'Ensure Storage Blob Data Contributor role is assigned',
+        checkStorageAccount: 'Ensure storage account name is correct'
+      }
     };
   }
 }
