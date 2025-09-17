@@ -120,13 +120,13 @@ Based on code review, TaktMate currently uses:
 ### Task 2.5: Migrate File Processing
 **Priority**: High | **Estimated Time**: 1 hour
 
-- [ ] Update chat endpoint to work with blob storage:
-  - [ ] Fetch CSV content from blob instead of memory
-  - [ ] Cache parsed CSV data temporarily (optional optimization)
-  - [ ] Maintain existing security checks (user can only access own files)
-- [ ] Update `processCsv.js` to handle blob streams if needed
-- [ ] Test CSV parsing with blob-stored files
-- [ ] Ensure no regression in chat functionality
+- [X] Update chat endpoint to work with blob storage:
+  - [X] Fetch CSV content from blob instead of memory
+  - [ ] Cache parsed CSV data temporarily (optional optimization - skipped for MVP)
+  - [X] Maintain existing security checks (user can only access own files)
+- [X] Update `processCsv.js` to handle blob streams if needed
+- [X] Test CSV parsing with blob-stored files
+- [X] Ensure no regression in chat functionality
 
 **Deliverables**: Chat feature works with blob-stored files
 

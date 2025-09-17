@@ -7,7 +7,7 @@ require('dotenv').config();
 const fileStore = require('./fileStore');
 const { parseCsv, formatCsvForPrompt } = require('./processCsv');
 const { requireAuth, optionalAuth } = require('./middleware/auth');
-const { healthCheck } = require('./services/storage');
+const { healthCheck, getBlobContent, listUserFiles } = require('./services/storage');
 const filesRouter = require('./routes/files');
 
 const app = express();
@@ -174,30 +174,65 @@ app.options('/api/chat', (req, res) => {
   res.sendStatus(200);
 });
 
-// Chat endpoint
+// Chat endpoint (supports both legacy fileId and new fileName)
 app.post('/api/chat', requireAuth, async (req, res) => {
   try {
     const user = req.user; // From SWA authentication middleware
     
-    const { fileId, message } = req.body;
+    const { fileId, fileName, message } = req.body;
 
-    if (!fileId || !message) {
-      return res.status(400).json({ error: 'fileId and message are required' });
+    if ((!fileId && !fileName) || !message) {
+      return res.status(400).json({ error: 'fileId or fileName, and message are required' });
     }
 
-    // Retrieve CSV data
-    const fileData = fileStore.get(fileId);
-    if (!fileData) {
-      return res.status(404).json({ error: 'File not found. Please upload a CSV file first.' });
-    }
+    let csvRows, filename;
+    
+    // Determine if this is a legacy in-memory file or a blob storage file
+    if (fileId && fileId.includes('_')) {
+      // Legacy in-memory file
+      console.log(`Legacy chat request for fileId: ${fileId}`);
+      
+      const fileData = fileStore.get(fileId);
+      if (!fileData) {
+        return res.status(404).json({ error: 'File not found. Please upload a CSV file first.' });
+      }
 
-    // Basic security check: ensure user can only access their own files
-    if (fileId.startsWith(user.id + '_') === false) {
-      return res.status(403).json({ error: 'Access denied. You can only chat with your own uploaded files.' });
+      // Basic security check: ensure user can only access their own files
+      if (fileId.startsWith(user.id + '_') === false) {
+        return res.status(403).json({ error: 'Access denied. You can only chat with your own uploaded files.' });
+      }
+
+      csvRows = fileData.rows;
+      filename = fileData.filename;
+      
+    } else {
+      // New blob storage file (use fileName parameter)
+      const targetFileName = fileName || fileId; // Support both parameter names for transition
+      console.log(`Blob storage chat request for file: ${targetFileName}`);
+      
+      // Verify user has access to this file
+      const userFiles = await listUserFiles(user.id);
+      const fileExists = userFiles.find(file => file.name === targetFileName);
+      
+      if (!fileExists) {
+        return res.status(404).json({ 
+          error: 'File not found', 
+          message: `File '${targetFileName}' does not exist or you don't have access to it` 
+        });
+      }
+
+      // Get blob content and parse CSV
+      const blobBuffer = await getBlobContent(user.id, targetFileName);
+      csvRows = await parseCsv(blobBuffer);
+      filename = targetFileName;
+      
+      if (!csvRows || csvRows.length === 0) {
+        return res.status(400).json({ error: 'CSV file is empty or invalid' });
+      }
     }
 
     // Format CSV data for GPT prompt
-    const csvString = formatCsvForPrompt(fileData.rows, fileData.filename);
+    const csvString = formatCsvForPrompt(csvRows, filename);
 
     // Create system prompt
     const systemPrompt = `You are a CSV data assistant.
@@ -230,8 +265,10 @@ ${csvString}`;
     res.json({
       success: true,
       reply,
-      fileId,
-      filename: fileData.filename
+      fileId: fileId || null,
+      fileName: filename,
+      filename: filename, // Keep for backward compatibility
+      source: fileId && fileId.includes('_') ? 'memory' : 'blob'
     });
 
   } catch (error) {
