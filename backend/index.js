@@ -1,12 +1,10 @@
 const express = require('express');
-const multer = require('multer');
 const cors = require('cors');
 const { OpenAI } = require('openai');
 require('dotenv').config();
 
-const fileStore = require('./fileStore');
 const { parseCsv, formatCsvForPrompt } = require('./processCsv');
-const { requireAuth, optionalAuth } = require('./middleware/auth');
+const { requireAuth } = require('./middleware/auth');
 const { healthCheck, getBlobContent, listUserFiles } = require('./services/storage');
 const filesRouter = require('./routes/files');
 
@@ -51,21 +49,6 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Register file management routes
 app.use('/api/files', filesRouter);
-
-// Configure multer for file uploads (memory storage)
-const upload = multer({
-  storage: multer.memoryStorage(),
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only CSV files are allowed!'), false);
-    }
-  },
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
-  }
-});
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
@@ -112,58 +95,6 @@ app.get('/api/test', (req, res) => {
 });
 
 
-// Handle preflight OPTIONS request for upload
-app.options('/api/upload', (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-ms-client-principal');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.sendStatus(200);
-});
-
-// Legacy Upload CSV endpoint (DEPRECATED - use /api/files/sas for new uploads)
-app.post('/api/upload', requireAuth, upload.single('csvFile'), async (req, res) => {
-  console.warn('DEPRECATED: /api/upload endpoint used. Please migrate to /api/files/sas for blob storage uploads.');
-  try {
-    const user = req.user; // From SWA authentication middleware
-    
-    if (!req.file) {
-      return res.status(400).json({ error: 'No CSV file uploaded' });
-    }
-
-    const filename = req.file.originalname;
-    const buffer = req.file.buffer;
-
-    // Parse CSV
-    const rows = await parseCsv(buffer);
-    
-    if (rows.length === 0) {
-      return res.status(400).json({ error: 'CSV file is empty or invalid' });
-    }
-
-    // Generate unique file ID with user context
-    const fileId = `${user.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    // Store in memory with user context
-    fileStore.store(fileId, filename, rows, user.id);
-
-    res.json({
-      success: true,
-      fileId,
-      filename,
-      rowCount: rows.length,
-      headers: Object.keys(rows[0]),
-      data: rows.slice(0, 50) // Send first 50 rows for display
-    });
-
-  } catch (error) {
-    console.error('Upload error:', error);
-    if (error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: 'File too large. Maximum size is 5MB.' });
-    }
-    res.status(500).json({ error: 'Failed to process CSV file: ' + error.message });
-  }
-});
 
 // Handle preflight OPTIONS request for chat
 app.options('/api/chat', (req, res) => {
@@ -174,65 +105,46 @@ app.options('/api/chat', (req, res) => {
   res.sendStatus(200);
 });
 
-// Chat endpoint (supports both legacy fileId and new fileName)
+// Chat endpoint - blob storage only
 app.post('/api/chat', requireAuth, async (req, res) => {
   try {
     const user = req.user; // From SWA authentication middleware
     
-    const { fileId, fileName, message } = req.body;
+    const { fileName, message } = req.body;
 
-    if ((!fileId && !fileName) || !message) {
-      return res.status(400).json({ error: 'fileId or fileName, and message are required' });
+    if (!fileName || !message) {
+      return res.status(400).json({ 
+        error: 'fileName and message are required',
+        message: 'Please provide the name of the CSV file you want to chat with'
+      });
     }
 
-    let csvRows, filename;
+    console.log(`Chat request from user ${user.id} for file: ${fileName}`);
     
-    // Determine if this is a legacy in-memory file or a blob storage file
-    if (fileId && fileId.includes('_')) {
-      // Legacy in-memory file
-      console.log(`Legacy chat request for fileId: ${fileId}`);
-      
-      const fileData = fileStore.get(fileId);
-      if (!fileData) {
-        return res.status(404).json({ error: 'File not found. Please upload a CSV file first.' });
-      }
+    // Verify user has access to this file
+    const userFiles = await listUserFiles(user.id);
+    const fileExists = userFiles.find(file => file.name === fileName);
+    
+    if (!fileExists) {
+      return res.status(404).json({ 
+        error: 'File not found', 
+        message: `File '${fileName}' does not exist in your storage. Please upload the file first using the file upload feature.` 
+      });
+    }
 
-      // Basic security check: ensure user can only access their own files
-      if (fileId.startsWith(user.id + '_') === false) {
-        return res.status(403).json({ error: 'Access denied. You can only chat with your own uploaded files.' });
-      }
-
-      csvRows = fileData.rows;
-      filename = fileData.filename;
-      
-    } else {
-      // New blob storage file (use fileName parameter)
-      const targetFileName = fileName || fileId; // Support both parameter names for transition
-      console.log(`Blob storage chat request for file: ${targetFileName}`);
-      
-      // Verify user has access to this file
-      const userFiles = await listUserFiles(user.id);
-      const fileExists = userFiles.find(file => file.name === targetFileName);
-      
-      if (!fileExists) {
-        return res.status(404).json({ 
-          error: 'File not found', 
-          message: `File '${targetFileName}' does not exist or you don't have access to it` 
-        });
-      }
-
-      // Get blob content and parse CSV
-      const blobBuffer = await getBlobContent(user.id, targetFileName);
-      csvRows = await parseCsv(blobBuffer);
-      filename = targetFileName;
-      
-      if (!csvRows || csvRows.length === 0) {
-        return res.status(400).json({ error: 'CSV file is empty or invalid' });
-      }
+    // Get blob content and parse CSV
+    const blobBuffer = await getBlobContent(user.id, fileName);
+    const csvRows = await parseCsv(blobBuffer);
+    
+    if (!csvRows || csvRows.length === 0) {
+      return res.status(400).json({ 
+        error: 'CSV file is empty or invalid',
+        message: 'The CSV file could not be parsed or contains no data'
+      });
     }
 
     // Format CSV data for GPT prompt
-    const csvString = formatCsvForPrompt(csvRows, filename);
+    const csvString = formatCsvForPrompt(csvRows, fileName);
 
     // Create system prompt
     const systemPrompt = `You are a CSV data assistant.
@@ -265,10 +177,7 @@ ${csvString}`;
     res.json({
       success: true,
       reply,
-      fileId: fileId || null,
-      fileName: filename,
-      filename: filename, // Keep for backward compatibility
-      source: fileId && fileId.includes('_') ? 'memory' : 'blob'
+      fileName: fileName
     });
 
   } catch (error) {
@@ -282,11 +191,7 @@ ${csvString}`;
 
 // Error handling middleware
 app.use((error, req, res, next) => {
-  if (error instanceof multer.MulterError) {
-    if (error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: 'File too large. Maximum size is 5MB.' });
-    }
-  }
+  console.error('Application error:', error.message);
   res.status(500).json({ error: error.message });
 });
 

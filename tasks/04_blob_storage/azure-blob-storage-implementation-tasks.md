@@ -130,6 +130,44 @@ Based on code review, TaktMate currently uses:
 
 **Deliverables**: Chat feature works with blob-stored files
 
+### Task 2.6: Hard Transition to Pure Blob Storage
+**Priority**: High | **Estimated Time**: 45 minutes
+
+Since there are no active users, perform a clean hard transition to eliminate all legacy in-memory storage:
+
+- [X] Remove in-memory file storage system:
+  - [X] Delete `backend/fileStore.js` (no longer needed)
+  - [X] Remove `fileStore` import and usage from `backend/index.js`
+  - [X] Remove all in-memory file handling code
+- [X] Clean up legacy upload endpoint:
+  - [X] Remove `POST /api/upload` endpoint entirely
+  - [X] Remove multer configuration and imports
+  - [X] Remove associated OPTIONS handler for upload
+  - [X] Clean up multer error handling middleware
+- [X] Simplify chat endpoint:
+  - [X] Remove dual storage support (fileId vs fileName)
+  - [X] Use only `fileName` parameter for blob storage
+  - [X] Remove legacy file ID logic and memory fallback
+  - [X] Simplify response format (remove `source` field)
+- [X] Update API documentation:
+  - [X] Document that chat endpoint now requires `fileName` instead of `fileId`
+  - [X] Update any API examples or documentation
+- [X] Clean up imports and dependencies:
+  - [X] Remove unused multer dependency from package.json
+  - [X] Clean up any other unused legacy imports
+- [X] Update error messages:
+  - [X] Remove references to "upload CSV file first" (legacy workflow)
+  - [X] Update to reference blob storage workflow
+
+**Benefits of Hard Transition**:
+- Simpler, cleaner codebase
+- No dual-path complexity
+- Easier to maintain and debug
+- Clear migration to persistent storage
+- Removes volatile in-memory storage completely
+
+**Deliverables**: Clean blob-storage-only backend with no legacy code
+
 ---
 
 ## Phase 3: Frontend Implementation
@@ -367,13 +405,13 @@ Based on code review, TaktMate currently uses:
 
 ## Estimated Total Timeline
 - **Phase 1**: 1.5 hours (Infrastructure)
-- **Phase 2**: 5.5 hours (Backend)
+- **Phase 2**: 6.25 hours (Backend - includes hard transition cleanup)
 - **Phase 3**: 4.5 hours (Frontend)
 - **Phase 4**: 2.25 hours (Security)
 - **Phase 5**: 4 hours (Testing)
 - **Phase 6**: 2 hours (Deployment)
 
-**Total**: ~20 hours of development time
+**Total**: ~20.5 hours of development time
 
 ---
 
