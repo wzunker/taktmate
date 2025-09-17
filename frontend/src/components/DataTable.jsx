@@ -1,11 +1,139 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const DataTable = ({ fileData }) => {
-  if (!fileData || !fileData.data || fileData.data.length === 0) {
+  const [csvData, setCsvData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Parse CSV content into structured data
+  const parseCsvContent = (csvText, filename) => {
+    const lines = csvText.trim().split('\n');
+    if (lines.length === 0) return null;
+
+    const headers = lines[0].split(',').map(header => header.trim().replace(/^"(.*)"$/, '$1'));
+    const rows = [];
+
+    for (let i = 1; i < lines.length && i <= 50; i++) { // Limit to first 50 rows for preview
+      const values = lines[i].split(',').map(value => value.trim().replace(/^"(.*)"$/, '$1'));
+      const row = {};
+      headers.forEach((header, index) => {
+        row[header] = values[index] || '';
+      });
+      rows.push(row);
+    }
+
+    return {
+      filename,
+      headers,
+      data: rows,
+      rowCount: lines.length - 1, // Total rows minus header
+      displayedRows: Math.min(50, lines.length - 1)
+    };
+  };
+
+  // Fetch file content from blob storage
+  const fetchFileContent = async (fileName) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Get auth info from SWA
+      const authResponse = await fetch('/.auth/me');
+      const authData = await authResponse.json();
+      
+      if (!authData.clientPrincipal) {
+        throw new Error('No authentication data available');
+      }
+      
+      const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
+      
+      // Request download SAS token
+      const sasResponse = await axios.get(`${backendURL}/api/files/${encodeURIComponent(fileName)}/sas`, {
+        headers: {
+          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
+        },
+        timeout: 10000
+      });
+
+      if (!sasResponse.data.success || !sasResponse.data.downloadUrl) {
+        throw new Error('Failed to get download URL');
+      }
+
+      // Fetch file content using SAS URL
+      const contentResponse = await fetch(sasResponse.data.downloadUrl);
+      if (!contentResponse.ok) {
+        throw new Error(`Failed to download file: ${contentResponse.statusText}`);
+      }
+
+      const csvText = await contentResponse.text();
+      const parsedData = parseCsvContent(csvText, fileName);
+      
+      if (!parsedData) {
+        throw new Error('Failed to parse CSV content');
+      }
+
+      setCsvData(parsedData);
+    } catch (err) {
+      console.error('Failed to fetch file content:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load file content when fileData changes
+  useEffect(() => {
+    if (fileData && fileData.name) {
+      fetchFileContent(fileData.name);
+    } else {
+      setCsvData(null);
+    }
+  }, [fileData?.name]);
+
+  // Show nothing if no file selected
+  if (!fileData) {
     return null;
   }
 
-  const { filename, headers, data, rowCount } = fileData;
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+          <span className="text-gray-600">Loading file data...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="text-center py-12">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 inline-block">
+            <h3 className="text-lg font-medium text-red-900 mb-2">Failed to Load File</h3>
+            <p className="text-red-700 mb-4">{error}</p>
+            <button 
+              onClick={() => fetchFileContent(fileData.name)}
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if no data loaded yet
+  if (!csvData) {
+    return null;
+  }
+
+  const { filename, headers, data, rowCount } = csvData;
   const displayedRows = data.length;
   const isTruncated = rowCount > 50;
 

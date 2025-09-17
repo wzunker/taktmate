@@ -205,10 +205,10 @@ Since there are no active users, perform a clean hard transition to eliminate al
 ### Task 3.3: Update Data Table Component
 **Priority**: Medium | **Estimated Time**: 1 hour
 
-- [ ] Modify `DataTable.jsx` if needed for blob-based files
-- [ ] Ensure file preview still works with new backend
-- [ ] Update any file-related state management
-- [ ] Test data display with blob-stored files
+- [x] Modify `DataTable.jsx` if needed for blob-based files
+- [x] Ensure file preview still works with new backend
+- [x] Update any file-related state management
+- [x] Test data display with blob-stored files
 
 **Deliverables**: Data preview works with blob storage
 
