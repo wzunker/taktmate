@@ -7,6 +7,11 @@ These variables must be set in Azure App Service Application Settings:
 ### Azure OpenAI Configuration
 - `OPENAI_API_KEY` - Your Azure OpenAI API key (from Azure Key Vault)
 
+### Azure Blob Storage Configuration
+- `STORAGE_ACCOUNT_NAME` - Name of the Azure Storage Account (e.g., 'taktmateblob')
+  - Used by the storage service to connect to blob storage
+  - Authentication handled via Managed Identity (no storage keys required)
+
 ### Server Configuration  
 - `NODE_ENV=production`
 - `PORT=3001` (automatically set by Azure App Service)
@@ -39,12 +44,14 @@ az webapp config appsettings set \
   --resource-group taktmate \
   --name taktmate-backend-api \
   --settings \
-    OPENAI_API_KEY="@Microsoft.KeyVault(VaultName=TaktMate-KeyVault;SecretName=OpenAI-API-Key)"
+    OPENAI_API_KEY="@Microsoft.KeyVault(VaultName=TaktMate-KeyVault;SecretName=OpenAI-API-Key)" \
+    STORAGE_ACCOUNT_NAME="taktmateblob"
 ```
 
 **Alternative: Via Azure Portal:**
 - Go to taktmate-backend-api → Settings → Environment variables
 - Add: `OPENAI_API_KEY` = `@Microsoft.KeyVault(VaultName=TaktMate-KeyVault;SecretName=OpenAI-API-Key)`
+- Add: `STORAGE_ACCOUNT_NAME` = `taktmateblob`
 
 ### Optional Settings:
 ```bash

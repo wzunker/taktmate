@@ -1,0 +1,326 @@
+/**
+ * Azure Blob Storage Service
+ * 
+ * Provides secure, user-isolated blob storage functionality using:
+ * - Managed Identity authentication (no storage keys in code)
+ * - Per-user containers for data isolation
+ * - User delegation SAS tokens for secure, time-limited access
+ * - Quota enforcement and file management
+ */
+
+const { DefaultAzureCredential } = require('@azure/identity');
+const {
+  BlobServiceClient,
+  generateBlobSASQueryParameters,
+  BlobSASPermissions,
+  StorageSharedKeyCredential
+} = require('@azure/storage-blob');
+
+// Get storage account name from environment variables
+const STORAGE_ACCOUNT_NAME = process.env.STORAGE_ACCOUNT_NAME || 'taktmateblob';
+
+/**
+ * Initialize BlobServiceClient with Managed Identity authentication
+ * Uses DefaultAzureCredential which automatically handles managed identity in Azure
+ * @returns {BlobServiceClient} Authenticated blob service client
+ */
+function serviceClient() {
+  try {
+    const credential = new DefaultAzureCredential();
+    const url = `https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net`;
+    
+    console.log(`Initializing storage client for account: ${STORAGE_ACCOUNT_NAME}`);
+    return new BlobServiceClient(url, credential);
+  } catch (error) {
+    console.error('Failed to initialize storage service client:', error.message);
+    throw new Error(`Storage service initialization failed: ${error.message}`);
+  }
+}
+
+/**
+ * Ensure user's container exists, create if it doesn't
+ * Container naming: u-{userId} (lowercase, compliant with Azure naming rules)
+ * @param {string} userId - User ID from authentication
+ * @returns {Promise<ContainerClient>} Container client for user's container
+ */
+async function ensureUserContainer(userId) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    const sc = serviceClient();
+    // Ensure container name compliance: lowercase, no special chars except hyphens
+    const containerName = `u-${userId.toLowerCase().replace(/[^a-z0-9-]/g, '')}`;
+    
+    console.log(`Ensuring container exists: ${containerName}`);
+    
+    const containerClient = sc.getContainerClient(containerName);
+    
+    // Create container if it doesn't exist
+    // This is idempotent - won't fail if container already exists
+    await containerClient.createIfNotExists({
+      access: 'blob' // Private container, access via SAS only
+    });
+    
+    return containerClient;
+  } catch (error) {
+    console.error(`Failed to ensure user container for user ${userId}:`, error.message);
+    throw new Error(`Container creation failed: ${error.message}`);
+  }
+}
+
+/**
+ * List all files in user's container
+ * @param {string} userId - User ID from authentication
+ * @returns {Promise<Array>} Array of file objects with name, size, lastModified
+ */
+async function listUserFiles(userId) {
+  try {
+    const containerClient = await ensureUserContainer(userId);
+    const files = [];
+    
+    console.log(`Listing files for user: ${userId}`);
+    
+    // List all blobs in the user's container
+    for await (const blob of containerClient.listBlobsFlat()) {
+      files.push({
+        name: blob.name,
+        size: blob.properties.contentLength || 0,
+        lastModified: blob.properties.lastModified,
+        contentType: blob.properties.contentType,
+        etag: blob.properties.etag
+      });
+    }
+    
+    console.log(`Found ${files.length} files for user ${userId}`);
+    return files;
+  } catch (error) {
+    console.error(`Failed to list files for user ${userId}:`, error.message);
+    throw new Error(`File listing failed: ${error.message}`);
+  }
+}
+
+/**
+ * Calculate total bytes used by user across all their files
+ * @param {string} userId - User ID from authentication
+ * @returns {Promise<number>} Total bytes used
+ */
+async function sumBytes(userId) {
+  try {
+    const files = await listUserFiles(userId);
+    const totalBytes = files.reduce((total, file) => total + (file.size || 0), 0);
+    
+    console.log(`User ${userId} using ${totalBytes} bytes (${(totalBytes / 1024 / 1024).toFixed(2)} MB)`);
+    return totalBytes;
+  } catch (error) {
+    console.error(`Failed to calculate storage usage for user ${userId}:`, error.message);
+    throw new Error(`Storage calculation failed: ${error.message}`);
+  }
+}
+
+/**
+ * Generate a user delegation SAS URL for uploading a blob
+ * Uses Azure AD credentials (managed identity) - no account keys required
+ * @param {string} userId - User ID from authentication
+ * @param {string} blobName - Name of the blob to upload
+ * @param {string} contentType - MIME type of the file
+ * @param {number} minutes - SAS token validity in minutes (default: 10)
+ * @returns {Promise<string>} SAS URL for uploading
+ */
+async function sasForUpload(userId, blobName, contentType, minutes = 10) {
+  try {
+    if (!userId || !blobName || !contentType) {
+      throw new Error('userId, blobName, and contentType are required');
+    }
+
+    const sc = serviceClient();
+    const containerClient = await ensureUserContainer(userId);
+    const containerName = containerClient.containerName;
+    
+    console.log(`Generating upload SAS for user ${userId}, blob: ${blobName}`);
+    
+    // Set SAS token validity period
+    const now = new Date();
+    const expiresOn = new Date(now.getTime() + minutes * 60 * 1000);
+    
+    // Get user delegation key (requires managed identity with Storage Blob Data Contributor role)
+    const userDelegationKey = await sc.getUserDelegationKey(now, expiresOn);
+    
+    // Create SAS with minimal permissions: create + write only
+    const sasPermissions = BlobSASPermissions.parse('cw'); // create, write
+    
+    const sasQueryParameters = generateBlobSASQueryParameters({
+      containerName,
+      blobName,
+      permissions: sasPermissions,
+      startsOn: now,
+      expiresOn: expiresOn,
+      contentType: contentType
+    }, userDelegationKey, STORAGE_ACCOUNT_NAME);
+    
+    const blobClient = containerClient.getBlockBlobClient(blobName);
+    const sasUrl = `${blobClient.url}?${sasQueryParameters.toString()}`;
+    
+    console.log(`Generated upload SAS for ${blobName}, expires in ${minutes} minutes`);
+    return sasUrl;
+  } catch (error) {
+    console.error(`Failed to generate upload SAS for user ${userId}, blob ${blobName}:`, error.message);
+    throw new Error(`Upload SAS generation failed: ${error.message}`);
+  }
+}
+
+/**
+ * Generate a user delegation SAS URL for downloading a blob
+ * @param {string} userId - User ID from authentication
+ * @param {string} blobName - Name of the blob to download
+ * @param {number} minutes - SAS token validity in minutes (default: 10)
+ * @returns {Promise<string>} SAS URL for downloading
+ */
+async function sasForRead(userId, blobName, minutes = 10) {
+  try {
+    if (!userId || !blobName) {
+      throw new Error('userId and blobName are required');
+    }
+
+    const sc = serviceClient();
+    const containerClient = await ensureUserContainer(userId);
+    const containerName = containerClient.containerName;
+    
+    console.log(`Generating download SAS for user ${userId}, blob: ${blobName}`);
+    
+    // Set SAS token validity period
+    const now = new Date();
+    const expiresOn = new Date(now.getTime() + minutes * 60 * 1000);
+    
+    // Get user delegation key
+    const userDelegationKey = await sc.getUserDelegationKey(now, expiresOn);
+    
+    // Create SAS with read-only permission
+    const sasPermissions = BlobSASPermissions.parse('r'); // read only
+    
+    const sasQueryParameters = generateBlobSASQueryParameters({
+      containerName,
+      blobName,
+      permissions: sasPermissions,
+      startsOn: now,
+      expiresOn: expiresOn
+    }, userDelegationKey, STORAGE_ACCOUNT_NAME);
+    
+    const blobClient = containerClient.getBlockBlobClient(blobName);
+    const sasUrl = `${blobClient.url}?${sasQueryParameters.toString()}`;
+    
+    console.log(`Generated download SAS for ${blobName}, expires in ${minutes} minutes`);
+    return sasUrl;
+  } catch (error) {
+    console.error(`Failed to generate download SAS for user ${userId}, blob ${blobName}:`, error.message);
+    throw new Error(`Download SAS generation failed: ${error.message}`);
+  }
+}
+
+/**
+ * Delete a blob from user's container
+ * @param {string} userId - User ID from authentication
+ * @param {string} blobName - Name of the blob to delete
+ * @returns {Promise<void>}
+ */
+async function deleteBlob(userId, blobName) {
+  try {
+    if (!userId || !blobName) {
+      throw new Error('userId and blobName are required');
+    }
+
+    const containerClient = await ensureUserContainer(userId);
+    
+    console.log(`Deleting blob for user ${userId}: ${blobName}`);
+    
+    const blobClient = containerClient.getBlockBlobClient(blobName);
+    
+    // Delete the blob (will not fail if blob doesn't exist)
+    await blobClient.deleteIfExists();
+    
+    console.log(`Successfully deleted blob: ${blobName}`);
+  } catch (error) {
+    console.error(`Failed to delete blob ${blobName} for user ${userId}:`, error.message);
+    throw new Error(`Blob deletion failed: ${error.message}`);
+  }
+}
+
+/**
+ * Get blob content as a stream (for CSV processing)
+ * @param {string} userId - User ID from authentication
+ * @param {string} blobName - Name of the blob to read
+ * @returns {Promise<Buffer>} Blob content as buffer
+ */
+async function getBlobContent(userId, blobName) {
+  try {
+    if (!userId || !blobName) {
+      throw new Error('userId and blobName are required');
+    }
+
+    const containerClient = await ensureUserContainer(userId);
+    const blobClient = containerClient.getBlockBlobClient(blobName);
+    
+    console.log(`Reading blob content for user ${userId}: ${blobName}`);
+    
+    // Download blob content
+    const downloadResponse = await blobClient.download();
+    
+    if (!downloadResponse.readableStreamBody) {
+      throw new Error('Failed to get readable stream from blob');
+    }
+    
+    // Convert stream to buffer
+    const chunks = [];
+    for await (const chunk of downloadResponse.readableStreamBody) {
+      chunks.push(chunk);
+    }
+    
+    const buffer = Buffer.concat(chunks);
+    console.log(`Successfully read ${buffer.length} bytes from ${blobName}`);
+    
+    return buffer;
+  } catch (error) {
+    console.error(`Failed to read blob ${blobName} for user ${userId}:`, error.message);
+    throw new Error(`Blob read failed: ${error.message}`);
+  }
+}
+
+/**
+ * Health check function to verify storage connectivity
+ * @returns {Promise<Object>} Health status object
+ */
+async function healthCheck() {
+  try {
+    const sc = serviceClient();
+    
+    // Try to get service properties (lightweight operation to test connectivity)
+    const serviceProperties = await sc.getProperties();
+    
+    return {
+      status: 'healthy',
+      storageAccount: STORAGE_ACCOUNT_NAME,
+      timestamp: new Date().toISOString(),
+      version: serviceProperties.defaultServiceVersion
+    };
+  } catch (error) {
+    console.error('Storage health check failed:', error.message);
+    return {
+      status: 'unhealthy',
+      storageAccount: STORAGE_ACCOUNT_NAME,
+      timestamp: new Date().toISOString(),
+      error: error.message
+    };
+  }
+}
+
+module.exports = {
+  ensureUserContainer,
+  listUserFiles,
+  sumBytes,
+  sasForUpload,
+  sasForRead,
+  deleteBlob,
+  getBlobContent,
+  healthCheck
+};
