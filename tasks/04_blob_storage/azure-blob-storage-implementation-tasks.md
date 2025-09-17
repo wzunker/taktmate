@@ -191,14 +191,14 @@ Since there are no active users, perform a clean hard transition to eliminate al
 ### Task 3.2: Update File Listing & Management
 **Priority**: High | **Estimated Time**: 1.5 hours
 
-- [ ] Update file listing to call new `/api/files` endpoint
-- [ ] Implement download via SAS tokens:
-  - [ ] Request download SAS from backend
-  - [ ] Open SAS URL for download
-  - [ ] Handle SAS token expiration
-- [ ] Update delete functionality to call new delete endpoint
-- [ ] Add file size and last modified display
-- [ ] Show storage quota usage (current/200MB)
+- [x] Update file listing to call new `/api/files` endpoint
+- [x] Implement download via SAS tokens:
+  - [x] Request download SAS from backend
+  - [x] Open SAS URL for download
+  - [x] Handle SAS token expiration
+- [x] Update delete functionality to call new delete endpoint
+- [x] Add file size and last modified display
+- [x] Show storage quota usage (current/200MB)
 
 **Deliverables**: Complete file management UI
 

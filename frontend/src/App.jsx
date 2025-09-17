@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import FileUpload from './components/FileUpload';
 import ChatBox from './components/ChatBox';
 import DataTable from './components/DataTable';
@@ -8,25 +9,129 @@ import useAuth from './hooks/useAuth';
 function App() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [activeFileId, setActiveFileId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [storageQuota, setStorageQuota] = useState({ used: 0, total: 200 * 1024 * 1024 }); // 200MB default
   const { isAuthenticated, isLoading, error } = useAuth();
 
+  // Load files from backend when authenticated
+  const loadFiles = async () => {
+    if (!isAuthenticated) return;
+    
+    setLoading(true);
+    try {
+      // Get auth info from SWA
+      const authResponse = await fetch('/.auth/me');
+      const authData = await authResponse.json();
+      
+      if (!authData.clientPrincipal) {
+        console.warn('No authentication data available');
+        return;
+      }
+      
+      const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
+      
+      const response = await axios.get(`${backendURL}/api/files`, {
+        headers: {
+          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
+        },
+        timeout: 10000
+      });
+
+      if (response.data.success) {
+        const filesData = response.data.files.map(file => ({
+          name: file.name,
+          size: file.size,
+          type: file.type || 'text/csv',
+          lastModified: file.lastModified,
+          // Use file name as ID for blob storage (no longer using fileId)
+          fileId: file.name
+        }));
+        
+        setUploadedFiles(filesData);
+        setStorageQuota({
+          used: response.data.quota.used,
+          total: response.data.quota.total
+        });
+
+        // Set first file as active if none is selected
+        if (filesData.length > 0 && !activeFileId) {
+          setActiveFileId(filesData[0].fileId);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load files:', err);
+      // Don't show error to user for initial load failure
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load files when component mounts and user is authenticated
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      loadFiles();
+    }
+  }, [isAuthenticated, isLoading]);
+
   const handleFileUploaded = (uploadedFileData) => {
+    // Add the new file to the list immediately for better UX
+    const newFile = {
+      name: uploadedFileData.name,
+      size: uploadedFileData.size,
+      type: uploadedFileData.type || 'text/csv',
+      lastModified: uploadedFileData.lastModified,
+      fileId: uploadedFileData.name // Use name as ID for blob storage
+    };
+
     setUploadedFiles(prevFiles => {
-      const newFiles = [...prevFiles, uploadedFileData];
+      const newFiles = [...prevFiles, newFile];
       // Set the first uploaded file as active if no file is currently active
       if (!activeFileId) {
-        setActiveFileId(uploadedFileData.fileId);
+        setActiveFileId(newFile.fileId);
       }
       return newFiles;
     });
+
+    // Refresh the file list to get updated quota info
+    loadFiles();
   };
 
-  const handleFileDeleted = (fileId) => {
-    setUploadedFiles(prevFiles => prevFiles.filter(file => file.fileId !== fileId));
-    // If the deleted file was active, set the first remaining file as active
-    if (activeFileId === fileId) {
-      const remainingFiles = uploadedFiles.filter(file => file.fileId !== fileId);
-      setActiveFileId(remainingFiles.length > 0 ? remainingFiles[0].fileId : null);
+  const handleFileDeleted = async (fileId) => {
+    try {
+      // Get auth info from SWA
+      const authResponse = await fetch('/.auth/me');
+      const authData = await authResponse.json();
+      
+      if (!authData.clientPrincipal) {
+        console.error('No authentication data available for delete');
+        return;
+      }
+      
+      const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
+      
+      // Call backend delete endpoint
+      await axios.delete(`${backendURL}/api/files/${encodeURIComponent(fileId)}`, {
+        headers: {
+          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
+        },
+        timeout: 10000
+      });
+
+      // Update local state immediately for better UX
+      setUploadedFiles(prevFiles => prevFiles.filter(file => file.fileId !== fileId));
+      
+      // If the deleted file was active, set the first remaining file as active
+      if (activeFileId === fileId) {
+        const remainingFiles = uploadedFiles.filter(file => file.fileId !== fileId);
+        setActiveFileId(remainingFiles.length > 0 ? remainingFiles[0].fileId : null);
+      }
+
+      // Refresh the file list to get updated quota info
+      loadFiles();
+    } catch (err) {
+      console.error('Failed to delete file:', err);
+      // You might want to show an error message to the user here
+      alert(`Failed to delete file: ${err.response?.data?.error || err.message}`);
     }
   };
 
@@ -34,50 +139,43 @@ function App() {
     setActiveFileId(fileId);
   };
 
-  const handleFileDownload = (file) => {
-    // Convert the file data back to CSV format and trigger download
-    if (file.originalFile) {
-      // If we have the original file, download that
-      const url = URL.createObjectURL(file.originalFile);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = file.filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } else {
-      // Otherwise, reconstruct CSV from data
-      const csvContent = convertDataToCSV(file.data, file.headers);
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = file.filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    }
-  };
+  const handleFileDownload = async (file) => {
+    try {
+      // Get auth info from SWA
+      const authResponse = await fetch('/.auth/me');
+      const authData = await authResponse.json();
+      
+      if (!authData.clientPrincipal) {
+        console.error('No authentication data available for download');
+        return;
+      }
+      
+      const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
+      
+      // Request download SAS token from backend
+      const response = await axios.get(`${backendURL}/api/files/${encodeURIComponent(file.name)}/sas`, {
+        headers: {
+          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
+        },
+        timeout: 10000
+      });
 
-  const convertDataToCSV = (data, headers) => {
-    if (!data || data.length === 0) return '';
-    
-    // Create CSV content
-    const csvHeaders = headers ? headers.join(',') : Object.keys(data[0]).join(',');
-    const csvRows = data.map(row => {
-      const values = headers ? headers.map(header => row[header] || '') : Object.values(row);
-      return values.map(value => {
-        // Escape values that contain commas, quotes, or newlines
-        if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
-          return `"${value.replace(/"/g, '""')}"`;
-        }
-        return value;
-      }).join(',');
-    });
-    
-    return [csvHeaders, ...csvRows].join('\n');
+      if (response.data.success && response.data.downloadUrl) {
+        // Open the SAS URL for download
+        const link = document.createElement('a');
+        link.href = response.data.downloadUrl;
+        link.download = file.name;
+        link.target = '_blank'; // Open in new tab as fallback
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        throw new Error('Failed to get download URL');
+      }
+    } catch (err) {
+      console.error('Failed to download file:', err);
+      alert(`Failed to download file: ${err.response?.data?.error || err.message}`);
+    }
   };
 
   // Get the currently active file data
@@ -152,9 +250,20 @@ function App() {
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-gray-800">Uploaded Files</h2>
-                <span className="text-sm text-gray-500">
-                  {uploadedFiles.length} file{uploadedFiles.length > 1 ? 's' : ''} in memory
-                </span>
+                <div className="text-sm text-gray-500 space-y-1">
+                  <div>{uploadedFiles.length} file{uploadedFiles.length > 1 ? 's' : ''} in storage</div>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                        style={{ width: `${Math.min(100, (storageQuota.used / storageQuota.total) * 100)}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-xs whitespace-nowrap">
+                      {(storageQuota.used / 1024 / 1024).toFixed(1)}/{(storageQuota.total / 1024 / 1024).toFixed(0)}MB
+                    </span>
+                  </div>
+                </div>
               </div>
               <div className="border border-gray-200 rounded-lg bg-white">
                 <div className="divide-y divide-gray-100">
@@ -185,7 +294,7 @@ function App() {
                                 className="text-sm font-medium text-gray-900 truncate hover:text-blue-600 transition-colors cursor-pointer text-left"
                                 title="Click to download file"
                               >
-                                {file.filename}
+                                {file.name}
                               </button>
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                 CSV
@@ -197,13 +306,13 @@ function App() {
                               )}
                             </div>
                             <div className="flex items-center mt-1 space-x-4 text-xs text-gray-500">
-                              <span>{file.rowCount} rows</span>
+                              <span>{(file.size / 1024).toFixed(1)} KB</span>
                               <span>•</span>
-                              <span>{file.headers?.length || 0} columns</span>
+                              <span>{new Date(file.lastModified).toLocaleDateString()}</span>
                               <span>•</span>
                               <span className="inline-flex items-center">
                                 <div className="w-2 h-2 bg-green-400 rounded-full mr-1"></div>
-                                Uploaded
+                                In Storage
                               </span>
                             </div>
                           </div>
@@ -240,7 +349,7 @@ function App() {
                             type="button"
                             onClick={() => handleFileDeleted(file.fileId)}
                             className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                            title="Remove file from memory"
+                            title="Delete file from storage"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
