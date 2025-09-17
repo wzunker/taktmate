@@ -23,6 +23,52 @@ const {
 
 const router = express.Router();
 
+// Rate limiting for SAS token generation (prevent abuse)
+const rateLimitMap = new Map(); // In-memory rate limiting (consider Redis for production)
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute window
+const RATE_LIMIT_MAX_REQUESTS = 30; // Max 30 SAS requests per minute per user
+
+/**
+ * Simple in-memory rate limiter for SAS token generation
+ * @param {string} userId - User ID to check rate limit for
+ * @returns {boolean} - True if request is allowed, false if rate limited
+ */
+function checkRateLimit(userId) {
+  const now = Date.now();
+  const userKey = `sas_${userId}`;
+  
+  if (!rateLimitMap.has(userKey)) {
+    rateLimitMap.set(userKey, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  
+  const userLimit = rateLimitMap.get(userKey);
+  
+  // Reset if window has passed
+  if (now > userLimit.resetTime) {
+    rateLimitMap.set(userKey, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  
+  // Check if under limit
+  if (userLimit.count < RATE_LIMIT_MAX_REQUESTS) {
+    userLimit.count++;
+    return true;
+  }
+  
+  return false; // Rate limited
+}
+
+// Clean up old rate limit entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of rateLimitMap.entries()) {
+    if (now > value.resetTime) {
+      rateLimitMap.delete(key);
+    }
+  }
+}, 5 * 60 * 1000); // Clean up every 5 minutes
+
 // Apply authentication middleware to all routes
 router.use(requireAuth);
 
@@ -37,6 +83,7 @@ const ALLOWED_CONTENT_TYPES = [
 
 /**
  * Validate file name for security and Azure compliance
+ * Enhanced security validation to prevent various attack vectors
  * @param {string} fileName - File name to validate
  * @returns {Object} - {valid: boolean, error?: string}
  */
@@ -45,19 +92,58 @@ function validateFileName(fileName) {
     return { valid: false, error: 'File name is required and must be a string' };
   }
 
+  // Trim whitespace and check minimum length
+  fileName = fileName.trim();
+  if (fileName.length === 0) {
+    return { valid: false, error: 'File name cannot be empty' };
+  }
+
   if (fileName.length > MAX_FILENAME_LENGTH) {
     return { valid: false, error: `File name too long (max ${MAX_FILENAME_LENGTH} characters)` };
   }
 
-  // Check for path traversal attempts
+  // Check for path traversal attempts (enhanced)
   if (fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
-    return { valid: false, error: 'File name contains invalid characters' };
+    return { valid: false, error: 'File name contains path traversal characters' };
   }
 
-  // Check for reserved names and characters
-  const invalidChars = /[<>:"|?*\x00-\x1f]/;
+  // Check for reserved names and dangerous characters (enhanced)
+  const invalidChars = /[<>:"|?*\x00-\x1f\x7f-\x9f]/; // Added control characters
   if (invalidChars.test(fileName)) {
-    return { valid: false, error: 'File name contains invalid characters' };
+    return { valid: false, error: 'File name contains invalid or control characters' };
+  }
+
+  // Check for Windows reserved names (case-insensitive)
+  const reservedNames = [
+    'CON', 'PRN', 'AUX', 'NUL',
+    'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
+    'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'
+  ];
+  
+  const nameWithoutExt = fileName.split('.')[0].toUpperCase();
+  if (reservedNames.includes(nameWithoutExt)) {
+    return { valid: false, error: 'File name uses a reserved system name' };
+  }
+
+  // Check for hidden files or files starting with special characters
+  if (fileName.startsWith('.') || fileName.startsWith('-') || fileName.startsWith('_')) {
+    return { valid: false, error: 'File name cannot start with special characters' };
+  }
+
+  // Ensure file has a valid extension
+  if (!fileName.includes('.') || fileName.endsWith('.')) {
+    return { valid: false, error: 'File name must have a valid extension' };
+  }
+
+  // Check for multiple consecutive dots
+  if (fileName.includes('..')) {
+    return { valid: false, error: 'File name cannot contain consecutive dots' };
+  }
+
+  // Check for Unicode normalization attacks
+  const normalized = fileName.normalize('NFC');
+  if (normalized !== fileName) {
+    return { valid: false, error: 'File name contains non-normalized Unicode characters' };
   }
 
   return { valid: true };
@@ -132,6 +218,16 @@ router.post('/sas', async (req, res) => {
     const { fileName, contentType, sizeBytes } = req.body;
     
     console.log(`SAS upload request from user ${userId}: ${fileName} (${sizeBytes} bytes)`);
+    
+    // Apply rate limiting for SAS token generation
+    if (!checkRateLimit(userId)) {
+      return res.status(429).json({
+        success: false,
+        error: 'Rate limit exceeded',
+        message: `Too many SAS token requests. Maximum ${RATE_LIMIT_MAX_REQUESTS} requests per minute allowed.`,
+        retryAfter: Math.ceil(RATE_LIMIT_WINDOW / 1000) // seconds
+      });
+    }
     
     // Validate required fields
     if (!fileName || !contentType || !Number.isFinite(sizeBytes)) {
@@ -238,6 +334,16 @@ router.get('/:blobName/sas', async (req, res) => {
     const { blobName } = req.params;
     
     console.log(`SAS download request from user ${userId}: ${blobName}`);
+    
+    // Apply rate limiting for SAS token generation
+    if (!checkRateLimit(userId)) {
+      return res.status(429).json({
+        success: false,
+        error: 'Rate limit exceeded',
+        message: `Too many SAS token requests. Maximum ${RATE_LIMIT_MAX_REQUESTS} requests per minute allowed.`,
+        retryAfter: Math.ceil(RATE_LIMIT_WINDOW / 1000) // seconds
+      });
+    }
     
     // Validate blob name
     const fileNameValidation = validateFileName(blobName);

@@ -47,6 +47,31 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Security headers middleware
+app.use((req, res, next) => {
+  // Security headers for all responses
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  
+  // Add blob storage domain to CSP for direct uploads/downloads
+  const blobStorageDomain = `https://${process.env.STORAGE_ACCOUNT_NAME || 'taktmateblob'}.blob.core.windows.net`;
+  res.setHeader('Content-Security-Policy', 
+    `default-src 'self'; ` +
+    `connect-src 'self' ${blobStorageDomain} https://taktmate.openai.azure.com; ` +
+    `script-src 'self' 'unsafe-inline'; ` +
+    `style-src 'self' 'unsafe-inline'; ` +
+    `img-src 'self' data:; ` +
+    `font-src 'self'; ` +
+    `object-src 'none'; ` +
+    `base-uri 'self';`
+  );
+  
+  next();
+});
+
 // Register file management routes
 app.use('/api/files', filesRouter);
 

@@ -212,6 +212,81 @@ Since there are no active users, perform a clean hard transition to eliminate al
 
 **Deliverables**: Data preview works with blob storage
 
+### Task 3.4: Enable Multi-File Type Support (SKIPPED FOR NOW)
+**Priority**: High | **Estimated Time**: 1 hour
+
+Enable support for four specific file types while maintaining CSV-only parsing for now:
+
+**Backend Updates**:
+- [ ] Update `ALLOWED_CONTENT_TYPES` in `backend/routes/files.js` to include:
+  - [ ] `text/csv` (existing)
+  - [ ] `application/csv` (existing)
+  - [ ] `text/plain` (existing - for .txt files)
+  - [ ] `application/pdf` (PDF files)
+  - [ ] `application/vnd.openxmlformats-officedocument.wordprocessingml.document` (DOCX files)
+  - [ ] `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` (XLSX files)
+  - [ ] `application/msword` (legacy DOC files - optional)
+  - [ ] `application/vnd.ms-excel` (legacy XLS files - optional)
+- [ ] Update error messages to reflect "Supported file types: CSV, DOCX, XLSX, PDF"
+- [ ] Update validation logic to handle multiple file extensions
+- [ ] Add file extension validation as secondary check (.csv, .docx, .xlsx, .pdf)
+
+**Frontend Updates**:
+- [ ] Remove CSV-only restriction in `FileUpload.jsx`
+- [ ] Update file type validation to accept: `.csv`, `.docx`, `.xlsx`, `.pdf`
+- [ ] Update UI text from "CSV files" to "document files" or "supported files"
+- [ ] Update drag-and-drop messages to mention multiple file types
+- [ ] Update file type badges/indicators to show actual file type
+- [ ] Update upload button text to be file-type agnostic
+
+**DataTable Component Updates**:
+- [ ] Add file type detection in `DataTable.jsx`
+- [ ] Only attempt CSV parsing for `.csv` files
+- [ ] Show appropriate message for non-CSV files: "Preview available for CSV files only"
+- [ ] Add file type icons/indicators for different file types
+- [ ] Maintain existing CSV parsing and display logic
+
+**Chat Integration Preparation**:
+- [ ] Update chat endpoint to accept different file types
+- [ ] For now, only process CSV files in chat (others show "CSV files only" message)
+- [ ] Add file type detection before attempting CSV parsing
+- [ ] Preserve existing CSV processing workflow
+
+**UI/UX Updates**:
+- [ ] Update application title/description to be less CSV-specific
+- [ ] Update help text and instructions to mention supported file types
+- [ ] Add file type icons in file listings (PDF icon, Excel icon, Word icon, CSV icon)
+- [ ] Update file upload area to show supported formats
+- [ ] Update any remaining "CSV Chat" references to "Document Chat" or similar
+
+**Validation & Security**:
+- [ ] Ensure file size limits apply to all file types (10MB per file, 200MB total)
+- [ ] Validate both MIME type and file extension for security
+- [ ] Add file signature validation for enhanced security (optional)
+- [ ] Test upload/download/delete for all supported file types
+- [ ] Ensure blob storage handles all file types correctly
+
+**Testing Requirements**:
+- [ ] Test file upload for each supported file type
+- [ ] Verify file type detection and validation
+- [ ] Test file download for each file type
+- [ ] Ensure CSV files still work with data preview and chat
+- [ ] Verify non-CSV files show appropriate messages
+- [ ] Test file deletion for all file types
+- [ ] Verify quota enforcement works across file types
+
+**Future Preparation**:
+- [ ] Document where to add parsing logic for DOCX/XLSX/PDF when ready
+- [ ] Add TODO comments for future file type processing
+- [ ] Ensure architecture supports adding new parsers later
+- [ ] Document content type mappings for future reference
+
+**Deliverables**: 
+- Support for CSV, DOCX, XLSX, and PDF file uploads/storage
+- CSV files continue to work with preview and chat
+- Other file types stored securely but show "parsing coming soon" messages
+- Foundation ready for future multi-file-type processing
+
 ---
 
 ## Phase 4: Security & Compliance
@@ -219,12 +294,12 @@ Since there are no active users, perform a clean hard transition to eliminate al
 ### Task 4.1: Implement Security Best Practices
 **Priority**: High | **Estimated Time**: 1 hour
 
-- [ ] Validate container naming (ensure compliance with Azure rules)
-- [ ] Implement SAS token scoping (blob-level, not container-level)
-- [ ] Set appropriate SAS token TTL (5-10 minutes)
-- [ ] Add request rate limiting for SAS token generation
-- [ ] Validate file names to prevent path traversal
-- [ ] Add CORS headers for blob storage domain
+- [x] Validate container naming (ensure compliance with Azure rules)
+- [x] Implement SAS token scoping (blob-level, not container-level)
+- [x] Set appropriate SAS token TTL (5-10 minutes)
+- [x] Add request rate limiting for SAS token generation
+- [x] Validate file names to prevent path traversal
+- [x] Add CORS headers for blob storage domain
 
 **Deliverables**: Security hardened implementation
 
