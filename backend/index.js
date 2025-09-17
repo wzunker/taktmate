@@ -7,6 +7,8 @@ require('dotenv').config();
 const fileStore = require('./fileStore');
 const { parseCsv, formatCsvForPrompt } = require('./processCsv');
 const { requireAuth, optionalAuth } = require('./middleware/auth');
+const { healthCheck } = require('./services/storage');
+const filesRouter = require('./routes/files');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -47,6 +49,9 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Register file management routes
+app.use('/api/files', filesRouter);
+
 // Configure multer for file uploads (memory storage)
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -63,12 +68,36 @@ const upload = multer({
 });
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK',
-    message: 'TaktMate Backend is running',
-    timestamp: new Date().toISOString()
-  });
+app.get('/api/health', async (req, res) => {
+  try {
+    // Check storage connectivity
+    const storageHealth = await healthCheck();
+    
+    const overallStatus = storageHealth.status === 'healthy' ? 'OK' : 'DEGRADED';
+    const statusCode = overallStatus === 'OK' ? 200 : 503;
+    
+    res.status(statusCode).json({ 
+      status: overallStatus,
+      message: 'TaktMate Backend is running',
+      services: {
+        api: 'healthy',
+        storage: storageHealth
+      },
+      environment: {
+        nodeVersion: process.version,
+        storageAccount: process.env.STORAGE_ACCOUNT_NAME || 'not configured'
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Health check error:', error.message);
+    res.status(503).json({
+      status: 'UNHEALTHY',
+      message: 'TaktMate Backend health check failed',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 
@@ -92,8 +121,9 @@ app.options('/api/upload', (req, res) => {
   res.sendStatus(200);
 });
 
-// Upload CSV endpoint
+// Legacy Upload CSV endpoint (DEPRECATED - use /api/files/sas for new uploads)
 app.post('/api/upload', requireAuth, upload.single('csvFile'), async (req, res) => {
+  console.warn('DEPRECATED: /api/upload endpoint used. Please migrate to /api/files/sas for blob storage uploads.');
   try {
     const user = req.user; // From SWA authentication middleware
     
@@ -223,6 +253,18 @@ app.use((error, req, res, next) => {
   res.status(500).json({ error: error.message });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`TaktMate Backend running on port ${PORT}`);
+  console.log(`Storage Account: ${process.env.STORAGE_ACCOUNT_NAME || 'NOT CONFIGURED'}`);
+  
+  // Test storage connectivity on startup
+  try {
+    const storageHealth = await healthCheck();
+    console.log(`Storage connectivity: ${storageHealth.status}`);
+    if (storageHealth.status !== 'healthy') {
+      console.warn('WARNING: Storage service is not healthy:', storageHealth.error);
+    }
+  } catch (error) {
+    console.error('ERROR: Failed to check storage connectivity on startup:', error.message);
+  }
 });

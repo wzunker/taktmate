@@ -108,12 +108,12 @@ Based on code review, TaktMate currently uses:
 ### Task 2.4: Update Main Application
 **Priority**: High | **Estimated Time**: 45 minutes
 
-- [ ] Add storage account name to environment variables
-- [ ] Register new routes in `backend/index.js`
-- [ ] Update CORS configuration if needed
-- [ ] Remove or deprecate old multer-based upload endpoint
-- [ ] Update health check to verify storage connectivity
-- [ ] Add storage service initialization
+- [X] Add storage account name to environment variables
+- [X] Register new routes in `backend/index.js`
+- [X] Update CORS configuration if needed
+- [X] Remove or deprecate old multer-based upload endpoint
+- [X] Update health check to verify storage connectivity
+- [X] Add storage service initialization
 
 **Deliverables**: Backend integrated with new storage system
 
