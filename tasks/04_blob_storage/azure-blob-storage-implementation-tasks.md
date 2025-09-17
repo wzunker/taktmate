@@ -1,0 +1,401 @@
+# Azure Blob Storage Implementation Tasks
+
+## Project Analysis Summary
+
+Based on code review, TaktMate currently uses:
+- **Authentication**: Azure Static Web Apps with Entra External ID (x-ms-client-principal header)
+- **File Handling**: In-memory storage with multer, 5MB limit, 5 file max, CSV parsing
+- **Security**: User isolation via file ID prefixing (`${user.id}_${timestamp}_${random}`)
+- **Backend**: Node.js/Express with Azure OpenAI integration
+- **Frontend**: React with axios for file uploads
+
+## Implementation Plan Overview
+
+**Goal**: Replace in-memory file storage with persistent, secure Azure Blob Storage using per-user containers, managed identity authentication, and SAS-based direct upload/download.
+
+**Architecture**: Backend acts as trusted SAS token issuer, frontend uploads/downloads directly to/from Blob Storage.
+
+---
+
+## Phase 1: Azure Infrastructure Setup
+
+### Task 1.1: Provision Azure Storage Account
+**Priority**: High | **Estimated Time**: 30 minutes
+
+- [ ] Create Azure Storage Account (Standard, GPv2)
+  - [ ] Choose same resource group as existing Web App
+  - [ ] Select region close to users (match existing services)
+  - [ ] Disable public blob access at account level
+  - [ ] Enable versioning and soft delete (optional but recommended)
+- [ ] Document storage account name and resource details
+- [ ] Test connectivity from Azure portal
+
+**Deliverables**: Storage account ready with connection details
+
+### Task 1.2: Configure Managed Identity & RBAC
+**Priority**: High | **Estimated Time**: 20 minutes
+
+- [ ] Enable System-assigned Managed Identity on existing Azure Web App (backend)
+- [ ] Grant "Storage Blob Data Contributor" role to Web App's managed identity at storage account level
+- [ ] Test managed identity access from Web App
+- [ ] Document role assignment details
+
+**Deliverables**: Backend Web App can authenticate to storage account
+
+### Task 1.3: Enable Access Time Tracking & Lifecycle Policy
+**Priority**: Medium | **Estimated Time**: 15 minutes
+
+- [ ] Enable Last Access Time Tracking on storage account
+  ```powershell
+  Enable-AzStorageBlobLastAccessTimeTracking -ResourceGroupName "<rg>" -AccountName "<storage>"
+  ```
+- [ ] Create Lifecycle Management policy
+  - [ ] Rule: Delete blobs after 90 days since last access
+  - [ ] Apply to all containers with prefix "u-" (user containers)
+- [ ] Test policy configuration
+
+**Deliverables**: Automatic cleanup after 90 days of inactivity
+
+---
+
+## Phase 2: Backend Implementation
+
+### Task 2.1: Install Azure Storage Dependencies
+**Priority**: High | **Estimated Time**: 10 minutes
+
+- [ ] Add to `backend/package.json`:
+  ```json
+  "@azure/identity": "^4.0.1",
+  "@azure/storage-blob": "^12.17.0"
+  ```
+- [ ] Run `npm install` in backend directory
+- [ ] Update environment variables documentation
+
+**Deliverables**: Required Azure SDK packages installed
+
+### Task 2.2: Create Storage Service Layer
+**Priority**: High | **Estimated Time**: 2 hours
+
+- [ ] Create `backend/services/storage.js` with functions:
+  - [ ] `serviceClient()` - Initialize BlobServiceClient with DefaultAzureCredential
+  - [ ] `ensureUserContainer(userId)` - Create/get user container (`u-${userId.toLowerCase()}`)
+  - [ ] `listUserFiles(userId)` - List blobs in user container
+  - [ ] `sumBytes(userId)` - Calculate total storage used by user
+  - [ ] `sasForUpload(userId, blobName, contentType, minutes)` - Generate write SAS
+  - [ ] `sasForRead(userId, blobName, minutes)` - Generate read SAS  
+  - [ ] `deleteBlob(userId, blobName)` - Delete specific blob
+- [ ] Implement user delegation SAS (not account key based)
+- [ ] Add proper error handling and logging
+- [ ] Add JSDoc documentation
+
+**Deliverables**: Complete storage abstraction layer
+
+### Task 2.3: Create File Management Routes
+**Priority**: High | **Estimated Time**: 1.5 hours
+
+- [ ] Create `backend/routes/files.js` with endpoints:
+  - [ ] `GET /api/files` - List user's files (replace in-memory listing)
+  - [ ] `POST /api/files/sas` - Request upload SAS token
+  - [ ] `GET /api/files/:blobName/sas` - Request download SAS token
+  - [ ] `DELETE /api/files/:blobName` - Delete file
+- [ ] Implement 200MB quota check before issuing upload SAS
+- [ ] Maintain 5-file analysis limit in UI (separate from storage)
+- [ ] Add request validation and error handling
+- [ ] Integrate with existing `requireAuth` middleware
+
+**Deliverables**: RESTful file management API
+
+### Task 2.4: Update Main Application
+**Priority**: High | **Estimated Time**: 45 minutes
+
+- [ ] Add storage account name to environment variables
+- [ ] Register new routes in `backend/index.js`
+- [ ] Update CORS configuration if needed
+- [ ] Remove or deprecate old multer-based upload endpoint
+- [ ] Update health check to verify storage connectivity
+- [ ] Add storage service initialization
+
+**Deliverables**: Backend integrated with new storage system
+
+### Task 2.5: Migrate File Processing
+**Priority**: High | **Estimated Time**: 1 hour
+
+- [ ] Update chat endpoint to work with blob storage:
+  - [ ] Fetch CSV content from blob instead of memory
+  - [ ] Cache parsed CSV data temporarily (optional optimization)
+  - [ ] Maintain existing security checks (user can only access own files)
+- [ ] Update `processCsv.js` to handle blob streams if needed
+- [ ] Test CSV parsing with blob-stored files
+- [ ] Ensure no regression in chat functionality
+
+**Deliverables**: Chat feature works with blob-stored files
+
+---
+
+## Phase 3: Frontend Implementation
+
+### Task 3.1: Update File Upload Component
+**Priority**: High | **Estimated Time**: 2 hours
+
+- [ ] Modify `FileUpload.jsx` to use SAS-based uploads:
+  - [ ] Replace direct multer upload with two-step process:
+    1. Request SAS token from backend
+    2. PUT file directly to blob storage
+  - [ ] Update progress indication for two-step process
+  - [ ] Handle SAS token expiration gracefully
+  - [ ] Add proper error handling for blob upload failures
+- [ ] Update file validation (maintain CSV-only restriction)
+- [ ] Preserve existing drag-and-drop functionality
+- [ ] Update UI to show storage vs. analysis limits separately
+
+**Deliverables**: Frontend uploads directly to blob storage
+
+### Task 3.2: Update File Listing & Management
+**Priority**: High | **Estimated Time**: 1.5 hours
+
+- [ ] Update file listing to call new `/api/files` endpoint
+- [ ] Implement download via SAS tokens:
+  - [ ] Request download SAS from backend
+  - [ ] Open SAS URL for download
+  - [ ] Handle SAS token expiration
+- [ ] Update delete functionality to call new delete endpoint
+- [ ] Add file size and last modified display
+- [ ] Show storage quota usage (current/200MB)
+
+**Deliverables**: Complete file management UI
+
+### Task 3.3: Update Data Table Component
+**Priority**: Medium | **Estimated Time**: 1 hour
+
+- [ ] Modify `DataTable.jsx` if needed for blob-based files
+- [ ] Ensure file preview still works with new backend
+- [ ] Update any file-related state management
+- [ ] Test data display with blob-stored files
+
+**Deliverables**: Data preview works with blob storage
+
+---
+
+## Phase 4: Security & Compliance
+
+### Task 4.1: Implement Security Best Practices
+**Priority**: High | **Estimated Time**: 1 hour
+
+- [ ] Validate container naming (ensure compliance with Azure rules)
+- [ ] Implement SAS token scoping (blob-level, not container-level)
+- [ ] Set appropriate SAS token TTL (5-10 minutes)
+- [ ] Add request rate limiting for SAS token generation
+- [ ] Validate file names to prevent path traversal
+- [ ] Add CORS headers for blob storage domain
+
+**Deliverables**: Security hardened implementation
+
+### Task 4.2: Add Monitoring & Logging
+**Priority**: Medium | **Estimated Time**: 45 minutes
+
+- [ ] Add structured logging for storage operations
+- [ ] Log SAS token generation events
+- [ ] Add metrics for storage usage by user
+- [ ] Monitor failed upload/download attempts
+- [ ] Add alerts for quota violations
+- [ ] Document monitoring setup
+
+**Deliverables**: Comprehensive monitoring in place
+
+### Task 4.3: Data Privacy & Compliance
+**Priority**: Medium | **Estimated Time**: 30 minutes
+
+- [ ] Document data retention policy (90-day auto-delete)
+- [ ] Add user consent messaging for file storage
+- [ ] Implement user data deletion capability
+- [ ] Document data processing locations
+- [ ] Add privacy policy updates if needed
+
+**Deliverables**: Privacy-compliant implementation
+
+---
+
+## Phase 5: Testing & Migration
+
+### Task 5.1: Unit & Integration Testing
+**Priority**: High | **Estimated Time**: 2 hours
+
+- [ ] Test storage service functions:
+  - [ ] Container creation and naming
+  - [ ] SAS token generation and validation
+  - [ ] File upload/download/delete operations
+  - [ ] Quota enforcement
+- [ ] Test API endpoints:
+  - [ ] Authentication integration
+  - [ ] Error handling
+  - [ ] Cross-user access prevention
+- [ ] Test frontend integration:
+  - [ ] Upload flow
+  - [ ] Download flow
+  - [ ] File management operations
+
+**Deliverables**: Comprehensive test coverage
+
+### Task 5.2: Migration Strategy
+**Priority**: High | **Estimated Time**: 1 hour
+
+- [ ] Plan migration of existing in-memory files (if any)
+- [ ] Create migration script if needed
+- [ ] Plan rollback strategy
+- [ ] Document deployment steps
+- [ ] Plan user communication for any downtime
+
+**Deliverables**: Migration plan ready
+
+### Task 5.3: Performance Testing
+**Priority**: Medium | **Estimated Time**: 1 hour
+
+- [ ] Test upload performance with various file sizes
+- [ ] Test concurrent user scenarios
+- [ ] Verify SAS token performance under load
+- [ ] Test storage quota enforcement accuracy
+- [ ] Benchmark against current in-memory performance
+
+**Deliverables**: Performance validated
+
+---
+
+## Phase 6: Deployment & Monitoring
+
+### Task 6.1: Environment Configuration
+**Priority**: High | **Estimated Time**: 30 minutes
+
+- [ ] Add environment variables to Azure Web App:
+  - [ ] `STORAGE_ACCOUNT_NAME`
+  - [ ] Any additional configuration needed
+- [ ] Update deployment scripts if needed
+- [ ] Configure staging environment for testing
+- [ ] Document environment setup
+
+**Deliverables**: Production environment ready
+
+### Task 6.2: Production Deployment
+**Priority**: High | **Estimated Time**: 1 hour
+
+- [ ] Deploy backend changes
+- [ ] Deploy frontend changes
+- [ ] Verify all endpoints working
+- [ ] Test end-to-end user flow
+- [ ] Monitor for errors
+- [ ] Rollback plan ready
+
+**Deliverables**: Production deployment successful
+
+### Task 6.3: Post-Deployment Monitoring
+**Priority**: High | **Estimated Time**: 30 minutes
+
+- [ ] Monitor storage account metrics
+- [ ] Check application logs for errors
+- [ ] Verify user uploads/downloads working
+- [ ] Monitor quota enforcement
+- [ ] Check lifecycle policy activation
+- [ ] User acceptance testing
+
+**Deliverables**: System stable and monitored
+
+---
+
+## Implementation Notes
+
+### Container Naming Strategy
+- Use `u-${userId.toLowerCase()}` format
+- Ensures compliance with Azure container naming rules
+- Provides clear user isolation
+- Easy to identify and manage
+
+### Quota Management
+- **Storage Quota**: 200MB per user (enforced before SAS generation)
+- **Analysis Quota**: 5 files max (UI-level restriction, separate from storage)
+- Users can store more than 5 files but analyze only 5 at a time
+
+### SAS Token Configuration
+- **Upload SAS**: `cw` permissions (create + write), 10-minute TTL
+- **Download SAS**: `r` permission (read), 10-minute TTL
+- **Scope**: Individual blob level (not container level)
+- **Type**: User delegation SAS (Azure AD based, not account key)
+
+### Error Handling
+- Graceful degradation for SAS token expiration
+- Clear error messages for quota violations
+- Retry logic for transient failures
+- Proper HTTP status codes
+
+### Security Considerations
+- No storage account keys in application code
+- Managed identity for backend authentication
+- Short-lived SAS tokens with minimal permissions
+- User isolation via container separation
+- CORS properly configured for blob storage domain
+
+---
+
+## Risk Assessment
+
+### High Risk
+- **Data Migration**: Moving from in-memory to persistent storage
+- **Authentication Changes**: New SAS-based flow
+- **User Experience**: Two-step upload process
+
+### Medium Risk
+- **Performance Impact**: Network latency for blob operations
+- **Quota Enforcement**: Ensuring accurate size calculations
+- **Browser Compatibility**: Direct blob upload support
+
+### Low Risk
+- **Cost Impact**: Blob storage costs are minimal for expected usage
+- **Scalability**: Azure Blob Storage handles scale automatically
+
+---
+
+## Success Criteria
+
+- [ ] Users can upload CSV files directly to blob storage
+- [ ] Files persist across sessions and server restarts
+- [ ] 200MB per-user quota enforced accurately
+- [ ] Files automatically deleted after 90 days of inactivity
+- [ ] Chat functionality works with blob-stored files
+- [ ] No degradation in upload/download performance
+- [ ] All security requirements met
+- [ ] Zero data loss during migration
+
+---
+
+## Estimated Total Timeline
+- **Phase 1**: 1.5 hours (Infrastructure)
+- **Phase 2**: 5.5 hours (Backend)
+- **Phase 3**: 4.5 hours (Frontend)
+- **Phase 4**: 2.25 hours (Security)
+- **Phase 5**: 4 hours (Testing)
+- **Phase 6**: 2 hours (Deployment)
+
+**Total**: ~20 hours of development time
+
+---
+
+## Dependencies
+
+### External Dependencies
+- Azure Storage Account provisioned
+- Managed Identity configured
+- Required npm packages installed
+
+### Internal Dependencies
+- Current authentication system (ready)
+- Existing file upload UI (needs modification)
+- CSV processing logic (minor updates needed)
+
+---
+
+## Next Steps
+
+1. **Start with Phase 1**: Set up Azure infrastructure first
+2. **Parallel Development**: Backend and frontend can be developed in parallel after infrastructure is ready
+3. **Incremental Testing**: Test each component as it's developed
+4. **Staged Rollout**: Consider deploying to staging environment first
+
+This implementation will provide TaktMate with persistent, scalable, and secure file storage while maintaining the existing user experience and adding automatic cleanup capabilities.
