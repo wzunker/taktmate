@@ -22,27 +22,27 @@ Based on code review, TaktMate currently uses:
 ### Task 1.1: Provision Azure Storage Account
 **Priority**: High | **Estimated Time**: 30 minutes
 
-- [ ] Create Azure Storage Account (Standard, GPv2)
-  - [ ] Choose same resource group as existing Web App
-  - [ ] Select region close to users (match existing services)
-  - [ ] Disable public blob access at account level
-  - [ ] Enable versioning and soft delete (optional but recommended)
-- [ ] Document storage account name and resource details
-- [ ] Test connectivity from Azure portal
+- [X] Create Azure Storage Account (Standard, GPv2)
+  - [X] Choose same resource group as existing Web App
+  - [X] Select region close to users (match existing services)
+  - [X] Disable public blob access at account level
+  - [X] Enable versioning and soft delete (optional but recommended)
+- [X] Document storage account name and resource details
+- [X] Test connectivity from Azure portal
 
 **Deliverables**: Storage account ready with connection details
 
 ### Task 1.2: Configure Managed Identity & RBAC
 **Priority**: High | **Estimated Time**: 20 minutes
 
-- [ ] Enable System-assigned Managed Identity on existing Azure Web App (backend)
-- [ ] Grant "Storage Blob Data Contributor" role to Web App's managed identity at storage account level
-- [ ] Test managed identity access from Web App
-- [ ] Document role assignment details
+- [X] Enable System-assigned Managed Identity on existing Azure Web App (backend)
+- [X] Grant "Storage Blob Data Contributor" role to Web App's managed identity at storage account level
+- [X] Test managed identity access from Web App
+- [X] Document role assignment details
 
 **Deliverables**: Backend Web App can authenticate to storage account
 
-### Task 1.3: Enable Access Time Tracking & Lifecycle Policy
+### Task 1.3: Enable Access Time Tracking & Lifecycle Policy (SKIPPED FOR NOW)
 **Priority**: Medium | **Estimated Time**: 15 minutes
 
 - [ ] Enable Last Access Time Tracking on storage account
@@ -63,45 +63,45 @@ Based on code review, TaktMate currently uses:
 ### Task 2.1: Install Azure Storage Dependencies
 **Priority**: High | **Estimated Time**: 10 minutes
 
-- [ ] Add to `backend/package.json`:
+- [X] Add to `backend/package.json`:
   ```json
   "@azure/identity": "^4.0.1",
   "@azure/storage-blob": "^12.17.0"
   ```
-- [ ] Run `npm install` in backend directory
-- [ ] Update environment variables documentation
+- [X] Run `npm install` in backend directory
+- [X] Update environment variables documentation
 
 **Deliverables**: Required Azure SDK packages installed
 
 ### Task 2.2: Create Storage Service Layer
 **Priority**: High | **Estimated Time**: 2 hours
 
-- [ ] Create `backend/services/storage.js` with functions:
-  - [ ] `serviceClient()` - Initialize BlobServiceClient with DefaultAzureCredential
-  - [ ] `ensureUserContainer(userId)` - Create/get user container (`u-${userId.toLowerCase()}`)
-  - [ ] `listUserFiles(userId)` - List blobs in user container
-  - [ ] `sumBytes(userId)` - Calculate total storage used by user
-  - [ ] `sasForUpload(userId, blobName, contentType, minutes)` - Generate write SAS
-  - [ ] `sasForRead(userId, blobName, minutes)` - Generate read SAS  
-  - [ ] `deleteBlob(userId, blobName)` - Delete specific blob
-- [ ] Implement user delegation SAS (not account key based)
-- [ ] Add proper error handling and logging
-- [ ] Add JSDoc documentation
+- [X] Create `backend/services/storage.js` with functions:
+  - [X] `serviceClient()` - Initialize BlobServiceClient with DefaultAzureCredential
+  - [X] `ensureUserContainer(userId)` - Create/get user container (`u-${userId.toLowerCase()}`)
+  - [X] `listUserFiles(userId)` - List blobs in user container
+  - [X] `sumBytes(userId)` - Calculate total storage used by user
+  - [X] `sasForUpload(userId, blobName, contentType, minutes)` - Generate write SAS
+  - [X] `sasForRead(userId, blobName, minutes)` - Generate read SAS  
+  - [X] `deleteBlob(userId, blobName)` - Delete specific blob
+- [X] Implement user delegation SAS (not account key based)
+- [X] Add proper error handling and logging
+- [X] Add JSDoc documentation
 
 **Deliverables**: Complete storage abstraction layer
 
 ### Task 2.3: Create File Management Routes
 **Priority**: High | **Estimated Time**: 1.5 hours
 
-- [ ] Create `backend/routes/files.js` with endpoints:
-  - [ ] `GET /api/files` - List user's files (replace in-memory listing)
-  - [ ] `POST /api/files/sas` - Request upload SAS token
-  - [ ] `GET /api/files/:blobName/sas` - Request download SAS token
-  - [ ] `DELETE /api/files/:blobName` - Delete file
-- [ ] Implement 200MB quota check before issuing upload SAS
-- [ ] Maintain 5-file analysis limit in UI (separate from storage)
-- [ ] Add request validation and error handling
-- [ ] Integrate with existing `requireAuth` middleware
+- [X] Create `backend/routes/files.js` with endpoints:
+  - [X] `GET /api/files` - List user's files (replace in-memory listing)
+  - [X] `POST /api/files/sas` - Request upload SAS token
+  - [X] `GET /api/files/:blobName/sas` - Request download SAS token
+  - [X] `DELETE /api/files/:blobName` - Delete file
+- [X] Implement 200MB quota check before issuing upload SAS
+- [X] Maintain 5-file analysis limit in UI (separate from storage)
+- [X] Add request validation and error handling
+- [X] Integrate with existing `requireAuth` middleware
 
 **Deliverables**: RESTful file management API
 
