@@ -175,16 +175,16 @@ Since there are no active users, perform a clean hard transition to eliminate al
 ### Task 3.1: Update File Upload Component
 **Priority**: High | **Estimated Time**: 2 hours
 
-- [ ] Modify `FileUpload.jsx` to use SAS-based uploads:
-  - [ ] Replace direct multer upload with two-step process:
+- [x] Modify `FileUpload.jsx` to use SAS-based uploads:
+  - [x] Replace direct multer upload with two-step process:
     1. Request SAS token from backend
     2. PUT file directly to blob storage
-  - [ ] Update progress indication for two-step process
-  - [ ] Handle SAS token expiration gracefully
-  - [ ] Add proper error handling for blob upload failures
-- [ ] Update file validation (maintain CSV-only restriction)
-- [ ] Preserve existing drag-and-drop functionality
-- [ ] Update UI to show storage vs. analysis limits separately
+  - [x] Update progress indication for two-step process
+  - [x] Handle SAS token expiration gracefully
+  - [x] Add proper error handling for blob upload failures
+- [x] Update file validation (maintain CSV-only restriction)
+- [x] Preserve existing drag-and-drop functionality
+- [x] Update UI to show storage vs. analysis limits separately
 
 **Deliverables**: Frontend uploads directly to blob storage
 

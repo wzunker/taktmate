@@ -4,6 +4,7 @@ import axios from 'axios';
 const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({}); // Track progress for each file
   const [error, setError] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const MAX_FILES = 5;
@@ -16,13 +17,13 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
 
     // Check if we have any slots available
     if (availableSlots <= 0) {
-      setError(`Maximum ${MAX_FILES} files in memory. Delete some uploaded files to add more.`);
+      setError(`Maximum ${MAX_FILES} files in storage. Delete some uploaded files to add more.`);
       return false;
     }
 
     // Check if we already have files selected that would fill available slots
     if (files.length >= availableSlots) {
-      setError(`Can only stage ${availableSlots} file${availableSlots > 1 ? 's' : ''} with ${totalFilesInMemory} already in memory`);
+      setError(`Can only stage ${availableSlots} file${availableSlots > 1 ? 's' : ''} with ${totalFilesInMemory} already in storage`);
       return false;
     }
 
@@ -133,6 +134,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
 
     setUploading(true);
     setError('');
+    setUploadProgress({}); // Reset progress
 
     try {
       // Get auth info from SWA
@@ -148,30 +150,78 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
       
       // Create headers with auth data
       const authHeaders = {
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': 'application/json',
         'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
       };
 
       const uploadPromises = files.map(async (file) => {
-        const formData = new FormData();
-        formData.append('csvFile', file);
-        
-        const response = await axios.post(`${backendURL}/api/upload`, formData, {
-          headers: authHeaders,
-          timeout: 30000, // 30 second timeout
-        });
+        try {
+          // Update progress: Step 1 - Requesting upload URL
+          setUploadProgress(prev => ({
+            ...prev,
+            [file.name]: { step: 'requesting', message: 'Getting upload URL...' }
+          }));
 
-        if (response.data.success) {
+          // Step 1: Request SAS token from backend
+          console.log(`Requesting SAS token for: ${file.name}`);
+          const sasResponse = await axios.post(`${backendURL}/api/files/sas`, {
+            fileName: file.name,
+            contentType: file.type || 'text/csv',
+            fileSize: file.size
+          }, {
+            headers: authHeaders,
+            timeout: 10000 // 10 second timeout for SAS request
+          });
+
+          if (!sasResponse.data.success || !sasResponse.data.uploadUrl) {
+            throw new Error(`Failed to get upload URL for ${file.name}: ${sasResponse.data.error || 'Unknown error'}`);
+          }
+
+          const { uploadUrl } = sasResponse.data;
+
+          // Update progress: Step 2 - Uploading to storage
+          setUploadProgress(prev => ({
+            ...prev,
+            [file.name]: { step: 'uploading', message: 'Uploading to storage...' }
+          }));
+
+          // Step 2: PUT file directly to blob storage
+          console.log(`Uploading ${file.name} to blob storage`);
+          const blobResponse = await fetch(uploadUrl, {
+            method: 'PUT',
+            body: file,
+            headers: {
+              'x-ms-blob-type': 'BlockBlob',
+              'Content-Type': file.type || 'text/csv',
+              'Content-Length': file.size.toString()
+            }
+          });
+
+          if (!blobResponse.ok) {
+            const errorText = await blobResponse.text();
+            throw new Error(`Blob upload failed for ${file.name}: ${blobResponse.status} ${blobResponse.statusText} - ${errorText}`);
+          }
+
+          console.log(`Successfully uploaded ${file.name} to blob storage`);
+
+          // Update progress: Complete
+          setUploadProgress(prev => ({
+            ...prev,
+            [file.name]: { step: 'complete', message: 'Upload complete!' }
+          }));
+
+          // Return file data for the parent component
           return {
-            fileId: response.data.fileId,
-            filename: response.data.filename,
-            rowCount: response.data.rowCount,
-            headers: response.data.headers,
-            data: response.data.data,
+            name: file.name,
+            size: file.size,
+            type: file.type || 'text/csv',
+            lastModified: new Date(file.lastModified).toISOString(),
             originalFile: file // Keep reference to original file for download
           };
+        } catch (fileError) {
+          console.error(`Upload error for ${file.name}:`, fileError);
+          throw new Error(`${file.name}: ${fileError.message}`);
         }
-        throw new Error(`Failed to upload ${file.name}`);
       });
 
       const uploadedFiles = await Promise.all(uploadPromises);
@@ -181,11 +231,28 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
         onFileUploaded(fileData);
       });
 
-      // Clear the files after successful upload
+      // Clear the files and progress after successful upload
       setFiles([]);
+      setUploadProgress({});
       
     } catch (err) {
-      setError(err.response?.data?.error || err.message || 'Failed to upload files');
+      console.error('Upload process failed:', err);
+      
+      // Handle different types of errors
+      let errorMessage = 'Failed to upload files';
+      
+      if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      // If it's a quota error, show the specific message
+      if (errorMessage.includes('quota') || errorMessage.includes('storage limit')) {
+        errorMessage += '. Please delete some files to free up space.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setUploading(false);
     }
@@ -196,7 +263,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-gray-800">Upload CSV Files</h2>
         <span className="text-sm text-gray-500">
-          {files.length}/{MAX_FILES - uploadedFilesCount} files selected ({uploadedFilesCount} in memory)
+          {files.length}/{MAX_FILES - uploadedFilesCount} files selected ({uploadedFilesCount} in storage)
         </span>
       </div>
       
@@ -229,7 +296,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
             <div>
               <p className="text-lg font-medium text-gray-900">
                 {uploadedFilesCount >= MAX_FILES
-                  ? `Maximum ${MAX_FILES} files in memory - delete some to add more`
+                  ? `Maximum ${MAX_FILES} files in storage - delete some to add more`
                   : files.length >= (MAX_FILES - uploadedFilesCount)
                   ? `Maximum ${MAX_FILES - uploadedFilesCount} files can be staged`
                   : isDragOver
@@ -300,8 +367,21 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
                           <span>{new Date().toLocaleDateString()}</span>
                           <span>•</span>
                           <span className="inline-flex items-center">
-                            <div className="w-2 h-2 bg-yellow-400 rounded-full mr-1"></div>
-                            Ready to upload
+                            {uploading && uploadProgress[file.name] ? (
+                              <>
+                                <div className={`w-2 h-2 rounded-full mr-1 ${
+                                  uploadProgress[file.name].step === 'requesting' ? 'bg-blue-400 animate-pulse' :
+                                  uploadProgress[file.name].step === 'uploading' ? 'bg-orange-400 animate-pulse' :
+                                  uploadProgress[file.name].step === 'complete' ? 'bg-green-400' : 'bg-yellow-400'
+                                }`}></div>
+                                {uploadProgress[file.name].message}
+                              </>
+                            ) : (
+                              <>
+                                <div className="w-2 h-2 bg-yellow-400 rounded-full mr-1"></div>
+                                Ready to upload
+                              </>
+                            )}
                           </span>
                         </div>
                       </div>
@@ -361,8 +441,8 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
           className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
         >
           {uploading
-            ? `Uploading ${files.length} file${files.length > 1 ? 's' : ''}...`
-            : `Upload ${files.length} CSV file${files.length > 1 ? 's' : ''}`}
+            ? `Uploading ${files.length} file${files.length > 1 ? 's' : ''} to blob storage...`
+            : `Upload ${files.length} CSV file${files.length > 1 ? 's' : ''} to Storage`}
         </button>
       </div>
     </div>
