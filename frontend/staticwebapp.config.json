@@ -8,6 +8,10 @@
       "allowedRoles": ["anonymous"]
     },
     {
+      "route": "/api/*",
+      "allowedRoles": ["anonymous", "authenticated"]
+    },
+    {
       "route": "/login",
       "rewrite": "/.auth/login/entraExternalId"
     },
