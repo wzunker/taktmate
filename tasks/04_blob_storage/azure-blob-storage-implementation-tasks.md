@@ -366,12 +366,12 @@ Enable support for four specific file types while maintaining CSV-only parsing f
 ### Task 6.1: Environment Configuration
 **Priority**: High | **Estimated Time**: 30 minutes
 
-- [ ] Add environment variables to Azure Web App:
-  - [ ] `STORAGE_ACCOUNT_NAME`
-  - [ ] Any additional configuration needed
-- [ ] Update deployment scripts if needed
-- [ ] Configure staging environment for testing
-- [ ] Document environment setup
+- [x] Add environment variables to Azure Web App:
+  - [x] `STORAGE_ACCOUNT_NAME` = `taktmateblob`
+  - [x] `OPENAI_API_KEY` (via Key Vault reference)
+- [x] Update deployment scripts if needed
+- [x] Configure staging environment for testing
+- [x] Document environment setup
 
 **Deliverables**: Production environment ready
 
