@@ -121,11 +121,12 @@ async function listUserFiles(userId) {
     
     console.log(`Listing files for user: ${userId}`);
     
-    // List all blobs in the user's container
-    for await (const blob of containerClient.listBlobsFlat()) {
+    // List all blobs in the user's container with metadata
+    for await (const blob of containerClient.listBlobsFlat({ includeMetadata: true })) {
+      const size = blob.properties.contentLength || blob.properties.blobSize || 0;
       files.push({
         name: blob.name,
-        size: blob.properties.contentLength || 0,
+        size: size,
         lastModified: blob.properties.lastModified,
         contentType: blob.properties.contentType,
         etag: blob.properties.etag
@@ -148,6 +149,7 @@ async function listUserFiles(userId) {
 async function sumBytes(userId) {
   try {
     const files = await listUserFiles(userId);
+    console.log(`Files for quota calculation:`, files.map(f => ({ name: f.name, size: f.size })));
     const totalBytes = files.reduce((total, file) => total + (file.size || 0), 0);
     
     console.log(`User ${userId} using ${totalBytes} bytes (${(totalBytes / 1024 / 1024).toFixed(2)} MB)`);
