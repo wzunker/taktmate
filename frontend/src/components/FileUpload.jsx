@@ -167,7 +167,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
           const sasResponse = await axios.post('/api/files/sas', {
             fileName: file.name,
             contentType: file.type || 'text/csv',
-            fileSize: file.size
+            sizeBytes: file.size
           }, {
             headers: authHeaders,
             timeout: 10000 // 10 second timeout for SAS request
