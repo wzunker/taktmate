@@ -44,8 +44,8 @@ function App() {
         
         setUploadedFiles(filesData);
         setStorageQuota({
-          used: response.data.quota.used,
-          total: response.data.quota.total
+          used: response.data.quota.used || 0,
+          total: response.data.quota.limit || (200 * 1024 * 1024)
         });
 
         // Set first file as active if none is selected

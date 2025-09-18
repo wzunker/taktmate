@@ -220,7 +220,17 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
           };
         } catch (fileError) {
           console.error(`Upload error for ${file.name}:`, fileError);
-          throw new Error(`${file.name}: ${fileError.message}`);
+          
+          // Handle specific error types
+          if (fileError.response?.status === 409) {
+            // Duplicate file error
+            throw new Error(`${file.name}: File already exists. Please rename or delete the existing file first.`);
+          } else if (fileError.response?.status === 413) {
+            // Quota exceeded error
+            throw new Error(`${file.name}: ${fileError.response.data.message || 'Storage quota exceeded'}`);
+          } else {
+            throw new Error(`${file.name}: ${fileError.response?.data?.message || fileError.message}`);
+          }
         }
       });
 

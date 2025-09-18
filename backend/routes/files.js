@@ -275,6 +275,22 @@ router.post('/sas', async (req, res) => {
       });
     }
 
+    // Check for duplicate files
+    const existingFiles = await listUserFiles(userId);
+    const duplicateFile = existingFiles.find(file => file.name === fileName);
+    if (duplicateFile) {
+      return res.status(409).json({
+        success: false,
+        error: 'File already exists',
+        message: `A file named '${fileName}' already exists. Please rename your file or delete the existing one first.`,
+        existingFile: {
+          name: duplicateFile.name,
+          size: duplicateFile.size,
+          lastModified: duplicateFile.lastModified
+        }
+      });
+    }
+
     // Check quota before issuing SAS token
     const currentUsage = await sumBytes(userId);
     if (currentUsage + sizeBytes > MAX_STORAGE_BYTES) {
