@@ -1,0 +1,24 @@
+# Test Dependencies
+node_modules/
+package-lock.json
+
+# Test Results
+coverage/
+test-results/
+*.log
+
+# Test Data
+fixtures/test-files/*.csv
+fixtures/temp-*
+
+# Environment
+.env.test
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

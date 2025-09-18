@@ -332,19 +332,19 @@ Enable support for four specific file types while maintaining CSV-only parsing f
 ### Task 5.1: Unit & Integration Testing
 **Priority**: High | **Estimated Time**: 2 hours
 
-- [ ] Test storage service functions:
-  - [ ] Container creation and naming
-  - [ ] SAS token generation and validation
-  - [ ] File upload/download/delete operations
-  - [ ] Quota enforcement
-- [ ] Test API endpoints:
-  - [ ] Authentication integration
-  - [ ] Error handling
-  - [ ] Cross-user access prevention
-- [ ] Test frontend integration:
-  - [ ] Upload flow
-  - [ ] Download flow
-  - [ ] File management operations
+- [x] Test storage service functions:
+  - [x] Container creation and naming
+  - [x] SAS token generation and validation
+  - [x] File upload/download/delete operations
+  - [x] Quota enforcement
+- [x] Test API endpoints:
+  - [x] Authentication integration
+  - [x] Error handling
+  - [x] Cross-user access prevention
+- [x] Test frontend integration:
+  - [x] Upload flow
+  - [x] Download flow
+  - [x] File management operations
 
 **Deliverables**: Comprehensive test coverage
 
