@@ -50,9 +50,9 @@ const ChatBox = ({ fileData }) => {
       }
       
       // Call backend directly with SWA auth data
-      const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
+      // Use relative URL to go through Static Web App proxy
       
-      const response = await axios.post(`${backendURL}/api/chat`, {
+      const response = await axios.post('/api/chat', {
         fileId: fileData.fileId,
         message: userMessage
       }, {

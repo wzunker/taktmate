@@ -146,7 +146,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
         return;
       }
       
-      const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
+      // Use relative URL to go through Static Web App proxy
       
       // Create headers with auth data
       const authHeaders = {
@@ -164,7 +164,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
 
           // Step 1: Request SAS token from backend
           console.log(`Requesting SAS token for: ${file.name}`);
-          const sasResponse = await axios.post(`${backendURL}/api/files/sas`, {
+          const sasResponse = await axios.post('/api/files/sas', {
             fileName: file.name,
             contentType: file.type || 'text/csv',
             fileSize: file.size

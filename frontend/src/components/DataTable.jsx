@@ -46,10 +46,10 @@ const DataTable = ({ fileData }) => {
         throw new Error('No authentication data available');
       }
       
-      const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
+      // Use relative URL to go through Static Web App proxy
       
       // Request download SAS token
-      const sasResponse = await axios.get(`${backendURL}/api/files/${encodeURIComponent(fileName)}/sas`, {
+      const sasResponse = await axios.get(`/api/files/${encodeURIComponent(fileName)}/sas`, {
         headers: {
           'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
         },

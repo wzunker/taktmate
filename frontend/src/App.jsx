@@ -25,9 +25,7 @@ function App() {
         return;
       }
       
-      const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
-      
-      const response = await axios.get(`${backendURL}/api/files`, {
+      const response = await axios.get('/api/files', {
         headers: {
           'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
         },
@@ -102,10 +100,8 @@ function App() {
         return;
       }
       
-      const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
-      
       // Call backend delete endpoint
-      await axios.delete(`${backendURL}/api/files/${encodeURIComponent(fileId)}`, {
+      await axios.delete(`/api/files/${encodeURIComponent(fileId)}`, {
         headers: {
           'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
         },
@@ -145,10 +141,8 @@ function App() {
         return;
       }
       
-      const backendURL = process.env.REACT_APP_API_URL || 'https://taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net';
-      
       // Request download SAS token from backend
-      const response = await axios.get(`${backendURL}/api/files/${encodeURIComponent(file.name)}/sas`, {
+      const response = await axios.get(`/api/files/${encodeURIComponent(file.name)}/sas`, {
         headers: {
           'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
         },
