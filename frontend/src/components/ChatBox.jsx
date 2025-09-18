@@ -7,6 +7,24 @@ const ChatBox = ({ fileData }) => {
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef(null);
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    // Welcome message when file is uploaded
+    if (fileData && fileData.filename && fileData.headers) {
+      setMessages([{
+        type: 'system',
+        content: `CSV file "${fileData.filename || fileData.name}" uploaded successfully! It contains ${fileData.rowCount || 'unknown'} rows with columns: ${Array.isArray(fileData.headers) ? fileData.headers.join(', ') : 'unknown'}. Ask me anything about this data!`
+      }]);
+    }
+  }, [fileData]);
+
   // Don't render if no file is selected or if fileData is invalid
   if (!fileData || typeof fileData !== 'object') {
     return (
@@ -21,24 +39,6 @@ const ChatBox = ({ fileData }) => {
       </div>
     );
   }
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  useEffect(() => {
-    // Welcome message when file is uploaded
-    if (fileData) {
-      setMessages([{
-        type: 'system',
-        content: `CSV file "${fileData.filename}" uploaded successfully! It contains ${fileData.rowCount} rows with columns: ${fileData.headers.join(', ')}. Ask me anything about this data!`
-      }]);
-    }
-  }, [fileData]);
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || sending || !fileData) return;
