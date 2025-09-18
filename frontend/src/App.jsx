@@ -50,7 +50,7 @@ function App() {
 
         // Set first file as active if none is selected
         if (filesData.length > 0 && !activeFileId) {
-          setActiveFileId(filesData[0].fileId);
+          setActiveFileId(filesData[0].name);
         }
       }
     } catch (err) {
@@ -80,7 +80,7 @@ function App() {
       const newFiles = [...prevFiles, newFile];
       // Set the first uploaded file as active if no file is currently active
       if (!activeFileId) {
-        setActiveFileId(newFile.fileId);
+        setActiveFileId(newFile.name);
       }
       return newFiles;
     });
@@ -109,12 +109,12 @@ function App() {
       });
 
       // Update local state immediately for better UX
-      setUploadedFiles(prevFiles => prevFiles.filter(file => file.fileId !== fileId));
+      setUploadedFiles(prevFiles => prevFiles.filter(file => file.name !== fileId));
       
       // If the deleted file was active, set the first remaining file as active
       if (activeFileId === fileId) {
-        const remainingFiles = uploadedFiles.filter(file => file.fileId !== fileId);
-        setActiveFileId(remainingFiles.length > 0 ? remainingFiles[0].fileId : null);
+        const remainingFiles = uploadedFiles.filter(file => file.name !== fileId);
+        setActiveFileId(remainingFiles.length > 0 ? remainingFiles[0].name : null);
       }
 
       // Refresh the file list to get updated quota info
@@ -168,7 +168,7 @@ function App() {
   };
 
   // Get the currently active file data
-  const activeFileData = uploadedFiles.find(file => file.fileId === activeFileId) || null;
+  const activeFileData = uploadedFiles.find(file => file.name === activeFileId) || null;
 
   // Show loading spinner while checking authentication
   if (isLoading) {
