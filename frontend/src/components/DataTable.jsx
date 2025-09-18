@@ -134,6 +134,18 @@ const DataTable = ({ fileData }) => {
   }
 
   const { filename, headers, data, rowCount } = csvData;
+  
+  // Additional safety check for headers
+  if (!headers || !Array.isArray(headers) || !data || !Array.isArray(data)) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="text-center text-gray-500">
+          <p>Unable to parse CSV data</p>
+        </div>
+      </div>
+    );
+  }
+  
   const displayedRows = data.length;
   const isTruncated = rowCount > 50;
 

@@ -4,8 +4,8 @@ import axios from 'axios';
 const ChatBox = ({ fileData }) => {
   const [messages, setMessages] = useState([]);
 
-  // Don't render if no file is selected
-  if (!fileData) {
+  // Don't render if no file is selected or if fileData is invalid
+  if (!fileData || typeof fileData !== 'object') {
     return (
       <div className="bg-white rounded-lg shadow-md flex flex-col h-96">
         <div className="flex-1 flex items-center justify-center">
@@ -120,7 +120,7 @@ const ChatBox = ({ fileData }) => {
           Chat with {fileData.filename || fileData.name || 'Unknown File'}
         </h2>
         <p className="text-sm text-gray-600">
-          {fileData.rowCount || 'Unknown'} rows • {fileData.headers?.length || 'Unknown'} columns
+          {fileData.rowCount || 'Unknown'} rows • {(fileData.headers && Array.isArray(fileData.headers)) ? fileData.headers.length : 'Unknown'} columns
         </p>
       </div>
 
