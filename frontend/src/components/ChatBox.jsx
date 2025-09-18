@@ -3,6 +3,21 @@ import axios from 'axios';
 
 const ChatBox = ({ fileData }) => {
   const [messages, setMessages] = useState([]);
+
+  // Don't render if no file is selected
+  if (!fileData) {
+    return (
+      <div className="bg-white rounded-lg shadow-md flex flex-col h-96">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center text-gray-500">
+            <div className="text-4xl mb-4">💬</div>
+            <p className="text-lg font-medium mb-2">No file selected</p>
+            <p className="text-sm">Upload and select a CSV file to start chatting with your data</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const [inputMessage, setInputMessage] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef(null);
@@ -53,7 +68,7 @@ const ChatBox = ({ fileData }) => {
       // Use relative URL to go through Static Web App proxy
       
       const response = await axios.post('/api/chat', {
-        fileId: fileData.fileId,
+        fileName: fileData.name || fileData.filename,
         message: userMessage
       }, {
         headers: {
@@ -102,10 +117,10 @@ const ChatBox = ({ fileData }) => {
       {/* Header */}
       <div className="p-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-800">
-          Chat with {fileData.filename}
+          Chat with {fileData.filename || fileData.name || 'Unknown File'}
         </h2>
         <p className="text-sm text-gray-600">
-          {fileData.rowCount} rows • {fileData.headers.length} columns
+          {fileData.rowCount || 'Unknown'} rows • {fileData.headers?.length || 'Unknown'} columns
         </p>
       </div>
 
