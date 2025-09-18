@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import FileUpload from './components/FileUpload';
 import ChatBox from './components/ChatBox';
@@ -9,15 +9,12 @@ import useAuth from './hooks/useAuth';
 function App() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [activeFileId, setActiveFileId] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [storageQuota, setStorageQuota] = useState({ used: 0, total: 200 * 1024 * 1024 }); // 200MB default
   const { isAuthenticated, isLoading, error } = useAuth();
 
   // Load files from backend when authenticated
-  const loadFiles = async () => {
+  const loadFiles = useCallback(async () => {
     if (!isAuthenticated) return;
-    
-    setLoading(true);
     try {
       // Get auth info from SWA
       const authResponse = await fetch('/.auth/me');
@@ -61,17 +58,15 @@ function App() {
     } catch (err) {
       console.error('Failed to load files:', err);
       // Don't show error to user for initial load failure
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   // Load files when component mounts and user is authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
       loadFiles();
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, loadFiles]);
 
   const handleFileUploaded = (uploadedFileData) => {
     // Add the new file to the list immediately for better UX

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 const DataTable = ({ fileData }) => {
@@ -33,7 +33,7 @@ const DataTable = ({ fileData }) => {
   };
 
   // Fetch file content from blob storage
-  const fetchFileContent = async (fileName) => {
+  const fetchFileContent = useCallback(async (fileName) => {
     setLoading(true);
     setError(null);
     
@@ -80,7 +80,7 @@ const DataTable = ({ fileData }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Load file content when fileData changes
   useEffect(() => {
@@ -89,7 +89,7 @@ const DataTable = ({ fileData }) => {
     } else {
       setCsvData(null);
     }
-  }, [fileData?.name]);
+  }, [fileData?.name, fetchFileContent]);
 
   // Show nothing if no file selected
   if (!fileData) {
