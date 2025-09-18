@@ -3,6 +3,9 @@ import axios from 'axios';
 
 const ChatBox = ({ fileData }) => {
   const [messages, setMessages] = useState([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef(null);
 
   // Don't render if no file is selected or if fileData is invalid
   if (!fileData || typeof fileData !== 'object') {
@@ -18,9 +21,6 @@ const ChatBox = ({ fileData }) => {
       </div>
     );
   }
-  const [inputMessage, setInputMessage] = useState('');
-  const [sending, setSending] = useState(false);
-  const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
