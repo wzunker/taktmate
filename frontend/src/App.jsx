@@ -59,7 +59,7 @@ function App() {
       console.error('Failed to load files:', err);
       // Don't show error to user for initial load failure
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, activeFileId]);
 
   // Load files when component mounts and user is authenticated
   useEffect(() => {

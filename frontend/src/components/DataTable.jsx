@@ -89,7 +89,7 @@ const DataTable = ({ fileData }) => {
     } else {
       setCsvData(null);
     }
-  }, [fileData?.name, fetchFileContent]);
+  }, [fileData, fetchFileContent]);
 
   // Show nothing if no file selected
   if (!fileData) {
