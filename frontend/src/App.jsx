@@ -9,7 +9,12 @@ import useAuth from './hooks/useAuth';
 function App() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [activeFileId, setActiveFileId] = useState(null);
-  const [storageQuota, setStorageQuota] = useState({ used: 0, total: 200 * 1024 * 1024 }); // 200MB default
+  const [storageQuota, setStorageQuota] = useState({ 
+    used: 0, 
+    total: 200 * 1024 * 1024, 
+    usedDisplay: '0 KB', 
+    limitDisplay: '200 MB' 
+  });
   const { isAuthenticated, isLoading, error } = useAuth();
 
   // Load files from backend when authenticated
@@ -45,7 +50,9 @@ function App() {
         setUploadedFiles(filesData);
         setStorageQuota({
           used: response.data.quota.used || 0,
-          total: response.data.quota.limit || (200 * 1024 * 1024)
+          total: response.data.quota.limit || (200 * 1024 * 1024),
+          usedDisplay: response.data.quota.usedDisplay || '0 KB',
+          limitDisplay: response.data.quota.limitDisplay || '200 MB'
         });
 
         // Set first file as active if none is selected
@@ -249,7 +256,7 @@ function App() {
                       ></div>
                     </div>
                     <span className="text-xs whitespace-nowrap">
-                      {(storageQuota.used / 1024 / 1024).toFixed(1)}/{(storageQuota.total / 1024 / 1024).toFixed(0)}MB
+                      {storageQuota.usedDisplay}/{storageQuota.limitDisplay}
                     </span>
                   </div>
                 </div>

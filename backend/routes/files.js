@@ -187,14 +187,19 @@ router.get('/', async (req, res) => {
         used: totalBytes,
         limit: MAX_STORAGE_BYTES,
         remaining: Math.max(0, MAX_STORAGE_BYTES - totalBytes),
-        usedMB: Math.round(totalBytes / 1024 / 1024 * 100) / 100,
-        limitMB: Math.round(MAX_STORAGE_BYTES / 1024 / 1024),
+        usedDisplay: totalBytes < 1024 * 1024 ? 
+          `${Math.round(totalBytes / 1024)} KB` : 
+          `${Math.round(totalBytes / 1024 / 1024 * 10) / 10} MB`,
+        limitDisplay: `${Math.round(MAX_STORAGE_BYTES / 1024 / 1024)} MB`,
+        remainingDisplay: (MAX_STORAGE_BYTES - totalBytes) < 1024 * 1024 ?
+          `${Math.round((MAX_STORAGE_BYTES - totalBytes) / 1024)} KB` :
+          `${Math.round((MAX_STORAGE_BYTES - totalBytes) / 1024 / 1024)} MB`,
         percentUsed: Math.round((totalBytes / MAX_STORAGE_BYTES) * 100)
       },
       timestamp: new Date().toISOString()
     };
     
-    console.log(`User ${userId}: ${files.length} files, ${response.quota.usedMB}MB used`);
+    console.log(`User ${userId}: ${files.length} files, ${response.quota.usedDisplay} used`);
     res.json(response);
     
   } catch (error) {

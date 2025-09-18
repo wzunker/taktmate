@@ -149,10 +149,9 @@ async function listUserFiles(userId) {
 async function sumBytes(userId) {
   try {
     const files = await listUserFiles(userId);
-    console.log(`Files for quota calculation:`, files.map(f => ({ name: f.name, size: f.size })));
     const totalBytes = files.reduce((total, file) => total + (file.size || 0), 0);
     
-    console.log(`User ${userId} using ${totalBytes} bytes (${(totalBytes / 1024 / 1024).toFixed(2)} MB)`);
+    console.log(`User ${userId} using ${totalBytes} bytes (${(totalBytes / 1024 / 1024).toFixed(3)} MB)`);
     return totalBytes;
   } catch (error) {
     console.error(`Failed to calculate storage usage for user ${userId}:`, error.message);
