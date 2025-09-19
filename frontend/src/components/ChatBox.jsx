@@ -58,7 +58,7 @@ const ChatBox = ({ fileData, className = '' }) => {
   // Don't render if no file is selected or if fileData is invalid
   if (!fileData || typeof fileData !== 'object') {
     return (
-      <Card variant="elevated" className="flex flex-col h-96">
+      <Card variant="elevated" className={`flex flex-col h-full ${className}`}>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center max-w-sm">
             <div className="w-16 h-16 mx-auto mb-4 bg-primary-100 rounded-full flex items-center justify-center">
@@ -66,8 +66,8 @@ const ChatBox = ({ fileData, className = '' }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
             </div>
-            <h3 className="heading-5 mb-2 text-text-primary">AI Chat Assistant</h3>
-            <p className="body-small text-text-secondary mb-4">Upload and select a CSV file to start an intelligent conversation with your data</p>
+            <h3 className="heading-5 mb-2 text-secondary-600 font-semibold">TaktMate</h3>
+            <p className="body-small text-text-secondary mb-4">Upload and select your files to start an intelligent conversation with your data</p>
             <div className="flex items-center justify-center space-x-4 body-xs text-text-muted">
               <div className="flex items-center space-x-1">
                 <div className="w-2 h-2 bg-primary-400 rounded-full"></div>
