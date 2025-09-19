@@ -334,7 +334,7 @@ const ChatBox = ({ fileData, className = '' }) => {
         )}
         
         {/* Input Row */}
-        <div className="flex items-end space-x-2 sm:space-x-3">
+        <div className="flex items-start space-x-2 sm:space-x-3">
           <div className="flex-1 relative">
             <textarea
               ref={inputRef}
@@ -371,14 +371,16 @@ const ChatBox = ({ fileData, className = '' }) => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                   ) : (
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      {/* Takt-style arrow with balls at endpoints */}
-                      <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                      <line x1="14" y1="6" x2="20" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                      <line x1="14" y1="18" x2="20" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      {/* Takt-style upward arrow with balls at endpoints */}
+                      <line x1="12" y1="20" x2="12" y2="4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                      <line x1="6" y1="10" x2="12" y2="4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+                      <line x1="18" y1="10" x2="12" y2="4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
                       {/* Balls at endpoints */}
-                      <circle cx="4" cy="12" r="2" fill="currentColor"/>
-                      <circle cx="20" cy="12" r="2" fill="currentColor"/>
+                      <circle cx="12" cy="20" r="2.5" fill="currentColor"/>
+                      <circle cx="12" cy="4" r="2.5" fill="currentColor"/>
+                      <circle cx="6" cy="10" r="2.5" fill="currentColor"/>
+                      <circle cx="18" cy="10" r="2.5" fill="currentColor"/>
                     </svg>
                   )}
                 </button>
