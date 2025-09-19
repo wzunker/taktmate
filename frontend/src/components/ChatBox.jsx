@@ -378,7 +378,6 @@ const ChatBox = ({ fileData, className = '' }) => {
                         <line x1="18.6" y1="10.6" x2="11.4" y2="3.4" stroke="currentColor" strokeWidth="2.0" strokeLinecap="round"/>
                         {/* Balls at new endpoints */}
                         <circle cx="12" cy="21.6" r="2.5" fill="currentColor"/>
-                        <circle cx="12" cy="2.4" r="2.5" fill="currentColor"/>
                         <circle cx="5.4" cy="10.6" r="2.5" fill="currentColor"/>
                         <circle cx="18.6" cy="10.6" r="2.5" fill="currentColor"/>
                       </svg>
