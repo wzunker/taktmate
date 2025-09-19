@@ -180,9 +180,9 @@ function App() {
   // Show loading spinner while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background-cream flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Checking authentication...</p>
         </div>
       </div>
@@ -192,7 +192,7 @@ function App() {
   // Show error state if there's an authentication error
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background-cream flex items-center justify-center">
         <div className="text-center">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
             <h2 className="text-lg font-medium text-red-900 mb-2">Authentication Error</h2>
@@ -210,14 +210,14 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background-cream">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-background-warm-white shadow-sm border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">TaktMate</h1>
-              <span className="ml-2 text-sm text-gray-500">CSV Chat MVP</span>
+              <h1 className="text-2xl font-bold text-text-primary">TaktMate</h1>
+              <span className="ml-2 text-sm text-text-secondary">CSV Chat MVP</span>
             </div>
             
             {/* User Profile and Logout */}
@@ -225,7 +225,7 @@ function App() {
               <UserProfile />
             )}
           </div>
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-text-secondary">
             Upload a CSV file and chat with your data using AI
           </p>
         </div>
@@ -251,7 +251,7 @@ function App() {
                   <div className="flex items-center space-x-2">
                     <div className="flex-1 bg-gray-200 rounded-full h-2">
                       <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                        className="bg-primary-600 h-2 rounded-full transition-all duration-300" 
                         style={{ width: `${Math.min(100, (storageQuota.used / storageQuota.total) * 100)}%` }}
                       ></div>
                     </div>
@@ -265,17 +265,17 @@ function App() {
                 <div className="divide-y divide-gray-100">
                   {uploadedFiles.map((file) => (
                     <div key={file.fileId} className={`px-4 py-3 transition-colors ${
-                      activeFileId === file.fileId ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'hover:bg-gray-50'
+                      activeFileId === file.fileId ? 'bg-primary-50 border-l-4 border-l-primary-500' : 'hover:bg-gray-50'
                     }`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3 flex-1 min-w-0">
                           {/* File Icon */}
                           <div className="flex-shrink-0">
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                              activeFileId === file.fileId ? 'bg-blue-100' : 'bg-green-100'
+                              activeFileId === file.fileId ? 'bg-primary-100' : 'bg-secondary-100'
                             }`}>
                               <svg className={`w-4 h-4 ${
-                                activeFileId === file.fileId ? 'text-blue-600' : 'text-green-600'
+                                activeFileId === file.fileId ? 'text-primary-600' : 'text-secondary-600'
                               }`} fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
                               </svg>
@@ -287,16 +287,16 @@ function App() {
                             <div className="flex items-center space-x-2">
                               <button
                                 onClick={() => handleFileDownload(file)}
-                                className="text-sm font-medium text-gray-900 truncate hover:text-blue-600 transition-colors cursor-pointer text-left"
+                                className="text-sm font-medium text-gray-900 truncate hover:text-primary-600 transition-colors cursor-pointer text-left"
                                 title="Click to download file"
                               >
                                 {file.name}
                               </button>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary-100 text-secondary-800">
                                 CSV
                               </span>
                               {activeFileId === file.fileId && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
                                   Active
                                 </span>
                               )}
@@ -321,8 +321,8 @@ function App() {
                             onClick={() => handleFileSelected(file.fileId)}
                             className={`p-1 transition-colors ${
                               activeFileId === file.fileId 
-                                ? 'text-blue-600' 
-                                : 'text-gray-400 hover:text-blue-600'
+                                ? 'text-primary-600' 
+                                : 'text-gray-400 hover:text-primary-600'
                             }`}
                             title="View file data"
                           >
@@ -334,7 +334,7 @@ function App() {
                           <button
                             type="button"
                             onClick={() => handleFileDownload(file)}
-                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                            className="p-1 text-gray-400 hover:text-primary-600 transition-colors"
                             title="Download file"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

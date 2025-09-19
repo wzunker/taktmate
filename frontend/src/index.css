@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Takt Brand Color Variables */
+:root {
+  --takt-orange: #E16809;
+  --takt-green: #3E553C;
+  --takt-iron-grey: #322E2D;
+  --takt-canvas-cream: #F7F3E9;
+  --takt-amber-orange: #CC7A00;
+  --takt-solar-orange: #FFA51F;
+  --takt-sky-blue: #4B95D1;
+  
+  /* Semantic color mappings */
+  --color-primary: var(--takt-orange);
+  --color-secondary: var(--takt-green);
+  --color-background: var(--takt-canvas-cream);
+  --color-text: var(--takt-iron-grey);
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -9,6 +26,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--takt-canvas-cream);
+  color: var(--takt-iron-grey);
 }
 
 code {
