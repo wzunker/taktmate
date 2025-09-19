@@ -89,4 +89,13 @@ code {
   .text-brand {
     @apply font-semibold text-primary-600;
   }
+  
+  /* Header Enhancements */
+  .sticky-header {
+    @apply transition-all duration-300 ease-in-out;
+  }
+  
+  .sticky-header:hover {
+    @apply shadow-md;
+  }
 }

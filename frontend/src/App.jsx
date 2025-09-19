@@ -214,7 +214,7 @@ function App() {
   return (
     <div className="min-h-screen bg-background-cream">
       {/* Header */}
-      <header className="bg-background-warm-white shadow-sm border-b border-gray-200">
+      <header className="bg-gradient-to-r from-background-warm-white to-background-cream shadow-sm border-b border-gray-200 sticky top-0 z-50 backdrop-blur-sm bg-opacity-95 sticky-header">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -231,6 +231,18 @@ function App() {
                 size="sm"
                 className="sm:hidden flex"
               />
+            </div>
+            
+            {/* Status Indicator - shows current context (hidden on mobile) */}
+            <div className="flex-1 justify-center hidden md:flex">
+              {activeFileData && (
+                <div className="flex items-center space-x-2 bg-primary-50 border border-primary-200 rounded-full px-3 py-1">
+                  <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse"></div>
+                  <span className="body-xs text-primary-800 font-medium">
+                    Analyzing: {activeFileData.name}
+                  </span>
+                </div>
+              )}
             </div>
             
             {/* User Profile and Logout */}

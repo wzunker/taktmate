@@ -6,9 +6,9 @@ import useAuth from '../hooks/useAuth';
  * Provides a reusable logout button with optional confirmation
  */
 const LogoutButton = ({ 
-  className = "bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm transition-colors",
+  className = "bg-secondary-100 hover:bg-secondary-200 text-secondary-800 px-3 py-1.5 rounded-md body-xs font-medium transition-colors",
   showConfirmation = false,
-  children = "Logout"
+  children = "Sign Out"
 }) => {
   const { logout, isLoading } = useAuth();
   const [showConfirm, setShowConfirm] = useState(false);
@@ -30,21 +30,21 @@ const LogoutButton = ({
   if (showConfirm) {
     return (
       <div className="relative inline-block">
-        <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50">
-          <p className="text-sm text-gray-700 mb-3">
-            Are you sure you want to log out?
+        <div className="absolute right-0 top-full mt-2 w-64 bg-background-warm-white border border-gray-200 rounded-lg shadow-lg p-4 z-50">
+          <p className="body-small text-text-primary mb-3">
+            Are you sure you want to sign out?
           </p>
           <div className="flex space-x-2">
             <button
               onClick={handleLogout}
               disabled={isLoading}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors disabled:opacity-50"
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md body-xs font-medium transition-colors disabled:opacity-50"
             >
-              {isLoading ? 'Logging out...' : 'Yes, Logout'}
+              {isLoading ? 'Signing out...' : 'Yes, Sign Out'}
             </button>
             <button
               onClick={handleCancel}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm transition-colors"
+              className="flex-1 bg-secondary-100 hover:bg-secondary-200 text-secondary-800 px-3 py-2 rounded-md body-xs font-medium transition-colors"
             >
               Cancel
             </button>
@@ -67,7 +67,7 @@ const LogoutButton = ({
       className={`${className} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
       title="Sign out of your account"
     >
-      {isLoading ? 'Logging out...' : children}
+      {isLoading ? 'Signing out...' : children}
     </button>
   );
 };

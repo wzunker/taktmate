@@ -65,25 +65,27 @@ const UserProfile = ({
 
   // Horizontal layout (default)
   return (
-    <div className={`flex items-center space-x-3 ${className}`}>
+    <div className={`flex items-center space-x-3 bg-background-cream border border-gray-200 rounded-lg px-3 py-2 shadow-sm ${className}`}>
       {/* User Avatar */}
-      <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
+      <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center ring-2 ring-primary-100">
         <span className="text-white font-medium text-sm">{initials}</span>
       </div>
       
       {/* User Info */}
       <div className="flex-1 min-w-0">
-        <div className="text-sm text-gray-700">
-          Welcome, <span className="font-medium">{displayName}</span>
+        <div className="body-small text-text-primary">
+          <span className="text-emphasis">{displayName}</span>
         </div>
         {email && email !== displayName && (
-          <div className="text-xs text-gray-500 truncate">{email}</div>
+          <div className="body-xs text-text-muted truncate">{email}</div>
         )}
       </div>
       
       {/* Logout Button */}
       {showLogout && (
-        <LogoutButton />
+        <div className="flex-shrink-0">
+          <LogoutButton />
+        </div>
       )}
     </div>
   );
