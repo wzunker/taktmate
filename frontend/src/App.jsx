@@ -218,21 +218,14 @@ function App() {
       <header className="bg-gradient-to-r from-background-warm-white to-background-cream shadow-sm border-b border-gray-200 sticky top-0 z-50 backdrop-blur-sm bg-opacity-95 sticky-header">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center min-w-0 flex-1">
-              <LogoWithText 
-                text="TaktMate" 
-                subtitle="CSV Chat MVP"
-                size="md"
-                className="sm:flex hidden"
-              />
-              {/* Mobile logo - just the symbol and text, no subtitle */}
-              <LogoWithText 
-                text="TaktMate" 
-                subtitle=""
-                size="sm"
-                className="sm:hidden flex"
-              />
-            </div>
+                <div className="flex items-center min-w-0 flex-1">
+                  {/* Main Takt Logo */}
+                  <img 
+                    src="/logo-takt.png" 
+                    alt="Takt" 
+                    className="h-10 sm:h-12 w-auto"
+                  />
+                </div>
             
             {/* Status Indicator - shows current context (hidden on mobile) */}
             <div className="flex-1 justify-center hidden lg:flex mx-4">
@@ -266,18 +259,14 @@ function App() {
             )}
           </div>
           
-          {/* Subtitle - responsive */}
-          <div className="mt-1 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <p className="body-small text-text-secondary">
-              Upload a CSV file and chat with your data using AI
-            </p>
-            {/* Mobile file status */}
-            {activeFileData && (
-              <p className="body-xs text-primary-600 font-medium mt-1 sm:mt-0 lg:hidden truncate">
+          {/* Mobile file status - only show when there's an active file */}
+          {activeFileData && (
+            <div className="mt-2 lg:hidden">
+              <p className="body-xs text-primary-600 font-medium truncate">
                 📊 {activeFileData.name}
               </p>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </header>
 

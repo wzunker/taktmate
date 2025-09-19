@@ -192,8 +192,8 @@ const ChatBox = ({ fileData }) => {
 
   return (
     <Card variant="elevated" padding="sm" className="flex flex-col h-80 sm:h-96">
-      <CardHeader
-        title="AI Data Assistant"
+            <CardHeader
+                title={<span className="text-secondary-600 font-semibold">taktmate</span>}
         subtitle={`Analyzing: ${fileData.filename || fileData.name || 'Unknown File'} • ${fileData.rowCount || 'Unknown'} rows • ${(fileData.headers && Array.isArray(fileData.headers)) ? fileData.headers.length : 'Unknown'} columns`}
         action={
           <div className="flex flex-col sm:flex-row items-end sm:items-center space-y-1 sm:space-y-0 sm:space-x-3">
@@ -249,7 +249,7 @@ const ChatBox = ({ fileData }) => {
             <div className={`flex-1 ${message.type === 'user' ? 'text-right' : ''}`}>
               {/* Message Label */}
               <div className={`body-xs text-text-muted mb-1 ${message.type === 'user' ? 'text-right' : ''}`}>
-                {message.type === 'user' ? 'You' : message.type === 'system' ? 'System' : message.type === 'error' ? 'Error' : 'AI Assistant'}
+                        {message.type === 'user' ? 'You' : message.type === 'system' ? 'System' : message.type === 'error' ? 'Error' : 'taktmate'}
                 {message.timestamp && (
                   <span className="ml-2">
                     {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -290,7 +290,7 @@ const ChatBox = ({ fileData }) => {
             
             {/* Typing Indicator */}
             <div className="flex-1">
-              <div className="body-xs text-text-muted mb-1">AI Assistant</div>
+                    <div className="body-xs text-text-muted mb-1">taktmate</div>
               <div className="bg-background-warm-white text-text-primary px-3 sm:px-4 py-2 sm:py-3 rounded-card rounded-tl-sm border border-gray-200 warm-shadow">
                 <div className="flex items-center space-x-1">
                   <span className="body-small sm:body-normal text-text-secondary">Analyzing your data</span>
