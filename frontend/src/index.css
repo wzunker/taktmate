@@ -161,12 +161,21 @@ code {
     font-size: 16px;
   }
   
-  /* Improve touch interactions */
-  button,
-  [role="button"],
-  input[type="submit"],
-  input[type="button"] {
-    min-height: 44px;
-    min-width: 44px;
-  }
-}
+          /* Improve touch interactions */
+          button,
+          [role="button"],
+          input[type="submit"],
+          input[type="button"] {
+            min-height: 44px;
+            min-width: 44px;
+          }
+        }
+
+        /* Layout helpers for full-height design */
+        .layout-full-height {
+          height: calc(100vh - 120px); /* Account for header height */
+        }
+
+        .layout-column {
+          height: calc(100vh - 140px); /* Account for header and padding */
+        }

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Card, { CardHeader, CardContent } from './Card';
 
-const DataTable = ({ fileData }) => {
+const DataTable = ({ fileData, className = '' }) => {
   const [csvData, setCsvData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -230,7 +230,7 @@ const DataTable = ({ fileData }) => {
   const isTruncated = rowCount > 1000;
 
   return (
-    <Card>
+    <Card className={`h-full flex flex-col ${className}`}>
       <CardHeader
         title="Data Table"
         subtitle={`${filename} • ${headers.length} columns • ${totalRows.toLocaleString()} rows`}
@@ -253,10 +253,10 @@ const DataTable = ({ fileData }) => {
         }
       />
 
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col min-h-0">
         {/* Desktop Table View */}
-        <div className="hidden md:block">
-          <div className="overflow-x-auto border border-gray-200 rounded-card warm-shadow">
+        <div className="hidden md:block flex-1 min-h-0">
+          <div className="h-full overflow-auto border border-gray-200 rounded-card warm-shadow">
             <table className="min-w-full divide-y divide-gray-200">
             {/* Table Header */}
             <thead className="bg-secondary-50">
@@ -342,7 +342,7 @@ const DataTable = ({ fileData }) => {
         </div>
 
         {/* Mobile Card View */}
-        <div className="md:hidden">
+        <div className="md:hidden flex-1 min-h-0">
           {/* Mobile Sort Control */}
           <div className="mb-4 p-3 bg-secondary-50 rounded-card border border-secondary-200">
             <div className="flex items-center justify-between">
@@ -370,7 +370,7 @@ const DataTable = ({ fileData }) => {
           </div>
           
           {/* Mobile Cards */}
-          <div className="space-y-3">
+          <div className="space-y-3 overflow-y-auto flex-1 mobile-scrollbar">
             {paginatedData.map((row, rowIndex) => (
             <div key={startRow + rowIndex} className="bg-background-warm-white border border-gray-200 rounded-card p-4 warm-shadow">
               <div className="flex items-center justify-between mb-3">

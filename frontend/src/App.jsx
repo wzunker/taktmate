@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import FileUpload from './components/FileUpload';
+import SourcesPanel from './components/SourcesPanel';
 import ChatBox from './components/ChatBox';
 import DataTable from './components/DataTable';
 import UserProfile from './components/UserProfile';
 import Logo from './components/Logo';
-import Card, { CardHeader, CardContent } from './components/Card';
+import Card from './components/Card';
 import useAuth from './hooks/useAuth';
 
 function App() {
@@ -223,7 +223,7 @@ function App() {
                   <img 
                     src="/logo-takt.png" 
                     alt="Takt" 
-                    className="h-10 sm:h-12 w-auto"
+                    className="h-14 sm:h-16 w-auto"
                   />
                 </div>
             
@@ -271,185 +271,62 @@ function App() {
       </header>
 
 
-      {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-        <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-          {/* File Upload Section */}
-          <FileUpload 
-            onFileUploaded={handleFileUploaded} 
-            uploadedFilesCount={uploadedFiles.length} 
-          />
+      {/* Main Content - 4 Column Layout */}
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 layout-full-height">
+          {/* Sources Column - Left (3 columns) */}
+          <div className="lg:col-span-3 layout-column">
+            <SourcesPanel 
+              onFileUploaded={handleFileUploaded}
+              uploadedFiles={uploadedFiles}
+              activeFileId={activeFileId}
+              storageQuota={storageQuota}
+              onFileSelected={handleFileSelected}
+              onFileDownload={handleFileDownload}
+              onFileDeleted={handleFileDeleted}
+            />
+          </div>
           
-          {/* Uploaded Files Section */}
-          {uploadedFiles.length > 0 && (
-            <Card variant="elevated">
-              <CardHeader
-                title="File Management"
-                subtitle="Manage your uploaded CSV files and storage"
-                action={
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                    {/* File Count Badge */}
-                    <div className="bg-secondary-100 text-secondary-800 px-3 py-1 rounded-badge body-xs font-medium">
-                      {uploadedFiles.length} file{uploadedFiles.length > 1 ? 's' : ''}
-                    </div>
-                    {/* Storage Quota Display */}
-                    <div className="text-right">
-                      <div className="body-xs text-text-secondary mb-1">Storage Usage</div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-20 sm:w-24 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-primary-600 h-2 rounded-full transition-all duration-300" 
-                            style={{ width: `${Math.min(100, (storageQuota.used / storageQuota.total) * 100)}%` }}
-                          ></div>
-                        </div>
-                        <span className="body-xs text-text-muted whitespace-nowrap">
-                          {storageQuota.usedDisplay}/{storageQuota.limitDisplay}
-                        </span>
-                      </div>
-                    </div>
+          {/* Chat Column - Middle (6 columns) */}
+          <div className="lg:col-span-6 layout-column">
+            <ChatBox fileData={activeFileData} className="h-full" />
+          </div>
+          
+          {/* Data Table Column - Right (3 columns) */}
+          <div className="lg:col-span-3 layout-column">
+            {activeFileData ? (
+              <DataTable fileData={activeFileData} className="h-full" />
+            ) : (
+              <Card variant="elevated" className="h-full flex items-center justify-center">
+                <div className="text-center p-8">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-secondary-100 rounded-full flex items-center justify-center">
+                    <svg className="w-8 h-8 text-secondary-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+                    </svg>
                   </div>
-                }
-              />
-              <CardContent>
-                <div className="border border-gray-200 rounded-card bg-background-warm-white warm-shadow">
-                  <div className="divide-y divide-gray-100">
-                  {uploadedFiles.map((file) => (
-                    <div key={file.fileId} className={`px-3 sm:px-4 lg:px-6 py-3 sm:py-4 transition-colors ${
-                      activeFileId === file.fileId ? 'bg-primary-50 border-l-4 border-l-primary-500' : 'hover:bg-background-cream'
-                    }`}>
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-                        <div className="flex items-center space-x-3 flex-1 min-w-0">
-                          {/* File Icon */}
-                          <div className="flex-shrink-0">
-                            <div className={`w-12 h-12 rounded-card flex items-center justify-center transition-colors duration-300 ${
-                              activeFileId === file.fileId 
-                                ? 'bg-primary-100 ring-2 ring-primary-200' 
-                                : 'bg-secondary-100 hover:bg-secondary-200'
-                            }`}>
-                              <svg className={`w-6 h-6 transition-colors duration-300 ${
-                                activeFileId === file.fileId ? 'text-primary-600' : 'text-secondary-600'
-                              }`} fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-                                <path d="M8,12H16V14H8V12M8,16H13V18H8V16Z" fill="currentColor" fillOpacity="0.6"/>
-                              </svg>
-                            </div>
-                          </div>
-                          
-                          {/* File Details */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-3 flex-wrap">
-                              <button
-                                onClick={() => handleFileDownload(file)}
-                                className="text-emphasis truncate hover:text-primary-600 transition-colors cursor-pointer text-left font-medium"
-                                title="Click to download file"
-                              >
-                                {file.name}
-                              </button>
-                              <div className="flex items-center space-x-2">
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-badge text-xs font-medium bg-secondary-100 text-secondary-800">
-                                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                                  </svg>
-                                  CSV
-                                </span>
-                                {activeFileId === file.fileId && (
-                                  <span className="inline-flex items-center px-2.5 py-1 rounded-badge text-xs font-medium bg-primary-100 text-primary-800">
-                                    <div className="w-2 h-2 bg-primary-500 rounded-full mr-1.5 animate-pulse"></div>
-                                    Active
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center mt-2 space-x-4 body-xs text-text-secondary">
-                              <div className="flex items-center space-x-1">
-                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                                <span className="font-medium">{(file.size / 1024).toFixed(1)} KB</span>
-                              </div>
-                              <span>•</span>
-                              <div className="flex items-center space-x-1">
-                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                                </svg>
-                                <span>{new Date(file.lastModified).toLocaleDateString()}</span>
-                              </div>
-                              <span>•</span>
-                              <div className="inline-flex items-center space-x-1">
-                                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                                <span className="font-medium text-green-700">Stored</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Action Buttons */}
-                        <div className="flex items-center justify-end sm:justify-start space-x-1 sm:ml-4 w-full sm:w-auto">
-                          <button
-                            type="button"
-                            onClick={() => handleFileSelected(file.fileId)}
-                            className={`p-2 rounded-button transition-all duration-200 ${
-                              activeFileId === file.fileId 
-                                ? 'text-primary-600 bg-primary-100 ring-2 ring-primary-200' 
-                                : 'text-gray-400 hover:text-primary-600 hover:bg-primary-50'
-                            }`}
-                            title={activeFileId === file.fileId ? "Currently viewing" : "View file data"}
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleFileDownload(file)}
-                            className="p-2 rounded-button text-gray-400 hover:text-secondary-600 hover:bg-secondary-50 transition-all duration-200"
-                            title="Download file"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleFileDeleted(file.fileId)}
-                            className="p-2 rounded-button text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all duration-200"
-                            title="Delete file from storage"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  </div>
+                  <h3 className="heading-4 text-text-secondary mb-2">No Data Selected</h3>
+                  <p className="body-small text-text-muted">
+                    Select a file from Sources to view its data
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* Data Table Section */}
-          {activeFileData && <DataTable fileData={activeFileData} />}
-          
-          {/* Chat Section */}
-          <ChatBox fileData={activeFileData} />
-          
-          {/* Info Section */}
-          {uploadedFiles.length === 0 && (
-            <div className="bg-primary-50 border border-primary-200 rounded-card p-8 card-shadow">
-              <h3 className="heading-5 text-primary-800 mb-2">How it works</h3>
-              <ol className="list-decimal list-inside space-y-2 body-normal text-primary-700">
-                <li>Upload CSV files (up to 5 files, max 5MB each)</li>
-                <li>The AI will analyze your data structure</li>
-                <li>Click on any file to view its data in the table</li>
-                <li>Ask questions about your data in natural language</li>
-                <li>Switch between files to analyze different datasets</li>
-              </ol>
-            </div>
-          )}
+              </Card>
+            )}
+          </div>
         </div>
+
+        {/* Info Section - Only show when no files uploaded */}
+        {uploadedFiles.length === 0 && (
+          <div className="mt-8 bg-primary-50 border border-primary-200 rounded-card p-8 card-shadow">
+            <h3 className="heading-5 text-primary-800 mb-2">How it works</h3>
+            <ol className="list-decimal list-inside space-y-2 body-normal text-primary-700">
+              <li>Upload CSV files (up to 5 files, max 5MB each)</li>
+              <li>The AI will analyze your data structure</li>
+              <li>Click on any file to view its data in the table</li>
+              <li>Ask questions about your data in natural language</li>
+              <li>Switch between files to analyze different datasets</li>
+            </ol>
+          </div>
+        )}
       </main>
 
       {/* Footer */}

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import Card, { CardHeader, CardContent } from './Card';
 
-const ChatBox = ({ fileData }) => {
+const ChatBox = ({ fileData, className = '' }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -191,7 +191,7 @@ const ChatBox = ({ fileData }) => {
   }
 
   return (
-    <Card variant="elevated" padding="sm" className="flex flex-col h-80 sm:h-96">
+    <Card variant="elevated" padding="sm" className={`flex flex-col h-full ${className}`}>
             <CardHeader
                 title={<span className="text-secondary-600 font-semibold">taktmate</span>}
         subtitle={`Analyzing: ${fileData.filename || fileData.name || 'Unknown File'} • ${fileData.rowCount || 'Unknown'} rows • ${(fileData.headers && Array.isArray(fileData.headers)) ? fileData.headers.length : 'Unknown'} columns`}
