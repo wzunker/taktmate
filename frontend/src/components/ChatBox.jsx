@@ -194,7 +194,7 @@ const ChatBox = ({ fileData, className = '' }) => {
     <Card variant="elevated" padding="sm" className={`flex flex-col h-full ${className}`}>
             <CardHeader
                 title={<span className="text-secondary-600 font-semibold">taktmate</span>}
-        subtitle={`Analyzing: ${fileData.filename || fileData.name || 'Unknown File'} • ${fileData.rowCount || 'Unknown'} rows • ${(fileData.headers && Array.isArray(fileData.headers)) ? fileData.headers.length : 'Unknown'} columns`}
+        subtitle={`${fileData.filename || fileData.name || 'Unknown File'} • ${fileData.rowCount || 'Unknown'} rows • ${(fileData.headers && Array.isArray(fileData.headers)) ? fileData.headers.length : 'Unknown'} columns`}
         action={
           <div className="flex flex-col sm:flex-row items-end sm:items-center space-y-1 sm:space-y-0 sm:space-x-3">
             {messageCount > 1 && (
@@ -345,10 +345,10 @@ const ChatBox = ({ fileData, className = '' }) => {
               className="w-full border border-gray-300 rounded-input px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-small sm:body-normal resize-none transition-all duration-200"
               disabled={sending}
               rows="1"
-              style={{ minHeight: '40px', maxHeight: '100px' }}
+                    style={{ minHeight: '40px', maxHeight: '150px' }}
               onInput={(e) => {
                 e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
+                e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
               }}
             />
             
@@ -360,22 +360,28 @@ const ChatBox = ({ fileData, className = '' }) => {
             )}
           </div>
           
-          <button
-            onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || sending || inputMessage.length > 500}
-            className="bg-primary-600 text-white p-2.5 sm:p-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0 min-w-[44px] min-h-[44px]"
-            title={!inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
-          >
-            {sending ? (
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            ) : (
-              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
-            )}
-          </button>
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!inputMessage.trim() || sending || inputMessage.length > 500}
+                  className="bg-primary-600 text-white p-2.5 sm:p-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  title={!inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
+                >
+                  {sending ? (
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      {/* Takt-style arrow with balls at endpoints */}
+                      <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      <line x1="14" y1="6" x2="20" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      <line x1="14" y1="18" x2="20" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      {/* Balls at endpoints */}
+                      <circle cx="4" cy="12" r="2" fill="currentColor"/>
+                      <circle cx="20" cy="12" r="2" fill="currentColor"/>
+                    </svg>
+                  )}
+                </button>
         </div>
         
         {/* Input Helper Text */}

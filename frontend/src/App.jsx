@@ -227,29 +227,6 @@ function App() {
                   />
                 </div>
             
-            {/* Status Indicator - shows current context (hidden on mobile) */}
-            <div className="flex-1 justify-center hidden lg:flex mx-4">
-              {activeFileData && (
-                <div className="flex items-center space-x-2 bg-primary-50 border border-primary-200 rounded-full px-3 py-1">
-                  <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse"></div>
-                  <span className="body-xs text-primary-800 font-medium truncate max-w-48">
-                    Analyzing: {activeFileData.name}
-                  </span>
-                </div>
-              )}
-            </div>
-            
-            {/* Mobile Status Indicator - simplified version */}
-            <div className="flex-1 justify-center flex lg:hidden mx-2">
-              {activeFileData && (
-                <div className="flex items-center space-x-1 bg-primary-50 border border-primary-200 rounded-full px-2 py-1">
-                  <div className="w-1.5 h-1.5 bg-primary-500 rounded-full animate-pulse"></div>
-                  <span className="body-xs text-primary-800 font-medium">
-                    Active
-                  </span>
-                </div>
-              )}
-            </div>
             
             {/* User Profile and Logout */}
             {isAuthenticated && (
@@ -259,14 +236,6 @@ function App() {
             )}
           </div>
           
-          {/* Mobile file status - only show when there's an active file */}
-          {activeFileData && (
-            <div className="mt-2 lg:hidden">
-              <p className="body-xs text-primary-600 font-medium truncate">
-                📊 {activeFileData.name}
-              </p>
-            </div>
-          )}
         </div>
       </header>
 
