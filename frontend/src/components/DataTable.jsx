@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import Card, { CardHeader, CardContent, InfoCard } from './Card';
+import Card, { CardHeader, CardContent } from './Card';
 
 const DataTable = ({ fileData }) => {
   const [csvData, setCsvData] = useState(null);

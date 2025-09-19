@@ -72,36 +72,36 @@ This checklist outlines a comprehensive redesign of TaktMate to align with Takt'
 - [X] **Implement better error messaging** with appropriate colors
 - [X] **Add file type icons** with consistent styling
 
-### [ ] 8. File Management Section
-- [ ] **Redesign file list items** with improved visual hierarchy
-- [ ] **Update action buttons** (view, download, delete) with brand colors
-- [ ] **Improve active file indicator** using Takt Orange
-- [ ] **Implement better loading states**
-- [ ] **Update storage quota visualization** with brand colors
+### [X] 8. File Management Section
+- [X] **Redesign file list items** with improved visual hierarchy
+- [X] **Update action buttons** (view, download, delete) with brand colors
+- [X] **Improve active file indicator** using Takt Orange
+- [X] **Implement better loading states**
+- [X] **Update storage quota visualization** with brand colors
 
-### [ ] 9. Data Table Component
-- [ ] **Update table header** with Takt Green background
-- [ ] **Improve row striping** with subtle Canvas Cream alternation
-- [ ] **Update borders** to use warm gray colors
-- [ ] **Add hover states** for table rows
-- [ ] **Improve responsive table design**
-- [ ] **Update pagination styling** if needed
+### [X] 9. Data Table Component
+- [X] **Update table header** with Takt Green background
+- [X] **Improve row striping** with subtle Canvas Cream alternation
+- [X] **Update borders** to use warm gray colors
+- [X] **Add hover states** for table rows
+- [X] **Improve responsive table design**
+- [X] **Update pagination styling** if needed
 
-### [ ] 10. Chat Interface
-- [ ] **Redesign chat bubbles** with brand-appropriate colors:
-  - User messages: Takt Orange background
+### [X] 10. Chat Interface
+- [X] **Redesign chat bubbles** with brand-appropriate colors:
+  - User messages: Takt Green background with cream text
   - Assistant messages: Canvas Cream background with Takt Green accents
   - System messages: Sky Blue background
-- [ ] **Update input field styling** with Takt Orange focus states
-- [ ] **Improve send button** with Takt Orange background
-- [ ] **Add typing indicators** with brand-consistent styling
-- [ ] **Implement better message formatting**
+- [X] **Update input field styling** with Takt Orange focus states
+- [X] **Improve send button** with Takt Orange background
+- [X] **Add typing indicators** with brand-consistent styling
+- [X] **Implement better message formatting**
 
-### [ ] 11. User Profile Component
-- [ ] **Update avatar styling** with Takt Orange background
-- [ ] **Improve user information display**
-- [ ] **Redesign logout button** with appropriate styling
-- [ ] **Add user preferences/settings access**
+### [X] 11. User Profile Component
+- [X] **Update avatar styling** with Takt Orange background
+- [X] **Improve user information display**
+- [X] **Redesign logout button** with appropriate styling
+- [X] **Add user preferences/settings access**
 
 ---
 

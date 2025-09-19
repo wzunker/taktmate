@@ -5,7 +5,7 @@ import ChatBox from './components/ChatBox';
 import DataTable from './components/DataTable';
 import UserProfile from './components/UserProfile';
 import Logo, { LogoWithText } from './components/Logo';
-import Card, { CardHeader, CardContent, StatCard } from './components/Card';
+import Card, { CardHeader, CardContent } from './components/Card';
 import useAuth from './hooks/useAuth';
 
 function App() {
