@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import Card, { CardHeader, CardContent } from './Card';
+import useAuth from '../hooks/useAuth';
 
 const ChatBox = ({ fileData, className = '' }) => {
   const [messages, setMessages] = useState([]);
@@ -10,6 +11,17 @@ const ChatBox = ({ fileData, className = '' }) => {
   const [messageCount, setMessageCount] = useState(0);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const { displayName } = useAuth();
+
+  // Get user initials for avatar
+  const getUserInitials = (name) => {
+    if (!name) return 'U';
+    return name
+      .split(' ')
+      .map(part => part.charAt(0).toUpperCase())
+      .slice(0, 2)
+      .join('');
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -210,14 +222,14 @@ const ChatBox = ({ fileData, className = '' }) => {
       <CardContent className="flex-1 overflow-y-auto space-y-4 sm:space-y-6 px-2 sm:px-4">
         {messages.map((message, index) => (
           <div key={index} className={`flex items-start space-x-2 sm:space-x-3 ${message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-            {/* Avatar */}
-            <div className="flex-shrink-0">
-              {message.type === 'user' ? (
-                <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                  </svg>
-                </div>
+                    {/* Avatar */}
+                    <div className="flex-shrink-0">
+                      {message.type === 'user' ? (
+                        <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs font-medium">
+                            {getUserInitials(displayName)}
+                          </span>
+                        </div>
               ) : message.type === 'system' ? (
                 <div className="w-8 h-8 bg-secondary-100 rounded-full flex items-center justify-center">
                   <svg className="w-4 h-4 text-secondary-600" fill="currentColor" viewBox="0 0 20 20">
@@ -231,11 +243,12 @@ const ChatBox = ({ fileData, className = '' }) => {
                   </svg>
                 </div>
               ) : (
-                <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-primary-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-                    <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
-                  </svg>
+                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center border border-gray-200">
+                  <img 
+                    src="/logo-solo.png" 
+                    alt="taktmate" 
+                    className="w-5 h-5"
+                  />
                 </div>
               )}
             </div>
@@ -243,14 +256,9 @@ const ChatBox = ({ fileData, className = '' }) => {
             {/* Message Content */}
             <div className={`flex-1 ${message.type === 'user' ? 'text-right' : ''}`}>
               {/* Message Label */}
-              <div className={`body-xs text-text-muted mb-1 ${message.type === 'user' ? 'text-right' : ''}`}>
+                      <div className={`body-xs text-text-muted mb-1 ${message.type === 'user' ? 'text-right' : ''}`}>
                         {message.type === 'user' ? 'You' : message.type === 'system' ? 'System' : message.type === 'error' ? 'Error' : 'taktmate'}
-                {message.timestamp && (
-                  <span className="ml-2">
-                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                )}
-              </div>
+                      </div>
               
               {/* Message Bubble */}
               <div
@@ -273,15 +281,16 @@ const ChatBox = ({ fileData, className = '' }) => {
         ))}
         {sending && (
           <div className="flex items-start space-x-2 sm:space-x-3">
-            {/* AI Avatar */}
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                <svg className="w-4 h-4 text-primary-600 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-                  <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
-                </svg>
-              </div>
-            </div>
+                  {/* AI Avatar */}
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center border border-gray-200">
+                      <img 
+                        src="/logo-solo.png" 
+                        alt="taktmate" 
+                        className="w-5 h-5 animate-pulse"
+                      />
+                    </div>
+                  </div>
             
             {/* Typing Indicator */}
             <div className="flex-1">
@@ -302,33 +311,9 @@ const ChatBox = ({ fileData, className = '' }) => {
         <div ref={messagesEndRef} />
       </CardContent>
 
-      {/* Enhanced Input Area */}
-      <div className="pt-3 sm:pt-4 border-t border-gray-200 mt-4 px-2 sm:px-0">
-        {/* Quick Suggestions */}
-        {messages.length <= 1 && (
-          <div className="mb-3">
-            <div className="body-xs text-text-muted mb-2">💡 Try asking:</div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {[
-                "What are the column names?",
-                "Show me summary statistics",
-                "Find trends in the data",
-                "What's the average value?"
-              ].map((suggestion, index) => (
-                <button
-                  key={index}
-                  onClick={() => setInputMessage(suggestion)}
-                  disabled={sending}
-                  className="px-3 py-2 bg-primary-50 hover:bg-primary-100 text-primary-700 rounded-badge body-xs font-medium transition-colors disabled:opacity-50 text-left"
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {/* Input Row */}
+              {/* Enhanced Input Area */}
+              <div className="pt-3 sm:pt-4 border-t border-gray-200 mt-4 px-2 sm:px-0">
+                {/* Input Row */}
         <div className="flex items-start space-x-2 sm:space-x-3">
           <div className="flex-1 relative">
             <textarea
@@ -336,7 +321,7 @@ const ChatBox = ({ fileData, className = '' }) => {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Ask a question about your CSV data..."
+                      placeholder="How can I help you today?"
               className="w-full border border-gray-300 rounded-input px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-small sm:body-normal resize-none transition-all duration-200"
               disabled={sending}
               rows="1"
