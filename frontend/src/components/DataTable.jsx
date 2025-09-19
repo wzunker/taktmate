@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import Card, { CardHeader, CardContent, InfoCard } from './Card';
 
 const DataTable = ({ fileData }) => {
   const [csvData, setCsvData] = useState(null);
@@ -99,32 +100,32 @@ const DataTable = ({ fileData }) => {
   // Show loading state
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <Card>
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
-          <span className="text-gray-600">Loading file data...</span>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mr-3"></div>
+          <span className="body-normal text-text-secondary">Loading file data...</span>
         </div>
-      </div>
+      </Card>
     );
   }
 
   // Show error state
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <Card>
         <div className="text-center py-12">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 inline-block">
-            <h3 className="text-lg font-medium text-red-900 mb-2">Failed to Load File</h3>
-            <p className="text-red-700 mb-4">{error}</p>
+          <div className="bg-red-50 border border-red-200 rounded-card p-6 inline-block warm-shadow">
+            <h3 className="heading-5 text-red-900 mb-2">Failed to Load File</h3>
+            <p className="body-normal text-red-700 mb-4">{error}</p>
             <button 
               onClick={() => fetchFileContent(fileData.name)}
-              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+              className="bg-red-600 text-white px-4 py-2 rounded-button hover:bg-red-700 body-small font-medium transition-colors"
             >
               Try Again
             </button>
           </div>
         </div>
-      </div>
+      </Card>
     );
   }
 
@@ -138,11 +139,11 @@ const DataTable = ({ fileData }) => {
   // Additional safety check for headers
   if (!headers || !Array.isArray(headers) || !data || !Array.isArray(data)) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div className="text-center text-gray-500">
-          <p>Unable to parse CSV data</p>
+      <Card>
+        <div className="text-center">
+          <p className="body-normal text-text-muted">Unable to parse CSV data</p>
         </div>
-      </div>
+      </Card>
     );
   }
   
@@ -150,32 +151,32 @@ const DataTable = ({ fileData }) => {
   const isTruncated = rowCount > 50;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-gray-800">Data Preview</h2>
-        <div className="text-sm text-gray-600">
-          Showing {displayedRows} of {rowCount} rows
-          {isTruncated && <span className="text-orange-600 ml-2">(truncated)</span>}
-        </div>
-      </div>
+    <Card>
+      <CardHeader
+        title="Data Preview"
+        subtitle={`File: ${filename} • Columns: ${headers.length}`}
+        action={
+          <div className="body-small text-text-secondary">
+            Showing {displayedRows} of {rowCount} rows
+            {isTruncated && <span className="text-primary-600 ml-2 font-medium">(truncated)</span>}
+          </div>
+        }
+      />
 
-      <div className="text-sm text-gray-600 mb-4">
-        <strong>File:</strong> {filename} • <strong>Columns:</strong> {headers.length}
-      </div>
-
-      {/* Table container with horizontal scroll */}
-      <div className="overflow-x-auto border border-gray-200 rounded-lg">
-        <table className="min-w-full divide-y divide-gray-200">
-          {/* Table Header */}
-          <thead className="bg-gray-50">
+      <CardContent>
+        {/* Table container with horizontal scroll */}
+        <div className="overflow-x-auto border border-gray-200 rounded-card warm-shadow">
+          <table className="min-w-full divide-y divide-gray-200">
+            {/* Table Header */}
+            <thead className="bg-secondary-50">
             <tr>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+              <th className="px-4 py-3 text-left body-xs font-medium text-secondary-700 uppercase tracking-wider border-r border-gray-200">
                 #
               </th>
               {headers.map((header, index) => (
                 <th
                   key={index}
-                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 last:border-r-0"
+                  className="px-4 py-3 text-left body-xs font-medium text-secondary-700 uppercase tracking-wider border-r border-gray-200 last:border-r-0"
                 >
                   {header}
                 </th>
@@ -184,16 +185,16 @@ const DataTable = ({ fileData }) => {
           </thead>
 
           {/* Table Body */}
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-background-warm-white divide-y divide-gray-200">
             {data.map((row, rowIndex) => (
-              <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 border-r border-gray-200 font-medium">
+              <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-background-warm-white' : 'bg-background-cream hover:bg-primary-50 transition-colors'}>
+                <td className="px-4 py-3 whitespace-nowrap body-xs text-text-muted border-r border-gray-200 font-medium">
                   {rowIndex + 1}
                 </td>
                 {headers.map((header, colIndex) => (
                   <td
                     key={colIndex}
-                    className="px-3 py-2 text-sm text-gray-900 border-r border-gray-200 last:border-r-0"
+                    className="px-4 py-3 body-small text-text-primary border-r border-gray-200 last:border-r-0"
                     title={row[header]} // Tooltip for long values
                   >
                     <div className="max-w-xs truncate">
@@ -207,23 +208,24 @@ const DataTable = ({ fileData }) => {
         </table>
       </div>
 
-      {/* Footer with summary */}
-      <div className="mt-4 text-xs text-gray-500 flex justify-between items-center">
-        <div>
-          {isTruncated && (
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              Only first 50 rows shown
-            </span>
-          )}
+        {/* Footer with summary */}
+        <div className="mt-6 pt-4 border-t border-gray-200 body-xs text-text-muted flex justify-between items-center">
+          <div>
+            {isTruncated && (
+              <span className="inline-flex items-center px-3 py-1 rounded-badge body-xs font-medium bg-primary-100 text-primary-800">
+                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                Only first 50 rows shown
+              </span>
+            )}
+          </div>
+          <div>
+            <span className="font-medium">Total:</span> {rowCount} rows × {headers.length} columns
+          </div>
         </div>
-        <div>
-          Total: {rowCount} rows × {headers.length} columns
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

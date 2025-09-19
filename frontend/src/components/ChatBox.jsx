@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import Card, { CardHeader, CardContent } from './Card';
 
 const ChatBox = ({ fileData }) => {
   const [messages, setMessages] = useState([]);
@@ -28,15 +29,15 @@ const ChatBox = ({ fileData }) => {
   // Don't render if no file is selected or if fileData is invalid
   if (!fileData || typeof fileData !== 'object') {
     return (
-      <div className="bg-white rounded-lg shadow-md flex flex-col h-96">
+      <Card className="flex flex-col h-96">
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-center text-gray-500">
+          <div className="text-center">
             <div className="text-4xl mb-4">💬</div>
-            <p className="text-lg font-medium mb-2">No file selected</p>
-            <p className="text-sm">Upload and select a CSV file to start chatting with your data</p>
+            <p className="heading-5 mb-2 text-text-secondary">No file selected</p>
+            <p className="body-small text-text-muted">Upload and select a CSV file to start chatting with your data</p>
           </div>
         </div>
-      </div>
+      </Card>
     );
   }
 
@@ -102,30 +103,26 @@ const ChatBox = ({ fileData }) => {
 
   if (!fileData) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="text-center text-gray-500">
+      <Card>
+        <div className="text-center">
           <div className="text-4xl mb-4">💬</div>
-          <h3 className="text-lg font-medium mb-2">Ready to Chat</h3>
-          <p>Upload a CSV file to start chatting with your data</p>
+          <h3 className="heading-5 mb-2 text-text-secondary">Ready to Chat</h3>
+          <p className="body-normal text-text-muted">Upload a CSV file to start chatting with your data</p>
         </div>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md flex flex-col h-96">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-800">
-          Chat with {fileData.filename || fileData.name || 'Unknown File'}
-        </h2>
-        <p className="text-sm text-gray-600">
-          {fileData.rowCount || 'Unknown'} rows • {(fileData.headers && Array.isArray(fileData.headers)) ? fileData.headers.length : 'Unknown'} columns
-        </p>
-      </div>
+    <Card padding="sm" className="flex flex-col h-96">
+      <CardHeader
+        title={`Chat with ${fileData.filename || fileData.name || 'Unknown File'}`}
+        subtitle={`${fileData.rowCount || 'Unknown'} rows • ${(fileData.headers && Array.isArray(fileData.headers)) ? fileData.headers.length : 'Unknown'} columns`}
+        className="mb-4"
+      />
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <CardContent className="flex-1 overflow-y-auto space-y-4">
         {messages.map((message, index) => (
           <div
             key={index}
@@ -134,52 +131,52 @@ const ChatBox = ({ fileData }) => {
             }`}
           >
             <div
-              className={`max-w-4xl px-4 py-2 rounded-lg ${
+              className={`max-w-4xl px-4 py-3 rounded-card ${
                 message.type === 'user'
-                  ? 'bg-primary-600 text-white'
+                  ? 'bg-primary-600 text-white warm-shadow'
                   : message.type === 'error'
-                  ? 'bg-red-100 text-red-800 border border-red-200'
+                  ? 'bg-red-50 text-red-800 border border-red-200 warm-shadow'
                   : message.type === 'system'
-                  ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                  : 'bg-gray-100 text-gray-800'
+                  ? 'bg-secondary-50 text-secondary-800 border border-secondary-200 warm-shadow'
+                  : 'bg-background-cream text-text-primary warm-shadow'
               }`}
             >
-              <p className="text-sm whitespace-pre-wrap font-mono">{message.content}</p>
+              <p className="body-small whitespace-pre-wrap">{message.content}</p>
             </div>
           </div>
         ))}
         {sending && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 text-gray-800 px-4 py-2 rounded-lg">
-              <p className="text-sm">Thinking...</p>
+            <div className="bg-background-cream text-text-primary px-4 py-3 rounded-card warm-shadow">
+              <p className="body-small">Thinking...</p>
             </div>
           </div>
         )}
         <div ref={messagesEndRef} />
-      </div>
+      </CardContent>
 
       {/* Input */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex space-x-2">
+      <div className="pt-4 border-t border-gray-200 mt-4">
+        <div className="flex space-x-3">
           <input
             type="text"
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Ask a question about your CSV data..."
-            className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="flex-1 border border-gray-300 rounded-input px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-normal"
             disabled={sending}
           />
           <button
             onClick={handleSendMessage}
             disabled={!inputMessage.trim() || sending}
-            className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            className="bg-primary-600 text-white px-4 py-2 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors body-small font-medium warm-shadow"
           >
             Send
           </button>
         </div>
       </div>
-    </div>
+    </Card>
   );
 };
 
