@@ -194,19 +194,12 @@ const ChatBox = ({ fileData, className = '' }) => {
     <Card variant="elevated" padding="sm" className={`flex flex-col h-full ${className}`}>
             <CardHeader
                 title={<span className="text-secondary-600 font-semibold">taktmate</span>}
-        subtitle={`${fileData.filename || fileData.name || 'Unknown File'} • ${fileData.rowCount || 'Unknown'} rows • ${(fileData.headers && Array.isArray(fileData.headers)) ? fileData.headers.length : 'Unknown'} columns`}
         action={
-          <div className="flex flex-col sm:flex-row items-end sm:items-center space-y-1 sm:space-y-0 sm:space-x-3">
-            {messageCount > 1 && (
-              <span className="body-xs text-text-muted hidden sm:block">
-                {messageCount - 1} message{messageCount - 1 !== 1 ? 's' : ''}
-              </span>
-            )}
-            <div className="flex items-center space-x-1">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="body-xs text-green-700 font-medium">Online</span>
-            </div>
-          </div>
+          messageCount > 1 && (
+            <span className="body-xs text-text-muted">
+              {messageCount - 1} message{messageCount - 1 !== 1 ? 's' : ''}
+            </span>
+          )
         }
         className="mb-4"
       />
@@ -363,7 +356,7 @@ const ChatBox = ({ fileData, className = '' }) => {
                 <button
                   onClick={handleSendMessage}
                   disabled={!inputMessage.trim() || sending || inputMessage.length > 500}
-                  className="bg-primary-600 text-white p-2.5 sm:p-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0 min-w-[44px] min-h-[44px]"
+                  className="bg-primary-600 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0 min-w-[44px] h-10 sm:h-12"
                   title={!inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
                 >
                   {sending ? (
@@ -378,12 +371,12 @@ const ChatBox = ({ fileData, className = '' }) => {
                 </button>
         </div>
         
-        {/* Input Helper Text */}
-        <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0 body-xs text-text-muted">
-          <span className="hidden sm:block">Press Enter to send, Shift+Enter for new line</span>
-          <span className="sm:hidden">Tap send or press Enter</span>
-          {sending && <span className="text-primary-600 font-medium">Processing your request...</span>}
-        </div>
+        {/* Processing indicator */}
+        {sending && (
+          <div className="mt-2 body-xs text-primary-600 font-medium text-center">
+            Processing your request...
+          </div>
+        )}
       </div>
     </Card>
   );
