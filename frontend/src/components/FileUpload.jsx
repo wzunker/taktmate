@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import Card, { CardHeader, CardContent, InfoCard } from './Card';
 
 const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
   const [files, setFiles] = useState([]);
@@ -269,25 +270,30 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
   };
 
   return (
-    <div className="bg-background-warm-white rounded-card card-shadow p-6 transition-shadow duration-300 hover:card-shadow-hover">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="heading-4">Upload CSV Files</h2>
-        <span className="body-small">
-          {files.length}/{MAX_FILES - uploadedFilesCount} files selected ({uploadedFilesCount} in storage)
-        </span>
-      </div>
+    <Card variant="interactive">
+      <CardHeader
+        title="Upload CSV Files"
+        subtitle="Drag and drop your files or browse to select"
+        action={
+          <span className="body-small text-text-secondary">
+            {files.length}/{MAX_FILES - uploadedFilesCount} selected ({uploadedFilesCount} in storage)
+          </span>
+        }
+      />
       
       {/* Privacy Notice */}
-      <div className="bg-primary-50 border border-primary-200 rounded-card p-4 mb-6 warm-shadow">
-        <div className="flex items-start space-x-3">
-          <div className="flex-shrink-0">
-            <svg className="w-5 h-5 text-primary-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <h4 className="text-emphasis text-primary-800 mb-1">Data Privacy & Storage</h4>
-            <p className="body-small text-primary-700 mb-2">
+      <InfoCard
+        variant="accent"
+        className="mb-6"
+        icon={
+          <svg className="w-6 h-6 text-primary-600" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+          </svg>
+        }
+        title="Data Privacy & Security"
+        description={
+          <div className="space-y-2">
+            <p className="body-small text-primary-700">
               Your files are securely stored in Azure Blob Storage with enterprise-grade encryption. 
               Files are automatically deleted after 90 days of inactivity, and you can delete them anytime.
             </p>
@@ -296,54 +302,70 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
               Your data remains private and is not shared with third parties.
             </p>
           </div>
-        </div>
-      </div>
+        }
+      />
 
-      <div className="space-y-4">
+      <CardContent className="space-y-6">
         {/* Drag and Drop Zone */}
         <div
           onDragOver={handleDragOver}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`relative border-2 border-dashed rounded-card p-8 text-center transition-all duration-200 ${
+          className={`relative border-2 border-dashed rounded-card p-10 text-center transition-all duration-300 ${
             uploadedFilesCount >= MAX_FILES || files.length >= (MAX_FILES - uploadedFilesCount)
-              ? 'border-gray-200 bg-gray-50'
+              ? 'border-gray-200 bg-background-cream'
               : isDragOver
-              ? 'border-primary-400 bg-primary-50'
-              : 'border-gray-300 hover:border-gray-400'
+              ? 'border-primary-500 bg-primary-50 shadow-lg shadow-primary-100'
+              : 'border-gray-300 hover:border-primary-400 hover:bg-primary-25'
           } ${uploading || uploadedFilesCount >= MAX_FILES || files.length >= (MAX_FILES - uploadedFilesCount) ? 'opacity-50 pointer-events-none' : ''}`}
         >
-          <div className="space-y-4">
-            <div className="mx-auto w-12 h-12 text-gray-400">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 48 48" aria-hidden="true">
+          <div className="space-y-6">
+            <div className={`mx-auto w-16 h-16 transition-colors duration-300 ${
+              isDragOver ? 'text-primary-500' : 'text-gray-400'
+            }`}>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 64 64" className="w-full h-full">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                  d="M32 8v32m0 0l8-8m-8 8l-8-8m24 8v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-8m32-24H16a4 4 0 00-4 4v16"
                 />
+                <circle cx="32" cy="20" r="2" fill="currentColor" />
               </svg>
             </div>
             <div>
-              <p className="heading-5">
+              <p className={`heading-5 transition-colors duration-300 ${
+                isDragOver ? 'text-primary-600' : 'text-text-primary'
+              }`}>
                 {uploadedFilesCount >= MAX_FILES
                   ? `Maximum ${MAX_FILES} files in storage - delete some to add more`
                   : files.length >= (MAX_FILES - uploadedFilesCount)
                   ? `Maximum ${MAX_FILES - uploadedFilesCount} files can be staged`
                   : isDragOver
-                  ? 'Drop your CSV files here'
+                  ? '✨ Drop your CSV files here ✨'
                   : 'Drag and drop your CSV files here'}
               </p>
-              {uploadedFilesCount < MAX_FILES && files.length < (MAX_FILES - uploadedFilesCount) && (
-                <p className="body-small mt-1">or</p>
+              <p className={`body-small mt-2 transition-colors duration-300 ${
+                isDragOver ? 'text-primary-700' : 'text-text-secondary'
+              }`}>
+                {isDragOver 
+                  ? 'Release to upload your files'
+                  : 'Supports CSV files up to 5MB each'
+                }
+              </p>
+              {uploadedFilesCount < MAX_FILES && files.length < (MAX_FILES - uploadedFilesCount) && !isDragOver && (
+                <p className="body-small mt-1 text-text-muted">or</p>
               )}
             </div>
-            {uploadedFilesCount < MAX_FILES && files.length < (MAX_FILES - uploadedFilesCount) && (
+            {uploadedFilesCount < MAX_FILES && files.length < (MAX_FILES - uploadedFilesCount) && !isDragOver && (
               <label
                 htmlFor="csvFile"
-                className="inline-flex items-center px-4 py-2 border border-transparent body-small font-medium rounded-button text-primary-700 bg-primary-100 hover:bg-primary-200 cursor-pointer transition-colors"
+                className="inline-flex items-center px-6 py-3 border border-transparent body-normal font-medium rounded-button text-white bg-primary-600 hover:bg-primary-700 cursor-pointer transition-all duration-300 warm-shadow hover:warm-shadow-lg"
               >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                </svg>
                 Browse Files
               </label>
             )}
@@ -373,9 +395,10 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
                     <div className="flex items-center space-x-3 flex-1 min-w-0">
                       {/* File Icon */}
                       <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                          <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                        <div className="w-10 h-10 bg-secondary-100 rounded-card flex items-center justify-center">
+                          <svg className="w-5 h-5 text-secondary-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 01.707.293L10.414 5H16a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 3v8h10V8H5z" clipRule="evenodd" />
+                            <path d="M7 10h6M7 12h4" stroke="currentColor" strokeWidth="0.5" fill="none" />
                           </svg>
                         </div>
                       </div>
@@ -389,7 +412,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
                           >
                             {file.name}
                           </button>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-badge text-xs font-medium bg-secondary-100 text-secondary-800">
                             CSV
                           </span>
                         </div>
@@ -401,17 +424,17 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
                           <span className="inline-flex items-center">
                             {uploading && uploadProgress[file.name] ? (
                               <>
-                                <div className={`w-2 h-2 rounded-full mr-1 ${
-                                  uploadProgress[file.name].step === 'requesting' ? 'bg-blue-400 animate-pulse' :
-                                  uploadProgress[file.name].step === 'uploading' ? 'bg-orange-400 animate-pulse' :
-                                  uploadProgress[file.name].step === 'complete' ? 'bg-green-400' : 'bg-yellow-400'
+                                <div className={`w-2 h-2 rounded-full mr-2 ${
+                                  uploadProgress[file.name].step === 'requesting' ? 'bg-secondary-400 animate-pulse' :
+                                  uploadProgress[file.name].step === 'uploading' ? 'bg-primary-400 animate-pulse' :
+                                  uploadProgress[file.name].step === 'complete' ? 'bg-green-400' : 'bg-primary-300'
                                 }`}></div>
-                                {uploadProgress[file.name].message}
+                                <span className="font-medium">{uploadProgress[file.name].message}</span>
                               </>
                             ) : (
                               <>
-                                <div className="w-2 h-2 bg-yellow-400 rounded-full mr-1"></div>
-                                Ready to upload
+                                <div className="w-2 h-2 bg-primary-300 rounded-full mr-2"></div>
+                                <span className="text-text-muted">Ready to upload</span>
                               </>
                             )}
                           </span>
@@ -462,8 +485,13 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
         )}
 
         {error && (
-          <div className="body-small text-red-600 bg-red-50 p-3 rounded-md">
-            {error}
+          <div className="body-small text-red-700 bg-red-50 border border-red-200 p-4 rounded-card warm-shadow">
+            <div className="flex items-start space-x-2">
+              <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span className="flex-1">{error}</span>
+            </div>
           </div>
         )}
 
@@ -476,8 +504,8 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
             ? `Uploading ${files.length} file${files.length > 1 ? 's' : ''} to blob storage...`
             : `Upload ${files.length} CSV file${files.length > 1 ? 's' : ''} to Storage`}
         </button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
