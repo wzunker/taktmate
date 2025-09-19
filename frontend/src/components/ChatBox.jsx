@@ -221,57 +221,51 @@ const ChatBox = ({ fileData, className = '' }) => {
       {/* Messages */}
       <CardContent className="flex-1 overflow-y-auto space-y-4 sm:space-y-6 px-2 sm:px-4">
         {messages.map((message, index) => (
-          <div key={index} className={`flex items-start space-x-2 sm:space-x-3 ${message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                    {/* Avatar */}
-                    <div className="flex-shrink-0">
-                      {message.type === 'user' ? (
-                        <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-medium">
-                            {getUserInitials(displayName)}
-                          </span>
-                        </div>
-              ) : message.type === 'system' ? (
-                <div className="w-8 h-8 bg-secondary-100 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-secondary-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              ) : message.type === 'error' ? (
-                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
-              ) : (
-                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center border border-gray-200">
-                  <img 
-                    src="/logo-solo.png" 
-                    alt="taktmate" 
-                    className="w-5 h-5"
-                  />
-                </div>
-              )}
-            </div>
-            
-            {/* Message Content */}
-            <div className={`flex-1 ${message.type === 'user' ? 'text-right' : ''}`}>
-              {/* Message Label */}
-                      <div className={`body-xs text-text-muted mb-1 ${message.type === 'user' ? 'text-right' : ''}`}>
-                        {message.type === 'user' ? 'You' : message.type === 'system' ? 'System' : message.type === 'error' ? 'Error' : 'taktmate'}
-                      </div>
+          <div key={index} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+            {/* Message Bubble with Avatar Inside */}
+            <div
+              className={`max-w-xs sm:max-w-lg px-3 sm:px-4 py-2 sm:py-3 rounded-card transition-all duration-200 flex items-start space-x-2 ${
+              message.type === 'user'
+                  ? 'bg-primary-600 text-white warm-shadow flex-row-reverse space-x-reverse'
+                  : message.type === 'error'
+                  ? 'bg-red-50 text-red-800 border border-red-200 warm-shadow'
+                  : message.type === 'system'
+                  ? 'bg-secondary-50 text-secondary-800 border border-secondary-200 warm-shadow'
+                  : 'bg-background-warm-white text-text-primary border border-gray-200 warm-shadow'
+              } ${message.type === 'user' ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
+            >
+              {/* Avatar inside bubble */}
+              <div className="flex-shrink-0">
+                {message.type === 'user' ? (
+                  <div className="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-medium">
+                      {getUserInitials(displayName)}
+                    </span>
+                  </div>
+                ) : message.type === 'system' ? (
+                  <div className="w-6 h-6 bg-secondary-200 rounded-full flex items-center justify-center">
+                    <svg className="w-3 h-3 text-secondary-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                ) : message.type === 'error' ? (
+                  <div className="w-6 h-6 bg-red-200 rounded-full flex items-center justify-center">
+                    <svg className="w-3 h-3 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="w-6 h-6 bg-primary-100 rounded-full flex items-center justify-center">
+                    {/* Custom Takt Delta SVG */}
+                    <svg className="w-4 h-4 text-primary-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2L2 22h20L12 2zm0 4.5L18.5 20H5.5L12 6.5z"/>
+                    </svg>
+                  </div>
+                )}
+              </div>
               
-              {/* Message Bubble */}
-              <div
-                className={`max-w-xs sm:max-w-lg inline-block px-3 sm:px-4 py-2 sm:py-3 rounded-card transition-all duration-200 ${
-                  message.type === 'user'
-                    ? 'bg-primary-600 text-white warm-shadow ml-auto'
-                    : message.type === 'error'
-                    ? 'bg-red-50 text-red-800 border border-red-200 warm-shadow'
-                    : message.type === 'system'
-                    ? 'bg-secondary-50 text-secondary-800 border border-secondary-200 warm-shadow'
-                    : 'bg-background-warm-white text-text-primary border border-gray-200 warm-shadow'
-                } ${message.type === 'user' ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
-              >
+              {/* Message Content */}
+              <div className="flex-1 min-w-0">
                 <div className="body-small sm:body-normal whitespace-pre-wrap leading-relaxed">
                   {message.content}
                 </div>
@@ -280,22 +274,21 @@ const ChatBox = ({ fileData, className = '' }) => {
           </div>
         ))}
         {sending && (
-          <div className="flex items-start space-x-2 sm:space-x-3">
-                  {/* AI Avatar */}
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center border border-gray-200">
-                      <img 
-                        src="/logo-solo.png" 
-                        alt="taktmate" 
-                        className="w-5 h-5 animate-pulse"
-                      />
-                    </div>
-                  </div>
-            
-            {/* Typing Indicator */}
-            <div className="flex-1">
-                    <div className="body-xs text-text-muted mb-1">taktmate</div>
-              <div className="bg-background-warm-white text-text-primary px-3 sm:px-4 py-2 sm:py-3 rounded-card rounded-tl-sm border border-gray-200 warm-shadow">
+          <div className="flex justify-start">
+            {/* Typing Indicator Bubble with Avatar Inside */}
+            <div className="bg-background-warm-white text-text-primary px-3 sm:px-4 py-2 sm:py-3 rounded-card rounded-tl-sm border border-gray-200 warm-shadow flex items-start space-x-2">
+              {/* Avatar inside bubble */}
+              <div className="flex-shrink-0">
+                <div className="w-6 h-6 bg-primary-100 rounded-full flex items-center justify-center">
+                  {/* Custom Takt Delta SVG with pulse */}
+                  <svg className="w-4 h-4 text-primary-600 animate-pulse" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L2 22h20L12 2zm0 4.5L18.5 20H5.5L12 6.5z"/>
+                  </svg>
+                </div>
+              </div>
+              
+              {/* Typing Content */}
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-1">
                   <span className="body-small sm:body-normal text-text-secondary">Analyzing your data</span>
                   <div className="flex space-x-1 ml-2">
