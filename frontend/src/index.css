@@ -173,9 +173,19 @@ code {
 
         /* Layout helpers for full-height design */
         .layout-full-height {
-          height: calc(100vh - 120px); /* Account for header height */
+          height: calc(100vh - 100px); /* Account for header height */
+          min-height: calc(100vh - 100px);
+          max-height: calc(100vh - 100px);
         }
 
         .layout-column {
-          height: calc(100vh - 140px); /* Account for header and padding */
+          height: calc(100vh - 116px); /* Account for header and padding */
+          min-height: calc(100vh - 116px);
+          max-height: calc(100vh - 116px);
+        }
+
+        /* Prevent body scrolling when layout is full height */
+        .full-height-layout {
+          height: 100vh;
+          overflow: hidden;
         }

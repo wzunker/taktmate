@@ -213,17 +213,17 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-background-cream">
+    <div className="full-height-layout bg-background-cream flex flex-col">
       {/* Header */}
-      <header className="bg-gradient-to-r from-background-warm-white to-background-cream shadow-sm border-b border-gray-200 sticky top-0 z-50 backdrop-blur-sm bg-opacity-95 sticky-header">
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+      <header className="bg-gradient-to-r from-background-warm-white to-background-cream shadow-sm border-b border-gray-200 z-50 backdrop-blur-sm bg-opacity-95 sticky-header flex-shrink-0">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
                 <div className="flex items-center min-w-0 flex-1">
                   {/* Main Takt Logo */}
                   <img 
                     src="/logo-takt.png" 
                     alt="Takt" 
-                    className="h-14 sm:h-16 w-auto"
+                    className="h-18 sm:h-20 w-auto"
                   />
                 </div>
             
@@ -272,10 +272,10 @@ function App() {
 
 
       {/* Main Content - 4 Column Layout */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 layout-full-height">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-4 flex-1 min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
           {/* Sources Column - Left (3 columns) */}
-          <div className="lg:col-span-3 layout-column">
+          <div className="lg:col-span-3 h-full">
             <SourcesPanel 
               onFileUploaded={handleFileUploaded}
               uploadedFiles={uploadedFiles}
@@ -288,12 +288,12 @@ function App() {
           </div>
           
           {/* Chat Column - Middle (6 columns) */}
-          <div className="lg:col-span-6 layout-column">
+          <div className="lg:col-span-6 h-full">
             <ChatBox fileData={activeFileData} className="h-full" />
           </div>
           
           {/* Data Table Column - Right (3 columns) */}
-          <div className="lg:col-span-3 layout-column">
+          <div className="lg:col-span-3 h-full">
             {activeFileData ? (
               <DataTable fileData={activeFileData} className="h-full" />
             ) : (
@@ -314,42 +314,7 @@ function App() {
           </div>
         </div>
 
-        {/* Info Section - Only show when no files uploaded */}
-        {uploadedFiles.length === 0 && (
-          <div className="mt-8 bg-primary-50 border border-primary-200 rounded-card p-8 card-shadow">
-            <h3 className="heading-5 text-primary-800 mb-2">How it works</h3>
-            <ol className="list-decimal list-inside space-y-2 body-normal text-primary-700">
-              <li>Upload CSV files (up to 5 files, max 5MB each)</li>
-              <li>The AI will analyze your data structure</li>
-              <li>Click on any file to view its data in the table</li>
-              <li>Ask questions about your data in natural language</li>
-              <li>Switch between files to analyze different datasets</li>
-            </ol>
-          </div>
-        )}
       </main>
-
-      {/* Footer */}
-      <footer className="mt-12 sm:mt-16 lg:mt-20 bg-background-warm-white border-t border-gray-200 warm-shadow">
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
-          <div className="text-center space-y-3 sm:space-y-2">
-            <p className="body-small">
-              TaktMate MVP - Powered by OpenAI GPT-4
-            </p>
-            <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 body-xs">
-              <span>🔒 Enterprise-grade security</span>
-              <span className="hidden sm:inline">•</span>
-              <span>📁 Files auto-deleted after 90 days</span>
-              <span className="hidden sm:inline">•</span>
-              <span>🛡️ Your data stays private</span>
-            </div>
-            <p className="body-xs max-w-2xl mx-auto px-2">
-              Files are securely stored in Azure with encryption at rest and in transit. 
-              Data is processed only for document analysis and remains within your private workspace.
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
