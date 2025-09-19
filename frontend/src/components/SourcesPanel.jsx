@@ -74,20 +74,40 @@ const SourcesPanel = ({
   };
 
   return (
-    <Card variant="elevated" className="h-full flex flex-col">
+    <Card 
+      variant="elevated" 
+      className={`h-full flex flex-col transition-all duration-200 ${
+        dragActive 
+          ? 'ring-2 ring-primary-400 bg-primary-50' 
+          : 'hover:bg-primary-25'
+      }`}
+      onDragEnter={handleDrag}
+      onDragLeave={handleDrag}
+      onDragOver={handleDrag}
+      onDrop={handleDrop}
+    >
       <CardHeader
-        title="Sources"
-        subtitle={`${uploadedFiles.length} file${uploadedFiles.length !== 1 ? 's' : ''} • ${storageQuota.usedDisplay}/${storageQuota.limitDisplay}`}
+        title={<span className="text-secondary-600 font-semibold lowercase">sources</span>}
         action={
-          <button
-            onClick={() => setShowPrivacyInfo(!showPrivacyInfo)}
-            className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
-            title="Privacy & Security Information"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowPrivacyInfo(!showPrivacyInfo)}
+              className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+              title="Privacy & Security Information"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={openFileDialog}
+              disabled={uploading}
+              className="bg-primary-600 text-white px-3 py-1.5 rounded-button body-xs font-medium hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors warm-shadow"
+            >
+              {uploading ? 'Uploading...' : 'Add'}
+            </button>
+          </div>
         }
       />
       
@@ -110,52 +130,27 @@ const SourcesPanel = ({
           </div>
         )}
 
-        {/* Drag and Drop Upload Area */}
-        <div
-          className={`relative border-2 border-dashed rounded-card p-6 text-center transition-all duration-200 ${
-            dragActive 
-              ? 'border-primary-400 bg-primary-50' 
-              : 'border-gray-300 hover:border-primary-300 hover:bg-primary-25'
-          }`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv"
-            onChange={handleFileInput}
-            className="hidden"
-          />
-          
-          <div className="space-y-3">
-            <div className="w-12 h-12 mx-auto bg-primary-100 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv"
+          onChange={handleFileInput}
+          className="hidden"
+        />
+
+        {/* Drag and drop hint when dragging */}
+        {dragActive && (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 mx-auto mb-4 bg-primary-100 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
             </div>
-            
-            <div>
-              <p className="body-small font-medium text-text-primary">
-                {dragActive ? 'Drop your CSV file here' : 'Drag & drop CSV files'}
-              </p>
-              <p className="body-xs text-text-muted mt-1">
-                Up to 5MB each
-              </p>
-            </div>
-            
-            <button
-              type="button"
-              onClick={openFileDialog}
-              disabled={uploading}
-              className="bg-primary-600 text-white px-4 py-2 rounded-button body-small font-medium hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors warm-shadow"
-            >
-              {uploading ? 'Uploading...' : 'Add'}
-            </button>
+            <p className="body-large font-medium text-primary-600">Drop your CSV file here</p>
+            <p className="body-small text-primary-500 mt-1">Up to 5MB each</p>
           </div>
-        </div>
+        )}
 
         {/* Error Message */}
         {error && (
@@ -171,7 +166,7 @@ const SourcesPanel = ({
         <div className="flex-1 min-h-0">
           {uploadedFiles.length > 0 ? (
             <div className="space-y-2">
-              <h4 className="body-small font-medium text-text-secondary">Files ({uploadedFiles.length})</h4>
+              <h4 className="body-small font-medium text-text-secondary">Files ({uploadedFiles.length}/5)</h4>
               <div className="space-y-1 max-h-full overflow-y-auto mobile-scrollbar">
                 {uploadedFiles.map((file) => (
                   <div
@@ -241,16 +236,17 @@ const SourcesPanel = ({
                 ))}
               </div>
             </div>
-          ) : (
+          ) : !dragActive ? (
             <div className="text-center py-8">
               <div className="w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center">
                 <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
                 </svg>
               </div>
-              <p className="body-small text-text-muted">No files uploaded yet</p>
+              <p className="body-small text-text-muted mb-2">No files uploaded yet</p>
+              <p className="body-xs text-text-muted">Drag & drop CSV files or click Add</p>
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Storage Quota */}
