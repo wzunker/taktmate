@@ -14,6 +14,7 @@ const SourcesPanel = ({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleDrag = (e) => {
@@ -87,31 +88,49 @@ const SourcesPanel = ({
       onDrop={handleDrop}
     >
       <CardHeader
-        title={<span className="text-secondary-600 font-semibold lowercase">sources</span>}
+        title={
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="flex items-center space-x-2 text-secondary-600 font-semibold lowercase hover:text-secondary-700 transition-colors"
+          >
+            <span>sources</span>
+            <svg 
+              className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`}
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        }
         action={
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setShowPrivacyInfo(!showPrivacyInfo)}
-              className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
-              title="Privacy & Security Information"
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={openFileDialog}
-              disabled={uploading}
-              className="bg-primary-600 text-white px-3 py-1.5 rounded-button body-xs font-medium hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors warm-shadow"
-            >
-              {uploading ? 'Uploading...' : 'Add'}
-            </button>
-          </div>
+          !isCollapsed && (
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setShowPrivacyInfo(!showPrivacyInfo)}
+                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+                title="Privacy & Security Information"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={openFileDialog}
+                disabled={uploading}
+                className="bg-primary-600 text-white px-3 py-1.5 rounded-button body-xs font-medium hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors warm-shadow"
+              >
+                {uploading ? 'Uploading...' : 'Add'}
+              </button>
+            </div>
+          )
         }
       />
       
-      <CardContent className="flex-1 flex flex-col space-y-4">
+      {!isCollapsed && (
+        <CardContent className="flex-1 flex flex-col space-y-4">
         {/* Privacy Info Expandable */}
         {showPrivacyInfo && (
           <div className="bg-amber-50 border border-amber-200 rounded-card p-4 space-y-2">
@@ -264,7 +283,8 @@ const SourcesPanel = ({
             ></div>
           </div>
         </div>
-      </CardContent>
+        </CardContent>
+      )}
     </Card>
   );
 };

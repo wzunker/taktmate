@@ -11,6 +11,7 @@ const DataTable = ({ fileData, className = '' }) => {
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
   const [isMobile, setIsMobile] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Check for mobile screen size
   useEffect(() => {
@@ -232,28 +233,26 @@ const DataTable = ({ fileData, className = '' }) => {
   return (
     <Card className={`h-full flex flex-col ${className}`}>
       <CardHeader
-        title="Data Table"
-        subtitle={`${filename} • ${headers.length} columns • ${totalRows.toLocaleString()} rows`}
-        action={
-          <div className="flex items-center space-x-4">
-            {/* Current page info */}
-            <div className="body-small text-text-secondary">
-              Showing {startRow}-{endRow} of {totalRows.toLocaleString()}
-              {isTruncated && <span className="text-primary-600 ml-2 font-medium">(limited to 1,000 rows)</span>}
-            </div>
-            {/* Pagination controls - simple version for header */}
-            {totalPages > 1 && (
-              <div className="flex items-center space-x-1">
-                <span className="body-xs text-text-muted">Page</span>
-                <span className="body-xs font-medium text-text-primary">{currentPage}</span>
-                <span className="body-xs text-text-muted">of {totalPages}</span>
-              </div>
-            )}
-          </div>
+        title={
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="flex items-center space-x-2 text-secondary-600 font-semibold lowercase hover:text-secondary-700 transition-colors"
+          >
+            <span>preview</span>
+            <svg 
+              className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`}
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
         }
       />
 
-      <CardContent className="flex-1 flex flex-col min-h-0">
+      {!isCollapsed && (
+        <CardContent className="flex-1 flex flex-col min-h-0">
         {/* Desktop Table View */}
         <div className="hidden md:block flex-1 min-h-0">
           <div className="h-full overflow-auto border border-gray-200 rounded-card warm-shadow">
@@ -415,8 +414,8 @@ const DataTable = ({ fileData, className = '' }) => {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
             {/* Left side - Summary and warnings */}
             <div className="flex items-center space-x-4">
-              <div className="body-small text-text-secondary">
-                <span className="font-medium">Dataset:</span> {rowCount.toLocaleString()} rows × {headers.length} columns
+              <div className="body-small text-text-secondary font-medium">
+                {rowCount.toLocaleString()} rows × {headers.length} columns
               </div>
               {isTruncated && (
                 <span className="inline-flex items-center px-2.5 py-1 rounded-badge body-xs font-medium bg-amber-100 text-amber-800">
@@ -439,9 +438,6 @@ const DataTable = ({ fileData, className = '' }) => {
             {/* Right side - Pagination controls */}
             {totalPages > 1 && (
               <div className="flex items-center space-x-2">
-                <span className="body-small text-text-secondary mr-2 hidden sm:block">
-                  Page {currentPage} of {totalPages}
-                </span>
                 
                 {/* Previous button */}
                 <button
@@ -506,7 +502,8 @@ const DataTable = ({ fileData, className = '' }) => {
             )}
           </div>
         </div>
-      </CardContent>
+        </CardContent>
+      )}
     </Card>
   );
 };
