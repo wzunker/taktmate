@@ -89,7 +89,7 @@ const SourcesPanel = ({
       onDrop={handleDrop}
     >
       <CardHeader
-        title={<span className="text-secondary-600 font-semibold lowercase">sources</span>}
+        title={!isCollapsed ? <span className="text-secondary-600 font-semibold lowercase">sources</span> : null}
         action={
           <button
             onClick={() => onToggleCollapse(!isCollapsed)}
