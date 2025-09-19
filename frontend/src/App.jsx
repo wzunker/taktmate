@@ -216,9 +216,9 @@ function App() {
     <div className="min-h-screen bg-background-cream">
       {/* Header */}
       <header className="bg-gradient-to-r from-background-warm-white to-background-cream shadow-sm border-b border-gray-200 sticky top-0 z-50 backdrop-blur-sm bg-opacity-95 sticky-header">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
+            <div className="flex items-center min-w-0 flex-1">
               <LogoWithText 
                 text="TaktMate" 
                 subtitle="CSV Chat MVP"
@@ -235,12 +235,24 @@ function App() {
             </div>
             
             {/* Status Indicator - shows current context (hidden on mobile) */}
-            <div className="flex-1 justify-center hidden md:flex">
+            <div className="flex-1 justify-center hidden lg:flex mx-4">
               {activeFileData && (
                 <div className="flex items-center space-x-2 bg-primary-50 border border-primary-200 rounded-full px-3 py-1">
                   <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse"></div>
-                  <span className="body-xs text-primary-800 font-medium">
+                  <span className="body-xs text-primary-800 font-medium truncate max-w-48">
                     Analyzing: {activeFileData.name}
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            {/* Mobile Status Indicator - simplified version */}
+            <div className="flex-1 justify-center flex lg:hidden mx-2">
+              {activeFileData && (
+                <div className="flex items-center space-x-1 bg-primary-50 border border-primary-200 rounded-full px-2 py-1">
+                  <div className="w-1.5 h-1.5 bg-primary-500 rounded-full animate-pulse"></div>
+                  <span className="body-xs text-primary-800 font-medium">
+                    Active
                   </span>
                 </div>
               )}
@@ -248,19 +260,31 @@ function App() {
             
             {/* User Profile and Logout */}
             {isAuthenticated && (
-              <UserProfile />
+              <div className="flex-shrink-0">
+                <UserProfile />
+              </div>
             )}
           </div>
-          <p className="mt-1 body-small">
-            Upload a CSV file and chat with your data using AI
-          </p>
+          
+          {/* Subtitle - responsive */}
+          <div className="mt-1 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <p className="body-small text-text-secondary">
+              Upload a CSV file and chat with your data using AI
+            </p>
+            {/* Mobile file status */}
+            {activeFileData && (
+              <p className="body-xs text-primary-600 font-medium mt-1 sm:mt-0 lg:hidden truncate">
+                📊 {activeFileData.name}
+              </p>
+            )}
+          </div>
         </div>
       </header>
 
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
+      <main className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+        <div className="space-y-4 sm:space-y-6 lg:space-y-8">
           {/* File Upload Section */}
           <FileUpload 
             onFileUploaded={handleFileUploaded} 
@@ -274,7 +298,7 @@ function App() {
                 title="File Management"
                 subtitle="Manage your uploaded CSV files and storage"
                 action={
-                  <div className="flex items-center space-x-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                     {/* File Count Badge */}
                     <div className="bg-secondary-100 text-secondary-800 px-3 py-1 rounded-badge body-xs font-medium">
                       {uploadedFiles.length} file{uploadedFiles.length > 1 ? 's' : ''}
@@ -283,7 +307,7 @@ function App() {
                     <div className="text-right">
                       <div className="body-xs text-text-secondary mb-1">Storage Usage</div>
                       <div className="flex items-center space-x-2">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
+                        <div className="w-20 sm:w-24 bg-gray-200 rounded-full h-2">
                           <div 
                             className="bg-primary-600 h-2 rounded-full transition-all duration-300" 
                             style={{ width: `${Math.min(100, (storageQuota.used / storageQuota.total) * 100)}%` }}
@@ -301,10 +325,10 @@ function App() {
                 <div className="border border-gray-200 rounded-card bg-background-warm-white warm-shadow">
                   <div className="divide-y divide-gray-100">
                   {uploadedFiles.map((file) => (
-                    <div key={file.fileId} className={`px-6 py-4 transition-colors ${
+                    <div key={file.fileId} className={`px-3 sm:px-4 lg:px-6 py-3 sm:py-4 transition-colors ${
                       activeFileId === file.fileId ? 'bg-primary-50 border-l-4 border-l-primary-500' : 'hover:bg-background-cream'
                     }`}>
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                         <div className="flex items-center space-x-3 flex-1 min-w-0">
                           {/* File Icon */}
                           <div className="flex-shrink-0">
@@ -371,7 +395,7 @@ function App() {
                         </div>
                         
                         {/* Action Buttons */}
-                        <div className="flex items-center space-x-1 ml-4">
+                        <div className="flex items-center justify-end sm:justify-start space-x-1 sm:ml-4 w-full sm:w-auto">
                           <button
                             type="button"
                             onClick={() => handleFileSelected(file.fileId)}
@@ -440,20 +464,20 @@ function App() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-20 bg-background-warm-white border-t border-gray-200 warm-shadow">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="text-center space-y-2">
+      <footer className="mt-12 sm:mt-16 lg:mt-20 bg-background-warm-white border-t border-gray-200 warm-shadow">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6">
+          <div className="text-center space-y-3 sm:space-y-2">
             <p className="body-small">
               TaktMate MVP - Powered by OpenAI GPT-4
             </p>
-            <div className="flex justify-center items-center space-x-4 body-xs">
+            <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-4 body-xs">
               <span>🔒 Enterprise-grade security</span>
-              <span>•</span>
+              <span className="hidden sm:inline">•</span>
               <span>📁 Files auto-deleted after 90 days</span>
-              <span>•</span>
+              <span className="hidden sm:inline">•</span>
               <span>🛡️ Your data stays private</span>
             </div>
-            <p className="body-xs max-w-2xl mx-auto">
+            <p className="body-xs max-w-2xl mx-auto px-2">
               Files are securely stored in Azure with encryption at rest and in transit. 
               Data is processed only for document analysis and remains within your private workspace.
             </p>

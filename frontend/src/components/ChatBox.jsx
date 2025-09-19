@@ -191,14 +191,14 @@ const ChatBox = ({ fileData }) => {
   }
 
   return (
-    <Card variant="elevated" padding="sm" className="flex flex-col h-96">
+    <Card variant="elevated" padding="sm" className="flex flex-col h-80 sm:h-96">
       <CardHeader
         title="AI Data Assistant"
         subtitle={`Analyzing: ${fileData.filename || fileData.name || 'Unknown File'} • ${fileData.rowCount || 'Unknown'} rows • ${(fileData.headers && Array.isArray(fileData.headers)) ? fileData.headers.length : 'Unknown'} columns`}
         action={
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-col sm:flex-row items-end sm:items-center space-y-1 sm:space-y-0 sm:space-x-3">
             {messageCount > 1 && (
-              <span className="body-xs text-text-muted">
+              <span className="body-xs text-text-muted hidden sm:block">
                 {messageCount - 1} message{messageCount - 1 !== 1 ? 's' : ''}
               </span>
             )}
@@ -212,9 +212,9 @@ const ChatBox = ({ fileData }) => {
       />
 
       {/* Messages */}
-      <CardContent className="flex-1 overflow-y-auto space-y-6">
+      <CardContent className="flex-1 overflow-y-auto space-y-4 sm:space-y-6 px-2 sm:px-4">
         {messages.map((message, index) => (
-          <div key={index} className={`flex items-start space-x-3 ${message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
+          <div key={index} className={`flex items-start space-x-2 sm:space-x-3 ${message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
             {/* Avatar */}
             <div className="flex-shrink-0">
               {message.type === 'user' ? (
@@ -259,7 +259,7 @@ const ChatBox = ({ fileData }) => {
               
               {/* Message Bubble */}
               <div
-                className={`max-w-lg inline-block px-4 py-3 rounded-card transition-all duration-200 ${
+                className={`max-w-xs sm:max-w-lg inline-block px-3 sm:px-4 py-2 sm:py-3 rounded-card transition-all duration-200 ${
                   message.type === 'user'
                     ? 'bg-primary-600 text-white warm-shadow ml-auto'
                     : message.type === 'error'
@@ -269,7 +269,7 @@ const ChatBox = ({ fileData }) => {
                     : 'bg-background-warm-white text-text-primary border border-gray-200 warm-shadow'
                 } ${message.type === 'user' ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
               >
-                <div className="body-normal whitespace-pre-wrap leading-relaxed">
+                <div className="body-small sm:body-normal whitespace-pre-wrap leading-relaxed">
                   {message.content}
                 </div>
               </div>
@@ -277,7 +277,7 @@ const ChatBox = ({ fileData }) => {
           </div>
         ))}
         {sending && (
-          <div className="flex items-start space-x-3">
+          <div className="flex items-start space-x-2 sm:space-x-3">
             {/* AI Avatar */}
             <div className="flex-shrink-0">
               <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
@@ -291,13 +291,13 @@ const ChatBox = ({ fileData }) => {
             {/* Typing Indicator */}
             <div className="flex-1">
               <div className="body-xs text-text-muted mb-1">AI Assistant</div>
-              <div className="bg-background-warm-white text-text-primary px-4 py-3 rounded-card rounded-tl-sm border border-gray-200 warm-shadow">
+              <div className="bg-background-warm-white text-text-primary px-3 sm:px-4 py-2 sm:py-3 rounded-card rounded-tl-sm border border-gray-200 warm-shadow">
                 <div className="flex items-center space-x-1">
-                  <span className="body-normal text-text-secondary">Analyzing your data</span>
+                  <span className="body-small sm:body-normal text-text-secondary">Analyzing your data</span>
                   <div className="flex space-x-1 ml-2">
-                    <div className={`w-2 h-2 bg-primary-400 rounded-full transition-opacity duration-300 ${typingDots >= 1 ? 'opacity-100' : 'opacity-30'}`}></div>
-                    <div className={`w-2 h-2 bg-primary-400 rounded-full transition-opacity duration-300 ${typingDots >= 2 ? 'opacity-100' : 'opacity-30'}`}></div>
-                    <div className={`w-2 h-2 bg-primary-400 rounded-full transition-opacity duration-300 ${typingDots >= 3 ? 'opacity-100' : 'opacity-30'}`}></div>
+                    <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary-400 rounded-full transition-opacity duration-300 ${typingDots >= 1 ? 'opacity-100' : 'opacity-30'}`}></div>
+                    <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary-400 rounded-full transition-opacity duration-300 ${typingDots >= 2 ? 'opacity-100' : 'opacity-30'}`}></div>
+                    <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary-400 rounded-full transition-opacity duration-300 ${typingDots >= 3 ? 'opacity-100' : 'opacity-30'}`}></div>
                   </div>
                 </div>
               </div>
@@ -308,12 +308,12 @@ const ChatBox = ({ fileData }) => {
       </CardContent>
 
       {/* Enhanced Input Area */}
-      <div className="pt-4 border-t border-gray-200 mt-4">
+      <div className="pt-3 sm:pt-4 border-t border-gray-200 mt-4 px-2 sm:px-0">
         {/* Quick Suggestions */}
         {messages.length <= 1 && (
           <div className="mb-3">
             <div className="body-xs text-text-muted mb-2">💡 Try asking:</div>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {[
                 "What are the column names?",
                 "Show me summary statistics",
@@ -324,7 +324,7 @@ const ChatBox = ({ fileData }) => {
                   key={index}
                   onClick={() => setInputMessage(suggestion)}
                   disabled={sending}
-                  className="px-3 py-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 rounded-badge body-xs font-medium transition-colors disabled:opacity-50"
+                  className="px-3 py-2 bg-primary-50 hover:bg-primary-100 text-primary-700 rounded-badge body-xs font-medium transition-colors disabled:opacity-50 text-left"
                 >
                   {suggestion}
                 </button>
@@ -334,7 +334,7 @@ const ChatBox = ({ fileData }) => {
         )}
         
         {/* Input Row */}
-        <div className="flex items-end space-x-3">
+        <div className="flex items-end space-x-2 sm:space-x-3">
           <div className="flex-1 relative">
             <textarea
               ref={inputRef}
@@ -342,19 +342,19 @@ const ChatBox = ({ fileData }) => {
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Ask a question about your CSV data..."
-              className="w-full border border-gray-300 rounded-input px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-normal resize-none transition-all duration-200"
+              className="w-full border border-gray-300 rounded-input px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-small sm:body-normal resize-none transition-all duration-200"
               disabled={sending}
               rows="1"
-              style={{ minHeight: '44px', maxHeight: '120px' }}
+              style={{ minHeight: '40px', maxHeight: '100px' }}
               onInput={(e) => {
                 e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
               }}
             />
             
             {/* Character Count */}
             {inputMessage.length > 100 && (
-              <div className="absolute bottom-1 right-12 body-xs text-text-muted">
+              <div className="absolute bottom-1 right-10 sm:right-12 body-xs text-text-muted">
                 {inputMessage.length}/500
               </div>
             )}
@@ -363,15 +363,15 @@ const ChatBox = ({ fileData }) => {
           <button
             onClick={handleSendMessage}
             disabled={!inputMessage.trim() || sending || inputMessage.length > 500}
-            className="bg-primary-600 text-white p-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0"
+            className="bg-primary-600 text-white p-2.5 sm:p-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0 min-w-[44px] min-h-[44px]"
             title={!inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
           >
             {sending ? (
-              <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
             )}
@@ -379,8 +379,9 @@ const ChatBox = ({ fileData }) => {
         </div>
         
         {/* Input Helper Text */}
-        <div className="mt-2 flex items-center justify-between body-xs text-text-muted">
-          <span>Press Enter to send, Shift+Enter for new line</span>
+        <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-1 sm:space-y-0 body-xs text-text-muted">
+          <span className="hidden sm:block">Press Enter to send, Shift+Enter for new line</span>
+          <span className="sm:hidden">Tap send or press Enter</span>
           {sending && <span className="text-primary-600 font-medium">Processing your request...</span>}
         </div>
       </div>
