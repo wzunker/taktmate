@@ -98,14 +98,13 @@ const DataTable = ({ fileData, className = '' }) => {
 
   // Get pagination info
   const getPaginationInfo = () => {
-    if (!csvData) return { totalPages: 0, startRow: 0, endRow: 0 };
+    if (!csvData) return { totalPages: 0, startRow: 0 };
     
     const totalRows = csvData.data.length;
     const totalPages = Math.ceil(totalRows / rowsPerPage);
     const startRow = (currentPage - 1) * rowsPerPage + 1;
-    const endRow = Math.min(currentPage * rowsPerPage, totalRows);
     
-    return { totalPages, startRow, endRow, totalRows };
+    return { totalPages, startRow };
   };
 
   // Fetch file content from blob storage
@@ -213,7 +212,7 @@ const DataTable = ({ fileData, className = '' }) => {
     return null;
   }
 
-  const { filename, headers, data, rowCount } = csvData;
+  const { headers, data, rowCount } = csvData;
   
   // Additional safety check for headers
   if (!headers || !Array.isArray(headers) || !data || !Array.isArray(data)) {
@@ -227,7 +226,7 @@ const DataTable = ({ fileData, className = '' }) => {
   }
   
   const paginatedData = getSortedAndPaginatedData();
-  const { totalPages, startRow, endRow, totalRows } = getPaginationInfo();
+  const { totalPages, startRow } = getPaginationInfo();
   const isTruncated = rowCount > 1000;
 
   return (
