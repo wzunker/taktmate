@@ -21,16 +21,72 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--takt-canvas-cream);
   color: var(--takt-iron-grey);
+  font-weight: 400; /* Poppins Regular */
+  line-height: 1.5;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* Takt Typography Utilities */
+@layer components {
+  /* Heading Styles */
+  .heading-1 {
+    @apply text-4xl font-bold text-text-primary leading-tight;
+  }
+  
+  .heading-2 {
+    @apply text-3xl font-bold text-text-primary leading-tight;
+  }
+  
+  .heading-3 {
+    @apply text-2xl font-semibold text-text-primary leading-snug;
+  }
+  
+  .heading-4 {
+    @apply text-xl font-semibold text-text-primary leading-snug;
+  }
+  
+  .heading-5 {
+    @apply text-lg font-medium text-text-primary leading-normal;
+  }
+  
+  /* Body Text Styles */
+  .body-large {
+    @apply text-lg font-normal text-text-primary leading-relaxed;
+  }
+  
+  .body-normal {
+    @apply text-base font-normal text-text-primary leading-normal;
+  }
+  
+  .body-small {
+    @apply text-sm font-normal text-text-secondary leading-normal;
+  }
+  
+  .body-xs {
+    @apply text-xs font-normal text-text-muted leading-tight;
+  }
+  
+  /* Special Text Styles */
+  .text-emphasis {
+    @apply font-medium text-text-primary;
+  }
+  
+  .text-subtle {
+    @apply font-normal text-text-muted;
+  }
+  
+  .text-brand {
+    @apply font-semibold text-primary-600;
+  }
 }

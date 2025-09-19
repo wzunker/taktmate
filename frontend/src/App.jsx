@@ -216,8 +216,8 @@ function App() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-text-primary">TaktMate</h1>
-              <span className="ml-2 text-sm text-text-secondary">CSV Chat MVP</span>
+              <h1 className="heading-3">TaktMate</h1>
+              <span className="ml-2 body-small">CSV Chat MVP</span>
             </div>
             
             {/* User Profile and Logout */}
@@ -225,7 +225,7 @@ function App() {
               <UserProfile />
             )}
           </div>
-          <p className="mt-1 text-sm text-text-secondary">
+          <p className="mt-1 body-small">
             Upload a CSV file and chat with your data using AI
           </p>
         </div>
@@ -245,8 +245,8 @@ function App() {
           {uploadedFiles.length > 0 && (
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">Uploaded Files</h2>
-                <div className="text-sm text-gray-500 space-y-1">
+                <h2 className="heading-4">Uploaded Files</h2>
+                <div className="body-small space-y-1">
                   <div>{uploadedFiles.length} file{uploadedFiles.length > 1 ? 's' : ''} in storage</div>
                   <div className="flex items-center space-x-2">
                     <div className="flex-1 bg-gray-200 rounded-full h-2">
@@ -255,7 +255,7 @@ function App() {
                         style={{ width: `${Math.min(100, (storageQuota.used / storageQuota.total) * 100)}%` }}
                       ></div>
                     </div>
-                    <span className="text-xs whitespace-nowrap">
+                    <span className="body-xs whitespace-nowrap">
                       {storageQuota.usedDisplay}/{storageQuota.limitDisplay}
                     </span>
                   </div>
@@ -287,7 +287,7 @@ function App() {
                             <div className="flex items-center space-x-2">
                               <button
                                 onClick={() => handleFileDownload(file)}
-                                className="text-sm font-medium text-gray-900 truncate hover:text-primary-600 transition-colors cursor-pointer text-left"
+                                className="text-emphasis truncate hover:text-primary-600 transition-colors cursor-pointer text-left"
                                 title="Click to download file"
                               >
                                 {file.name}
@@ -301,7 +301,7 @@ function App() {
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center mt-1 space-x-4 text-xs text-gray-500">
+                            <div className="flex items-center mt-1 space-x-4 body-xs">
                               <span>{(file.size / 1024).toFixed(1)} KB</span>
                               <span>•</span>
                               <span>{new Date(file.lastModified).toLocaleDateString()}</span>
@@ -368,9 +368,9 @@ function App() {
           
           {/* Info Section */}
           {uploadedFiles.length === 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-blue-900 mb-2">How it works</h3>
-              <ol className="list-decimal list-inside space-y-2 text-blue-800">
+            <div className="bg-primary-50 border border-primary-200 rounded-lg p-6">
+              <h3 className="heading-5 text-primary-800 mb-2">How it works</h3>
+              <ol className="list-decimal list-inside space-y-2 body-normal text-primary-700">
                 <li>Upload CSV files (up to 5 files, max 5MB each)</li>
                 <li>The AI will analyze your data structure</li>
                 <li>Click on any file to view its data in the table</li>
@@ -386,17 +386,17 @@ function App() {
       <footer className="mt-16 bg-white border-t border-gray-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="text-center space-y-2">
-            <p className="text-sm text-gray-500">
+            <p className="body-small">
               TaktMate MVP - Powered by OpenAI GPT-4
             </p>
-            <div className="flex justify-center items-center space-x-4 text-xs text-gray-400">
+            <div className="flex justify-center items-center space-x-4 body-xs">
               <span>🔒 Enterprise-grade security</span>
               <span>•</span>
               <span>📁 Files auto-deleted after 90 days</span>
               <span>•</span>
               <span>🛡️ Your data stays private</span>
             </div>
-            <p className="text-xs text-gray-400 max-w-2xl mx-auto">
+            <p className="body-xs max-w-2xl mx-auto">
               Files are securely stored in Azure with encryption at rest and in transit. 
               Data is processed only for document analysis and remains within your private workspace.
             </p>

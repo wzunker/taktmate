@@ -271,8 +271,8 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-gray-800">Upload CSV Files</h2>
-        <span className="text-sm text-gray-500">
+        <h2 className="heading-4">Upload CSV Files</h2>
+        <span className="body-small">
           {files.length}/{MAX_FILES - uploadedFilesCount} files selected ({uploadedFilesCount} in storage)
         </span>
       </div>
@@ -286,12 +286,12 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
             </svg>
           </div>
           <div className="flex-1">
-            <h4 className="text-sm font-medium text-blue-900 mb-1">Data Privacy & Storage</h4>
-            <p className="text-sm text-blue-800 mb-2">
+            <h4 className="text-emphasis text-primary-800 mb-1">Data Privacy & Storage</h4>
+            <p className="body-small text-primary-700 mb-2">
               Your files are securely stored in Azure Blob Storage with enterprise-grade encryption. 
               Files are automatically deleted after 90 days of inactivity, and you can delete them anytime.
             </p>
-            <p className="text-xs text-blue-700">
+            <p className="body-xs text-primary-600">
               By uploading files, you consent to processing for document analysis and AI chat functionality. 
               Your data remains private and is not shared with third parties.
             </p>
@@ -326,7 +326,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
               </svg>
             </div>
             <div>
-              <p className="text-lg font-medium text-gray-900">
+              <p className="heading-5">
                 {uploadedFilesCount >= MAX_FILES
                   ? `Maximum ${MAX_FILES} files in storage - delete some to add more`
                   : files.length >= (MAX_FILES - uploadedFilesCount)
@@ -336,7 +336,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
                   : 'Drag and drop your CSV files here'}
               </p>
               {uploadedFilesCount < MAX_FILES && files.length < (MAX_FILES - uploadedFilesCount) && (
-                <p className="text-sm text-gray-500 mt-1">or</p>
+                <p className="body-small mt-1">or</p>
               )}
             </div>
             {uploadedFilesCount < MAX_FILES && files.length < (MAX_FILES - uploadedFilesCount) && (
@@ -362,7 +362,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
         {files.length > 0 && (
           <div className="border border-gray-200 rounded-lg bg-white">
             <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-              <h3 className="text-sm font-medium text-gray-900">
+              <h3 className="text-emphasis">
                 Selected Files ({files.length}/{MAX_FILES})
               </h3>
             </div>
@@ -385,7 +385,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={() => downloadFile(file)}
-                            className="text-sm font-medium text-gray-900 truncate hover:text-blue-600 transition-colors cursor-pointer text-left"
+                            className="text-emphasis truncate hover:text-primary-600 transition-colors cursor-pointer text-left"
                           >
                             {file.name}
                           </button>
@@ -393,7 +393,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
                             CSV
                           </span>
                         </div>
-                        <div className="flex items-center mt-1 space-x-4 text-xs text-gray-500">
+                        <div className="flex items-center mt-1 space-x-4 body-xs">
                           <span>{(file.size / 1024).toFixed(1)} KB</span>
                           <span>•</span>
                           <span>{new Date().toLocaleDateString()}</span>
@@ -449,7 +449,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
             
             {/* File List Footer */}
             <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 rounded-b-lg">
-              <div className="flex items-center justify-between text-xs text-gray-500">
+              <div className="flex items-center justify-between body-xs">
                 <span>
                   Total size: {(files.reduce((total, file) => total + file.size, 0) / 1024).toFixed(1)} KB
                 </span>
@@ -462,7 +462,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
         )}
 
         {error && (
-          <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+          <div className="body-small text-red-600 bg-red-50 p-3 rounded-md">
             {error}
           </div>
         )}
