@@ -269,7 +269,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div className="bg-background-warm-white rounded-card card-shadow p-6 transition-shadow duration-300 hover:card-shadow-hover">
       <div className="flex justify-between items-center mb-4">
         <h2 className="heading-4">Upload CSV Files</h2>
         <span className="body-small">
@@ -278,10 +278,10 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
       </div>
       
       {/* Privacy Notice */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+      <div className="bg-primary-50 border border-primary-200 rounded-card p-4 mb-6 warm-shadow">
         <div className="flex items-start space-x-3">
           <div className="flex-shrink-0">
-            <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-5 h-5 text-primary-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
           </div>
@@ -306,7 +306,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
+          className={`relative border-2 border-dashed rounded-card p-8 text-center transition-all duration-200 ${
             uploadedFilesCount >= MAX_FILES || files.length >= (MAX_FILES - uploadedFilesCount)
               ? 'border-gray-200 bg-gray-50'
               : isDragOver
@@ -342,7 +342,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
             {uploadedFilesCount < MAX_FILES && files.length < (MAX_FILES - uploadedFilesCount) && (
               <label
                 htmlFor="csvFile"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 cursor-pointer transition-colors"
+                className="inline-flex items-center px-4 py-2 border border-transparent body-small font-medium rounded-button text-primary-700 bg-primary-100 hover:bg-primary-200 cursor-pointer transition-colors"
               >
                 Browse Files
               </label>
@@ -360,8 +360,8 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
         </div>
 
         {files.length > 0 && (
-          <div className="border border-gray-200 rounded-lg bg-white">
-            <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+          <div className="border border-gray-200 rounded-card bg-background-warm-white warm-shadow">
+            <div className="px-4 py-3 border-b border-gray-200 bg-background-cream rounded-t-card">
               <h3 className="text-emphasis">
                 Selected Files ({files.length}/{MAX_FILES})
               </h3>
@@ -448,7 +448,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
             </div>
             
             {/* File List Footer */}
-            <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+            <div className="px-4 py-3 bg-background-cream border-t border-gray-200 rounded-b-card">
               <div className="flex items-center justify-between body-xs">
                 <span>
                   Total size: {(files.reduce((total, file) => total + file.size, 0) / 1024).toFixed(1)} KB
@@ -470,7 +470,7 @@ const FileUpload = ({ onFileUploaded, uploadedFilesCount = 0 }) => {
         <button
           onClick={handleUpload}
           disabled={files.length === 0 || uploading}
-          className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          className="w-full bg-primary-600 text-white py-3 px-4 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors body-normal font-medium warm-shadow-lg"
         >
           {uploading
             ? `Uploading ${files.length} file${files.length > 1 ? 's' : ''} to blob storage...`

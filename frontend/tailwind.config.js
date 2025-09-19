@@ -80,6 +80,20 @@ module.exports = {
           secondary: '#5A5450',  // Lighter iron grey
           muted: '#8B8680',      // Muted text
         }
+      },
+      // Consistent Border Radius
+      borderRadius: {
+        'card': '8px',      // For cards and larger containers
+        'button': '6px',    // For buttons and smaller elements
+        'input': '6px',     // For form inputs
+        'badge': '12px',    // For badges and pills
+      },
+      // Enhanced Spacing Scale
+      spacing: {
+        '18': '4.5rem',   // 72px
+        '22': '5.5rem',   // 88px
+        '26': '6.5rem',   // 104px
+        '30': '7.5rem',   // 120px
       }
     },
   },

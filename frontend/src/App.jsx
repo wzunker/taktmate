@@ -259,7 +259,7 @@ function App() {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* File Upload Section */}
           <FileUpload 
             onFileUploaded={handleFileUploaded} 
@@ -268,7 +268,7 @@ function App() {
           
           {/* Uploaded Files Section */}
           {uploadedFiles.length > 0 && (
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-background-warm-white rounded-card card-shadow p-6 transition-shadow duration-300 hover:card-shadow-hover">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="heading-4">Uploaded Files</h2>
                 <div className="body-small space-y-1">
@@ -286,11 +286,11 @@ function App() {
                   </div>
                 </div>
               </div>
-              <div className="border border-gray-200 rounded-lg bg-white">
+              <div className="border border-gray-200 rounded-card bg-background-warm-white warm-shadow">
                 <div className="divide-y divide-gray-100">
                   {uploadedFiles.map((file) => (
-                    <div key={file.fileId} className={`px-4 py-3 transition-colors ${
-                      activeFileId === file.fileId ? 'bg-primary-50 border-l-4 border-l-primary-500' : 'hover:bg-gray-50'
+                    <div key={file.fileId} className={`px-6 py-4 transition-colors ${
+                      activeFileId === file.fileId ? 'bg-primary-50 border-l-4 border-l-primary-500' : 'hover:bg-background-cream'
                     }`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3 flex-1 min-w-0">
@@ -317,11 +317,11 @@ function App() {
                               >
                                 {file.name}
                               </button>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary-100 text-secondary-800">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-badge text-xs font-medium bg-secondary-100 text-secondary-800">
                                 CSV
                               </span>
                               {activeFileId === file.fileId && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-badge text-xs font-medium bg-primary-100 text-primary-800">
                                   Active
                                 </span>
                               )}
@@ -393,7 +393,7 @@ function App() {
           
           {/* Info Section */}
           {uploadedFiles.length === 0 && (
-            <div className="bg-primary-50 border border-primary-200 rounded-lg p-6">
+            <div className="bg-primary-50 border border-primary-200 rounded-card p-8 card-shadow">
               <h3 className="heading-5 text-primary-800 mb-2">How it works</h3>
               <ol className="list-decimal list-inside space-y-2 body-normal text-primary-700">
                 <li>Upload CSV files (up to 5 files, max 5MB each)</li>
@@ -408,7 +408,7 @@ function App() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-16 bg-white border-t border-gray-200">
+      <footer className="mt-20 bg-background-warm-white border-t border-gray-200 warm-shadow">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="text-center space-y-2">
             <p className="body-small">
