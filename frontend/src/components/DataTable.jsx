@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import Card, { CardHeader, CardContent } from './Card';
 
-const DataTable = ({ fileData, className = '' }) => {
+const DataTable = ({ fileData, className = '', isCollapsed, onToggleCollapse }) => {
   const [csvData, setCsvData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -11,7 +11,6 @@ const DataTable = ({ fileData, className = '' }) => {
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
   const [isMobile, setIsMobile] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Check for mobile screen size
   useEffect(() => {
@@ -232,19 +231,20 @@ const DataTable = ({ fileData, className = '' }) => {
   return (
     <Card className={`h-full flex flex-col ${className}`}>
       <CardHeader
-        title={
+        title={<span className="text-secondary-600 font-semibold lowercase">preview</span>}
+        action={
           <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="flex items-center space-x-2 text-secondary-600 font-semibold lowercase hover:text-secondary-700 transition-colors"
+            onClick={() => onToggleCollapse(!isCollapsed)}
+            className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+            title={isCollapsed ? "Expand preview" : "Collapse preview"}
           >
-            <span>preview</span>
             <svg 
               className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`}
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
         }

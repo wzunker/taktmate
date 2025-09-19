@@ -17,6 +17,8 @@ function App() {
     usedDisplay: '0 KB', 
     limitDisplay: '200 MB' 
   });
+  const [sourcesCollapsed, setSourcesCollapsed] = useState(false);
+  const [previewCollapsed, setPreviewCollapsed] = useState(false);
   const { isAuthenticated, isLoading, error } = useAuth();
 
   // Load files from backend when authenticated
@@ -240,11 +242,11 @@ function App() {
       </header>
 
 
-      {/* Main Content - 4 Column Layout */}
+      {/* Main Content - Dynamic Layout */}
       <main className="w-full px-4 sm:px-6 lg:px-8 py-4 flex-1 min-h-0">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-          {/* Sources Column - Left (3 columns) */}
-          <div className="lg:col-span-3 h-full">
+          {/* Sources Column - Dynamic width based on collapse */}
+          <div className={`h-full ${sourcesCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} transition-all duration-300`}>
             <SourcesPanel 
               onFileUploaded={handleFileUploaded}
               uploadedFiles={uploadedFiles}
@@ -253,18 +255,30 @@ function App() {
               onFileSelected={handleFileSelected}
               onFileDownload={handleFileDownload}
               onFileDeleted={handleFileDeleted}
+              isCollapsed={sourcesCollapsed}
+              onToggleCollapse={setSourcesCollapsed}
             />
           </div>
           
-          {/* Chat Column - Middle (6 columns) */}
-          <div className="lg:col-span-6 h-full">
+          {/* Chat Column - Dynamic width based on both collapses */}
+          <div className={`h-full ${
+            sourcesCollapsed && previewCollapsed ? 'lg:col-span-10' :
+            sourcesCollapsed ? 'lg:col-span-8' :
+            previewCollapsed ? 'lg:col-span-8' :
+            'lg:col-span-6'
+          } transition-all duration-300`}>
             <ChatBox fileData={activeFileData} className="h-full" />
           </div>
           
-          {/* Data Table Column - Right (3 columns) */}
-          <div className="lg:col-span-3 h-full">
+          {/* Data Table Column - Dynamic width based on collapse */}
+          <div className={`h-full ${previewCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} transition-all duration-300`}>
             {activeFileData ? (
-              <DataTable fileData={activeFileData} className="h-full" />
+              <DataTable 
+                fileData={activeFileData} 
+                className="h-full"
+                isCollapsed={previewCollapsed}
+                onToggleCollapse={setPreviewCollapsed}
+              />
             ) : (
               <Card variant="elevated" className="h-full flex items-center justify-center">
                 <div className="text-center p-8">
