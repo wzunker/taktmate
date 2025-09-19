@@ -223,10 +223,10 @@ const ChatBox = ({ fileData, className = '' }) => {
         {messages.map((message, index) => (
           <div key={index} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
             {/* Message Bubble with Avatar Inside */}
-            <div
-              className={`max-w-xs sm:max-w-lg px-3 sm:px-4 py-2 sm:py-3 rounded-card transition-all duration-200 flex items-start space-x-2 ${
+              <div
+                className={`max-w-xs sm:max-w-lg px-3 sm:px-4 py-2 sm:py-3 rounded-card transition-all duration-200 flex items-start space-x-2 ${
               message.type === 'user'
-                  ? 'bg-primary-600 text-white warm-shadow flex-row-reverse space-x-reverse'
+                  ? 'bg-primary-600 text-background-cream warm-shadow flex-row-reverse space-x-reverse'
                   : message.type === 'error'
                   ? 'bg-red-50 text-red-800 border border-red-200 warm-shadow'
                   : message.type === 'system'
@@ -237,27 +237,27 @@ const ChatBox = ({ fileData, className = '' }) => {
               {/* Avatar inside bubble */}
               <div className="flex-shrink-0">
                 {message.type === 'user' ? (
-                  <div className="w-6 h-6 bg-white bg-opacity-20 rounded-md flex items-center justify-center">
-                    <span className="text-white text-xs font-medium">
+                  <div className="w-8 h-8 bg-white bg-opacity-20 rounded-md flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
                       {getUserInitials(displayName)}
                     </span>
                   </div>
                 ) : message.type === 'system' ? (
-                  <div className="w-6 h-6 bg-secondary-200 rounded-md flex items-center justify-center">
-                    <svg className="w-3 h-3 text-secondary-600" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="w-8 h-8 bg-secondary-200 rounded-md flex items-center justify-center">
+                    <svg className="w-4 h-4 text-secondary-600" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                     </svg>
                   </div>
                 ) : message.type === 'error' ? (
-                  <div className="w-6 h-6 bg-red-200 rounded-md flex items-center justify-center">
-                    <svg className="w-3 h-3 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="w-8 h-8 bg-red-200 rounded-md flex items-center justify-center">
+                    <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
                   </div>
                 ) : (
-                  <div className="w-6 h-6 bg-primary-100 rounded-md flex flex-col items-center justify-center">
-                    {/* Simple text logo */}
-                    <div className="text-primary-600 text-xs font-bold leading-none">
+                  <div className="w-8 h-8 bg-primary-100 rounded-md flex flex-col items-center justify-center px-1">
+                    {/* Simple text logo - centered */}
+                    <div className="text-primary-600 text-xs font-bold leading-tight text-center">
                       <div>takt</div>
                       <div>mate</div>
                     </div>
@@ -280,9 +280,9 @@ const ChatBox = ({ fileData, className = '' }) => {
             <div className="bg-background-warm-white text-text-primary px-3 sm:px-4 py-2 sm:py-3 rounded-card rounded-tl-sm border border-gray-200 warm-shadow flex items-start space-x-2">
               {/* Avatar inside bubble */}
               <div className="flex-shrink-0">
-                <div className="w-6 h-6 bg-primary-100 rounded-md flex flex-col items-center justify-center">
-                  {/* Simple text logo with pulse */}
-                  <div className="text-primary-600 text-xs font-bold leading-none animate-pulse">
+                <div className="w-8 h-8 bg-primary-100 rounded-md flex flex-col items-center justify-center px-1">
+                  {/* Simple text logo with pulse - centered */}
+                  <div className="text-primary-600 text-xs font-bold leading-tight text-center animate-pulse">
                     <div>takt</div>
                     <div>mate</div>
                   </div>
