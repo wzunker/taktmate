@@ -34,7 +34,7 @@ const UserProfile = ({
       <div className={`bg-white rounded-lg border border-gray-200 p-4 ${className}`}>
         <div className="text-center">
           {/* User Avatar */}
-          <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+          <div className="w-16 h-16 bg-primary-600 rounded-full flex items-center justify-center mx-auto mb-3">
             <span className="text-white font-medium text-lg">{initials}</span>
           </div>
           
@@ -67,7 +67,7 @@ const UserProfile = ({
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
       {/* User Avatar */}
-      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+      <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
         <span className="text-white font-medium text-sm">{initials}</span>
       </div>
       

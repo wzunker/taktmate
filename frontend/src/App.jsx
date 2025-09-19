@@ -4,6 +4,7 @@ import FileUpload from './components/FileUpload';
 import ChatBox from './components/ChatBox';
 import DataTable from './components/DataTable';
 import UserProfile from './components/UserProfile';
+import Logo, { LogoWithText } from './components/Logo';
 import useAuth from './hooks/useAuth';
 
 function App() {
@@ -182,8 +183,8 @@ function App() {
     return (
       <div className="min-h-screen bg-background-cream flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Checking authentication...</p>
+          <Logo variant="solo" size="lg" animate={true} className="mx-auto mb-4" />
+          <p className="body-normal text-text-secondary">Checking authentication...</p>
         </div>
       </div>
     );
@@ -194,9 +195,10 @@ function App() {
     return (
       <div className="min-h-screen bg-background-cream flex items-center justify-center">
         <div className="text-center">
+          <Logo variant="solo" size="md" className="mx-auto mb-6" />
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
-            <h2 className="text-lg font-medium text-red-900 mb-2">Authentication Error</h2>
-            <p className="text-red-700 mb-4">{error}</p>
+            <h2 className="heading-5 text-red-900 mb-2">Authentication Error</h2>
+            <p className="body-normal text-red-700 mb-4">{error}</p>
             <button 
               onClick={() => window.location.reload()} 
               className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
@@ -216,8 +218,19 @@ function App() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <h1 className="heading-3">TaktMate</h1>
-              <span className="ml-2 body-small">CSV Chat MVP</span>
+              <LogoWithText 
+                text="TaktMate" 
+                subtitle="CSV Chat MVP"
+                size="md"
+                className="sm:flex hidden"
+              />
+              {/* Mobile logo - just the symbol and text, no subtitle */}
+              <LogoWithText 
+                text="TaktMate" 
+                subtitle=""
+                size="sm"
+                className="sm:hidden flex"
+              />
             </div>
             
             {/* User Profile and Logout */}
