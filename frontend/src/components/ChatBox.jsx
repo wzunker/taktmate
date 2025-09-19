@@ -363,7 +363,7 @@ const ChatBox = ({ fileData, className = '' }) => {
                 <button
                   onClick={handleSendMessage}
                   disabled={!inputMessage.trim() || sending || inputMessage.length > 500}
-                  className="bg-primary-600 text-white p-2.5 sm:p-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  className="bg-primary-600 text-white p-2.5 sm:p-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0 min-w-[44px] min-h-[44px]"
                   title={!inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
                 >
                   {sending ? (
@@ -371,16 +371,9 @@ const ChatBox = ({ fileData, className = '' }) => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                   ) : (
-                      <svg className="w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        {/* Takt-style upward arrow with flat top - 30% larger */}
-                        <line x1="12" y1="22.08" x2="12" y2="4.42" stroke="currentColor" strokeWidth="2.6" strokeLinecap="butt"/>
-                        <line x1="5.02" y1="13.78" x2="12.78" y2="4.42" stroke="currentColor" strokeWidth="2.6" strokeLinecap="butt"/>
-                        <line x1="18.98" y1="13.78" x2="11.22" y2="4.42" stroke="currentColor" strokeWidth="2.6" strokeLinecap="butt"/>
-                        {/* Balls at endpoints */}
-                        <circle cx="12" cy="22.08" r="3.25" fill="currentColor"/>
-                        <circle cx="5.02" cy="13.78" r="3.25" fill="currentColor"/>
-                        <circle cx="18.98" cy="13.78" r="3.25" fill="currentColor"/>
-                      </svg>
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
                   )}
                 </button>
         </div>
