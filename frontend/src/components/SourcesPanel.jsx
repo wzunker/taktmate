@@ -63,8 +63,58 @@ const SourcesPanel = ({
     setUploading(true);
     
     try {
-      await onFileUploaded(file);
+      // Get auth info from SWA
+      const authResponse = await fetch('/.auth/me');
+      const authData = await authResponse.json();
+      
+      if (!authData.clientPrincipal) {
+        throw new Error('Authentication required. Please log in.');
+      }
+
+      // Step 1: Request SAS token from backend
+      const sasResponse = await fetch('/api/files/sas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          contentType: file.type || 'text/csv',
+          sizeBytes: file.size
+        })
+      });
+
+      const sasData = await sasResponse.json();
+      
+      if (!sasData.success) {
+        throw new Error(sasData.message || sasData.error || 'Failed to get upload URL');
+      }
+
+      // Step 2: Upload file to Azure Blob Storage
+      const uploadResponse = await fetch(sasData.uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type || 'text/csv',
+          'x-ms-blob-type': 'BlockBlob'
+        },
+        body: file
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+      }
+
+      // Step 3: Notify parent component of successful upload
+      await onFileUploaded({
+        name: file.name,
+        size: file.size,
+        type: file.type || 'text/csv',
+        lastModified: new Date().toISOString()
+      });
+      
     } catch (error) {
+      console.error('Upload error:', error);
       setError(error.message || 'Upload failed. Please try again.');
     } finally {
       setUploading(false);
