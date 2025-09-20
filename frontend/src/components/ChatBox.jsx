@@ -226,7 +226,7 @@ const ChatBox = ({ fileData, className = '' }) => {
               <div
                 className={`max-w-xs sm:max-w-lg px-3 sm:px-4 py-2 sm:py-3 rounded-card transition-all duration-200 flex items-start space-x-2 ${
               message.type === 'user'
-                  ? 'bg-primary-600 text-takt-canvas-cream warm-shadow flex-row-reverse space-x-reverse'
+                  ? 'bg-primary-600 text-background-cream warm-shadow flex-row-reverse space-x-reverse'
                   : message.type === 'error'
                   ? 'bg-red-50 text-red-800 border border-red-200 warm-shadow'
                   : message.type === 'system'
