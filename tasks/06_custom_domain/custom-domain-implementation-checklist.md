@@ -66,14 +66,14 @@ This checklist guides you through adding a custom domain to your TaktMate web ap
   - [X] Enter domain: `app.taktconnect.com` (or your chosen domain)
   - [X] Choose "CNAME" validation method
 
-- [ ] **Complete DNS validation**
-  - [ ] Azure will provide a TXT record for validation
-  - [ ] Add the TXT record in Porkbun DNS:
+- [X] **Complete DNS validation**
+  - [X] Azure will provide a TXT record for validation
+  - [X] Add the TXT record in Porkbun DNS:
     - **Name**: `_dnsauth.app` (or as specified by Azure)
     - **Type**: TXT
     - **Value**: (Azure-provided validation string)
-  - [ ] Click "Validate" in Azure Portal
-  - [ ] Wait for validation to complete (can take up to 24 hours)
+  - [X] Click "Validate" in Azure Portal
+  - [X] Wait for validation to complete (can take up to 24 hours)
 
 - [ ] **Enable SSL certificate**
   - [ ] Verify "App Service Managed Certificate" is selected
