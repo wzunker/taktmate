@@ -30,7 +30,8 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:3000', 
       'http://127.0.0.1:3000',
-      'https://orange-flower-0b350780f.1.azurestaticapps.net'
+      'https://orange-flower-0b350780f.1.azurestaticapps.net',
+      'https://app.taktconnect.com'
     ];
     
     // Allow any Azure Static Web Apps origin or the specific origins
