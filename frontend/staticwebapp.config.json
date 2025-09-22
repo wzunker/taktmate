@@ -22,13 +22,6 @@
     {
       "route": "/*",
       "allowedRoles": ["authenticated"]
-    },
-    {
-      "route": "/*",
-      "headers": {
-        "x-forwarded-host": "www.app.taktconnect.com"
-      },
-      "redirect": "https://app.taktconnect.com{uri}"
     }
   ],
   "responseOverrides": {
