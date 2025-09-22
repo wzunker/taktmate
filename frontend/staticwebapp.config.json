@@ -4,6 +4,13 @@
   },
   "routes": [
     {
+      "route": "/*",
+      "headers": {
+        "host": "www.app.taktconnect.com"
+      },
+      "redirect": "https://app.taktconnect.com{uri}"
+    },
+    {
       "route": "/.auth/*",
       "allowedRoles": ["anonymous"]
     },
