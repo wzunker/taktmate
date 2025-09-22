@@ -26,7 +26,7 @@
     {
       "route": "/*",
       "headers": {
-        "host": "www.app.taktconnect.com"
+        "x-forwarded-host": "www.app.taktconnect.com"
       },
       "redirect": "https://app.taktconnect.com{uri}"
     }
