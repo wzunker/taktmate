@@ -159,27 +159,27 @@ Transform TaktMate from stateless single-turn conversations to persistent multi-
 ## Phase 3: Frontend Implementation
 
 ### 3.1 Enhanced Sources Panel with Conversation History
-- [ ] **Enhance `frontend/src/components/SourcesPanel.jsx`**
-  - [ ] Add conversation history section below file list
-  - [ ] Show conversations associated with currently selected file
-  - [ ] Add "Recent Conversations" section when no file selected
-  - [ ] Maintain existing file upload and management functionality
-  - [ ] Add conversation count indicators next to files with conversations
+- [X] **Enhance `frontend/src/components/SourcesPanel.jsx`**
+  - [X] Add conversation history section below file list
+  - [X] Show conversations associated with currently selected file
+  - [X] Add "Recent Conversations" section when no file selected
+  - [X] Maintain existing file upload and management functionality
+  - [X] Add conversation count indicators next to files with conversations
 
-- [ ] **Create `frontend/src/components/ConversationItem.jsx`**
-  - [ ] Display individual conversation with title and last message preview
-  - [ ] Show conversation metadata (date, message count, status)
-  - [ ] Visual indicators for active/archived conversations
-  - [ ] Click to select conversation and load associated file
-  - [ ] Context menu for conversation actions (rename, delete, export)
-  - [ ] Handle missing/deleted files gracefully (show as inactive)
+- [X] **Create `frontend/src/components/ConversationItem.jsx`**
+  - [X] Display individual conversation with title and last message preview
+  - [X] Show conversation metadata (date, message count, status)
+  - [X] Visual indicators for active/archived conversations
+  - [X] Click to select conversation and load associated file
+  - [X] Context menu for conversation actions (rename, delete, export)
+  - [X] Handle missing/deleted files gracefully (show as inactive)
 
-- [ ] **Conversation Integration Features**
-  - [ ] Auto-select file when conversation is clicked
-  - [ ] Show "file missing" indicator for conversations with deleted files
-  - [ ] Simple conversation search within the sources panel
-  - [ ] Collapsible conversation history section
-  - [ ] Empty state messaging for files with no conversations
+- [X] **Conversation Integration Features**
+  - [X] Auto-select file when conversation is clicked
+  - [X] Show "file missing" indicator for conversations with deleted files
+  - [X] Simple conversation search within the sources panel
+  - [X] Collapsible conversation history section
+  - [X] Empty state messaging for files with no conversations
 
 ### 3.2 Enhanced ChatBox Component
 - [ ] **Modify `frontend/src/components/ChatBox.jsx`**

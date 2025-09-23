@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Card, { CardHeader, CardContent } from './Card';
+import ConversationItem from './ConversationItem';
 
 const SourcesPanel = ({ 
   onFileUploaded, 
@@ -11,13 +12,48 @@ const SourcesPanel = ({
   onFileDeleted,
   isCollapsed,
   onToggleCollapse,
-  filesLoading
+  filesLoading,
+  // New conversation-related props
+  conversations = [],
+  activeConversationId,
+  onConversationSelected,
+  onConversationRename,
+  onConversationDelete,
+  onConversationExport,
+  conversationsLoading = false
 }) => {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
+  const [showConversations, setShowConversations] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Get conversations for the currently selected file
+  const getFileConversations = () => {
+    if (!activeFileId) return [];
+    const activeFile = uploadedFiles.find(f => f.fileId === activeFileId);
+    if (!activeFile) return [];
+    
+    return conversations.filter(conv => conv.fileName === activeFile.name);
+  };
+
+  // Get recent conversations (when no file is selected)
+  const getRecentConversations = () => {
+    return conversations
+      .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+      .slice(0, 5);
+  };
+
+  // Check if a conversation's file still exists
+  const hasValidFile = (conversation) => {
+    return uploadedFiles.some(file => file.name === conversation.fileName);
+  };
+
+  // Get conversation count for a file
+  const getFileConversationCount = (fileName) => {
+    return conversations.filter(conv => conv.fileName === fileName).length;
+  };
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -285,9 +321,16 @@ const SourcesPanel = ({
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <p className="body-small font-medium text-text-primary truncate">
-                          {file.name}
-                        </p>
+                        <div className="flex items-center justify-between">
+                          <p className="body-small font-medium text-text-primary truncate">
+                            {file.name}
+                          </p>
+                          {getFileConversationCount(file.name) > 0 && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-secondary-100 text-secondary-700 ml-2">
+                              {getFileConversationCount(file.name)}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center space-x-2 mt-1">
                           <span className="body-xs text-text-muted">
                             {(file.size / 1024).toFixed(1)} KB
@@ -343,6 +386,75 @@ const SourcesPanel = ({
             </div>
           ) : null}
         </div>
+
+        {/* Conversations Section */}
+        {(uploadedFiles.length > 0 || conversations.length > 0) && (
+          <div className="border-t border-gray-200 pt-4">
+            {/* Conversations Header */}
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="body-small font-medium text-text-secondary">
+                {activeFileId ? 'File Conversations' : 'Recent Conversations'}
+              </h4>
+              <button
+                onClick={() => setShowConversations(!showConversations)}
+                className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+                title={showConversations ? "Collapse conversations" : "Expand conversations"}
+              >
+                <svg 
+                  className={`w-4 h-4 transition-transform duration-200 ${showConversations ? 'rotate-90' : ''}`}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Conversations List */}
+            {showConversations && (
+              <div className="space-y-2 max-h-64 overflow-y-auto mobile-scrollbar">
+                {conversationsLoading ? (
+                  <div className="flex items-center justify-center py-6">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mr-2"></div>
+                    <span className="body-small text-text-muted">Loading conversations...</span>
+                  </div>
+                ) : (() => {
+                  const displayConversations = activeFileId ? getFileConversations() : getRecentConversations();
+                  
+                  return displayConversations.length > 0 ? (
+                    displayConversations.map((conversation) => (
+                      <ConversationItem
+                        key={conversation.id}
+                        conversation={conversation}
+                        isActive={conversation.id === activeConversationId}
+                        onSelect={onConversationSelected}
+                        onRename={onConversationRename}
+                        onDelete={onConversationDelete}
+                        onExport={onConversationExport}
+                        hasValidFile={hasValidFile(conversation)}
+                      />
+                    ))
+                  ) : (
+                    <div className="text-center py-6">
+                      <div className="w-8 h-8 mx-auto mb-2 bg-gray-100 rounded-full flex items-center justify-center">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                      </div>
+                      <p className="body-small text-text-muted">
+                        {activeFileId ? 'No conversations for this file yet' : 'No conversations yet'}
+                      </p>
+                      <p className="body-xs text-text-muted mt-1">
+                        Start chatting to create conversation history
+                      </p>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Storage Quota */}
         <div className="pt-3 border-t border-gray-200">
