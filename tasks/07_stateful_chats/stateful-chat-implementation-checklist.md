@@ -204,20 +204,20 @@ Transform TaktMate from stateless single-turn conversations to persistent multi-
   - [X] Show typing indicators with conversation awareness
 
 ### 3.3 App Layout and State Management Updates
-- [ ] **Modify `frontend/src/App.jsx`**
-  - [ ] Add active conversation state management
-  - [ ] Handle conversation switching from sources panel
-  - [ ] Coordinate conversation selection with file selection
-  - [ ] Pass conversation state to ChatBox component
-  - [ ] Handle conversation creation and updates
+- [X] **Modify `frontend/src/App.jsx`**
+  - [X] Add active conversation state management
+  - [X] Handle conversation switching from sources panel
+  - [X] Coordinate conversation selection with file selection
+  - [X] Pass conversation state to ChatBox component
+  - [X] Handle conversation creation and updates
 
-- [ ] **State Management**
-  - [ ] Add conversation state to main App component
-  - [ ] Handle conversation list updates and caching
-  - [ ] Manage active conversation switching
-  - [ ] Sync conversation state between sources panel and chat
-  - [ ] Auto-load file when conversation is selected
-  - [ ] Add loading states for conversation operations
+- [X] **State Management**
+  - [X] Add conversation state to main App component
+  - [X] Handle conversation list updates and caching
+  - [X] Manage active conversation switching
+  - [X] Sync conversation state between sources panel and chat
+  - [X] Auto-load file when conversation is selected
+  - [X] Add loading states for conversation operations
 
 ---
 

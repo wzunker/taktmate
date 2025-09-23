@@ -20,6 +20,12 @@ function App() {
   const [sourcesCollapsed, setSourcesCollapsed] = useState(false);
   const [previewCollapsed, setPreviewCollapsed] = useState(false);
   const [filesLoading, setFilesLoading] = useState(false);
+  
+  // Conversation state management
+  const [conversations, setConversations] = useState([]);
+  const [activeConversationId, setActiveConversationId] = useState(null);
+  const [conversationsLoading, setConversationsLoading] = useState(false);
+  
   const { isAuthenticated, isLoading, error } = useAuth();
 
   // Load files from backend when authenticated
@@ -78,12 +84,49 @@ function App() {
     }
   }, [isAuthenticated, activeFileId]);
 
-  // Load files when component mounts and user is authenticated
+  // Load conversations from backend
+  const loadConversations = useCallback(async (showLoading = false) => {
+    if (!isAuthenticated) return;
+    if (showLoading) {
+      setConversationsLoading(true);
+    }
+    try {
+      // Get auth info from SWA
+      const authResponse = await fetch('/.auth/me');
+      const authData = await authResponse.json();
+      
+      if (!authData.clientPrincipal) {
+        console.warn('No authentication data available for conversations');
+        return;
+      }
+      
+      const response = await axios.get('/api/conversations', {
+        headers: {
+          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
+        },
+        timeout: 10000
+      });
+
+      if (response.data.success) {
+        setConversations(response.data.conversations || []);
+      }
+    } catch (err) {
+      console.error('Failed to load conversations:', err);
+      // Don't show error to user for initial load failure
+    } finally {
+      if (showLoading) {
+        setConversationsLoading(false);
+      }
+    }
+  }, [isAuthenticated]);
+
+  // Load files and conversations when component mounts and user is authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
       loadFiles(true); // Show loading spinner on initial load
+      loadConversations(true); // Load conversations too
     }
-  }, [isAuthenticated, isLoading, loadFiles]);
+  }, [isAuthenticated, isLoading, loadFiles, loadConversations]);
 
   const handleFileUploaded = (uploadedFileData) => {
     // Add the new file to the list immediately for better UX
@@ -147,6 +190,133 @@ function App() {
 
   const handleFileSelected = (fileId) => {
     setActiveFileId(fileId);
+    // Clear active conversation when switching files
+    setActiveConversationId(null);
+  };
+
+  // Conversation management functions
+  const handleConversationSelected = (conversation) => {
+    setActiveConversationId(conversation.id);
+    
+    // Auto-load the associated file if it exists
+    const associatedFile = uploadedFiles.find(file => file.name === conversation.fileName);
+    if (associatedFile) {
+      setActiveFileId(associatedFile.name);
+    } else {
+      console.warn(`File ${conversation.fileName} not found for conversation ${conversation.id}`);
+    }
+  };
+
+  const handleConversationCreated = (newConversation) => {
+    setConversations(prev => [newConversation, ...prev]);
+    setActiveConversationId(newConversation.id);
+    // No need to reload conversations from backend - we have the data
+  };
+
+  const handleConversationUpdated = (conversationId, updates) => {
+    setConversations(prev => prev.map(conv => 
+      conv.id === conversationId 
+        ? { ...conv, ...updates }
+        : conv
+    ));
+  };
+
+  const handleConversationRename = async (conversationId, newTitle) => {
+    try {
+      // Get auth info from SWA
+      const authResponse = await fetch('/.auth/me');
+      const authData = await authResponse.json();
+      
+      if (!authData.clientPrincipal) {
+        console.error('No authentication data available');
+        return;
+      }
+
+      await axios.put(`/api/conversations/${conversationId}`, 
+        { title: newTitle },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
+          },
+          timeout: 10000
+        }
+      );
+
+      // Update local state
+      handleConversationUpdated(conversationId, { title: newTitle });
+    } catch (err) {
+      console.error('Failed to rename conversation:', err);
+      alert(`Failed to rename conversation: ${err.response?.data?.error || err.message}`);
+    }
+  };
+
+  const handleConversationDelete = async (conversationId) => {
+    try {
+      // Get auth info from SWA
+      const authResponse = await fetch('/.auth/me');
+      const authData = await authResponse.json();
+      
+      if (!authData.clientPrincipal) {
+        console.error('No authentication data available');
+        return;
+      }
+
+      await axios.delete(`/api/conversations/${conversationId}`, {
+        headers: {
+          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
+        },
+        timeout: 10000
+      });
+
+      // Update local state
+      setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+      
+      // Clear active conversation if it was deleted
+      if (activeConversationId === conversationId) {
+        setActiveConversationId(null);
+      }
+    } catch (err) {
+      console.error('Failed to delete conversation:', err);
+      alert(`Failed to delete conversation: ${err.response?.data?.error || err.message}`);
+    }
+  };
+
+  const handleConversationExport = async (conversation, format) => {
+    try {
+      // Get auth info from SWA
+      const authResponse = await fetch('/.auth/me');
+      const authData = await authResponse.json();
+      
+      if (!authData.clientPrincipal) {
+        console.error('No authentication data available');
+        return;
+      }
+
+      const response = await axios.get(`/api/conversations/${conversation.id}/export/${format}`, {
+        headers: {
+          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
+        },
+        timeout: 10000,
+        responseType: 'blob'
+      });
+
+      // Create download link
+      const blob = new Blob([response.data], { 
+        type: format === 'json' ? 'application/json' : 'text/csv' 
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${conversation.title || 'conversation'}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to export conversation:', err);
+      alert(`Failed to export conversation: ${err.response?.data?.error || err.message}`);
+    }
   };
 
   const handleFileDownload = async (file) => {
@@ -266,6 +436,14 @@ function App() {
               isCollapsed={sourcesCollapsed}
               onToggleCollapse={setSourcesCollapsed}
               filesLoading={filesLoading}
+              // Conversation props
+              conversations={conversations}
+              activeConversationId={activeConversationId}
+              onConversationSelected={handleConversationSelected}
+              onConversationRename={handleConversationRename}
+              onConversationDelete={handleConversationDelete}
+              onConversationExport={handleConversationExport}
+              conversationsLoading={conversationsLoading}
             />
           </div>
           
@@ -276,7 +454,13 @@ function App() {
             previewCollapsed ? 'lg:col-span-8' :
             'lg:col-span-6'
           } transition-all duration-300`}>
-            <ChatBox fileData={activeFileData} className="h-full" />
+            <ChatBox 
+              fileData={activeFileData} 
+              className="h-full"
+              conversationId={activeConversationId}
+              onConversationCreated={handleConversationCreated}
+              onConversationUpdated={handleConversationUpdated}
+            />
           </div>
           
           {/* Data Table Column - Dynamic width based on collapse */}
