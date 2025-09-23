@@ -6,6 +6,7 @@ require('dotenv').config();
 const { parseCsv, formatCsvForPrompt } = require('./processCsv');
 const { requireAuth } = require('./middleware/auth');
 const { healthCheck, getBlobContent, listUserFiles } = require('./services/storage');
+const cosmosService = require('./services/cosmos');
 const filesRouter = require('./routes/files');
 
 const app = express();
@@ -82,7 +83,12 @@ app.get('/api/health', async (req, res) => {
     // Check storage connectivity
     const storageHealth = await healthCheck();
     
-    const overallStatus = storageHealth.status === 'healthy' ? 'OK' : 'DEGRADED';
+    // Check Cosmos DB connectivity
+    const cosmosHealth = await cosmosService.healthCheck();
+    
+    const overallStatus = 
+      storageHealth.status === 'healthy' && cosmosHealth.status === 'healthy' 
+        ? 'OK' : 'DEGRADED';
     const statusCode = overallStatus === 'OK' ? 200 : 503;
     
     res.status(statusCode).json({ 
@@ -90,11 +96,14 @@ app.get('/api/health', async (req, res) => {
       message: 'TaktMate Backend is running',
       services: {
         api: 'healthy',
-        storage: storageHealth
+        storage: storageHealth,
+        cosmos: cosmosHealth
       },
       environment: {
         nodeVersion: process.version,
-        storageAccount: process.env.STORAGE_ACCOUNT_NAME || 'not configured'
+        storageAccount: process.env.STORAGE_ACCOUNT_NAME || 'not configured',
+        cosmosEndpoint: process.env.COSMOS_DB_ENDPOINT || 'not configured',
+        cosmosDatabase: process.env.COSMOS_DB_DATABASE_NAME || 'not configured'
       },
       timestamp: new Date().toISOString()
     });
@@ -224,6 +233,7 @@ app.use((error, req, res, next) => {
 app.listen(PORT, async () => {
   console.log(`TaktMate Backend running on port ${PORT}`);
   console.log(`Storage Account: ${process.env.STORAGE_ACCOUNT_NAME || 'NOT CONFIGURED'}`);
+  console.log(`Cosmos DB: ${process.env.COSMOS_DB_ENDPOINT || 'NOT CONFIGURED'}`);
   
   // Test storage connectivity on startup
   try {
@@ -234,5 +244,16 @@ app.listen(PORT, async () => {
     }
   } catch (error) {
     console.error('ERROR: Failed to check storage connectivity on startup:', error.message);
+  }
+
+  // Test Cosmos DB connectivity on startup
+  try {
+    const cosmosHealth = await cosmosService.healthCheck();
+    console.log(`Cosmos DB connectivity: ${cosmosHealth.status}`);
+    if (cosmosHealth.status !== 'healthy') {
+      console.warn('WARNING: Cosmos DB service is not healthy:', cosmosHealth.error);
+    }
+  } catch (error) {
+    console.error('ERROR: Failed to check Cosmos DB connectivity on startup:', error.message);
   }
 });
