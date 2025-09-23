@@ -158,36 +158,28 @@ Transform TaktMate from stateless single-turn conversations to persistent multi-
 
 ## Phase 3: Frontend Implementation
 
-### 3.1 Enhanced Preview Panel with Conversation History
-- [ ] **Enhance `frontend/src/components/DataTable.jsx` (Preview Panel)**
-  - [ ] Add toggle between "Data Preview" and "Conversations" modes
-  - [ ] Maintain existing data table functionality when in data mode
-  - [ ] Add conversation list view when in conversations mode
-  - [ ] Preserve existing collapse/expand functionality
-  - [ ] Add mode indicator in panel header
+### 3.1 Enhanced Sources Panel with Conversation History
+- [ ] **Enhance `frontend/src/components/SourcesPanel.jsx`**
+  - [ ] Add conversation history section below file list
+  - [ ] Show conversations associated with currently selected file
+  - [ ] Add "Recent Conversations" section when no file selected
+  - [ ] Maintain existing file upload and management functionality
+  - [ ] Add conversation count indicators next to files with conversations
 
-- [ ] **Create `frontend/src/components/ConversationList.jsx`**
-  - [ ] Display list of user conversations for current file
-  - [ ] Show conversation titles, last message preview, timestamp
+- [ ] **Create `frontend/src/components/ConversationItem.jsx`**
+  - [ ] Display individual conversation with title and last message preview
+  - [ ] Show conversation metadata (date, message count, status)
   - [ ] Visual indicators for active/archived conversations
-  - [ ] Conversation selection and highlighting
-  - [ ] Conversation context menu (rename, delete, export)
-  - [ ] Empty state when no conversations exist
+  - [ ] Click to select conversation and load associated file
+  - [ ] Context menu for conversation actions (rename, delete, export)
+  - [ ] Handle missing/deleted files gracefully (show as inactive)
 
-- [ ] **Conversation List Features**
-  - [ ] Filter conversations by current selected file
-  - [ ] Search functionality within conversations
-  - [ ] Infinite scroll or pagination for long conversation lists
-  - [ ] Real-time updates when new conversations created
-  - [ ] Show conversation metadata (message count, status)
-
-- [ ] **Preview Panel Integration**
-  - [ ] Add toggle buttons in DataTable header ("Data" / "Conversations")
-  - [ ] Smooth transitions between data and conversation views
-  - [ ] Maintain panel collapse/expand state across mode switches
-  - [ ] Show conversation count badge in conversations mode button
-  - [ ] Add "New Conversation" button in conversations mode
-  - [ ] Responsive design for mobile conversation browsing
+- [ ] **Conversation Integration Features**
+  - [ ] Auto-select file when conversation is clicked
+  - [ ] Show "file missing" indicator for conversations with deleted files
+  - [ ] Simple conversation search within the sources panel
+  - [ ] Collapsible conversation history section
+  - [ ] Empty state messaging for files with no conversations
 
 ### 3.2 Enhanced ChatBox Component
 - [ ] **Modify `frontend/src/components/ChatBox.jsx`**
@@ -214,8 +206,8 @@ Transform TaktMate from stateless single-turn conversations to persistent multi-
 ### 3.3 App Layout and State Management Updates
 - [ ] **Modify `frontend/src/App.jsx`**
   - [ ] Add active conversation state management
-  - [ ] Handle conversation switching from preview panel
-  - [ ] Coordinate between file selection and conversations
+  - [ ] Handle conversation switching from sources panel
+  - [ ] Coordinate conversation selection with file selection
   - [ ] Pass conversation state to ChatBox component
   - [ ] Handle conversation creation and updates
 
@@ -223,8 +215,8 @@ Transform TaktMate from stateless single-turn conversations to persistent multi-
   - [ ] Add conversation state to main App component
   - [ ] Handle conversation list updates and caching
   - [ ] Manage active conversation switching
-  - [ ] Sync conversation state between preview panel and chat
-  - [ ] Handle conversation filtering by selected file
+  - [ ] Sync conversation state between sources panel and chat
+  - [ ] Auto-load file when conversation is selected
   - [ ] Add loading states for conversation operations
 
 ---
