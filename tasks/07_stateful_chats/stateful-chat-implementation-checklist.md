@@ -158,22 +158,36 @@ Transform TaktMate from stateless single-turn conversations to persistent multi-
 
 ## Phase 3: Frontend Implementation
 
-### 3.1 Conversation Sidebar Component
-- [ ] **Create `frontend/src/components/ConversationSidebar.jsx`**
-  - [ ] Display list of user conversations
+### 3.1 Enhanced Preview Panel with Conversation History
+- [ ] **Enhance `frontend/src/components/DataTable.jsx` (Preview Panel)**
+  - [ ] Add toggle between "Data Preview" and "Conversations" modes
+  - [ ] Maintain existing data table functionality when in data mode
+  - [ ] Add conversation list view when in conversations mode
+  - [ ] Preserve existing collapse/expand functionality
+  - [ ] Add mode indicator in panel header
+
+- [ ] **Create `frontend/src/components/ConversationList.jsx`**
+  - [ ] Display list of user conversations for current file
   - [ ] Show conversation titles, last message preview, timestamp
   - [ ] Visual indicators for active/archived conversations
-  - [ ] Search functionality for conversations
-  - [ ] Filter by file association
-  - [ ] Create new conversation button
+  - [ ] Conversation selection and highlighting
   - [ ] Conversation context menu (rename, delete, export)
+  - [ ] Empty state when no conversations exist
 
-- [ ] **Sidebar Features**
-  - [ ] Collapsible/expandable sidebar
+- [ ] **Conversation List Features**
+  - [ ] Filter conversations by current selected file
+  - [ ] Search functionality within conversations
   - [ ] Infinite scroll or pagination for long conversation lists
   - [ ] Real-time updates when new conversations created
-  - [ ] Drag-to-reorder conversations (optional)
-  - [ ] Bulk operations (delete multiple, export multiple)
+  - [ ] Show conversation metadata (message count, status)
+
+- [ ] **Preview Panel Integration**
+  - [ ] Add toggle buttons in DataTable header ("Data" / "Conversations")
+  - [ ] Smooth transitions between data and conversation views
+  - [ ] Maintain panel collapse/expand state across mode switches
+  - [ ] Show conversation count badge in conversations mode button
+  - [ ] Add "New Conversation" button in conversations mode
+  - [ ] Responsive design for mobile conversation browsing
 
 ### 3.2 Enhanced ChatBox Component
 - [ ] **Modify `frontend/src/components/ChatBox.jsx`**
@@ -197,20 +211,21 @@ Transform TaktMate from stateless single-turn conversations to persistent multi-
   - [ ] Update conversation title based on content
   - [ ] Show typing indicators with conversation awareness
 
-### 3.3 App Layout Updates
+### 3.3 App Layout and State Management Updates
 - [ ] **Modify `frontend/src/App.jsx`**
-  - [ ] Add conversation sidebar to main layout
-  - [ ] Manage active conversation state
-  - [ ] Handle conversation switching
+  - [ ] Add active conversation state management
+  - [ ] Handle conversation switching from preview panel
   - [ ] Coordinate between file selection and conversations
-  - [ ] Add responsive design for mobile conversation management
+  - [ ] Pass conversation state to ChatBox component
+  - [ ] Handle conversation creation and updates
 
 - [ ] **State Management**
-  - [ ] Create conversation context or state management
-  - [ ] Handle conversation list updates
+  - [ ] Add conversation state to main App component
+  - [ ] Handle conversation list updates and caching
   - [ ] Manage active conversation switching
-  - [ ] Sync conversation state across components
-  - [ ] Handle offline/online conversation sync
+  - [ ] Sync conversation state between preview panel and chat
+  - [ ] Handle conversation filtering by selected file
+  - [ ] Add loading states for conversation operations
 
 ---
 
