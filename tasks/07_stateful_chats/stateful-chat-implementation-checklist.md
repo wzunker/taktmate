@@ -119,25 +119,25 @@ Transform TaktMate from stateless single-turn conversations to persistent multi-
   - [X] `getConversationsByDateRange(userId, startDate, endDate)` - Date filtering
 
 ### 2.2 Conversation API Endpoints
-- [ ] **Create `backend/routes/conversations.js`**
-  - [ ] `GET /api/conversations` - List user conversations with pagination
-  - [ ] `POST /api/conversations` - Create new conversation
-  - [ ] `GET /api/conversations/:id` - Get specific conversation
-  - [ ] `PUT /api/conversations/:id` - Update conversation (title, etc.)
-  - [ ] `DELETE /api/conversations/:id` - Delete conversation
-  - [ ] `GET /api/conversations/:id/messages` - Get conversation messages
-  - [ ] `POST /api/conversations/:id/messages` - Add message to conversation
+- [X] **Create `backend/routes/conversations.js`**
+  - [X] `GET /api/conversations` - List user conversations with pagination
+  - [X] `POST /api/conversations` - Create new conversation
+  - [X] `GET /api/conversations/:id` - Get specific conversation
+  - [X] `PUT /api/conversations/:id` - Update conversation (title, etc.)
+  - [X] `DELETE /api/conversations/:id` - Delete conversation
+  - [X] `GET /api/conversations/:id/messages` - Get conversation messages
+  - [X] `POST /api/conversations/:id/messages` - Add message to conversation
 
-- [ ] **Enhanced Chat Endpoint**
-  - [ ] Modify existing `/api/chat` to support conversation context
-  - [ ] Add `conversationId` parameter (optional for backward compatibility)
-  - [ ] Include recent messages in GPT prompt for context
-  - [ ] Auto-create conversation if none provided
-  - [ ] Return conversation metadata with response
+- [X] **Enhanced Chat Endpoint**
+  - [X] Modify existing `/api/chat` to support conversation context
+  - [X] Add `conversationId` parameter (optional for backward compatibility)
+  - [X] Include recent messages in GPT prompt for context
+  - [X] Auto-create conversation if none provided
+  - [X] Return conversation metadata with response
 
-- [ ] **Export Endpoints**
-  - [ ] `GET /api/conversations/:id/export/json` - Export as JSON
-  - [ ] `GET /api/conversations/:id/export/csv` - Export as CSV
+- [X] **Export Endpoints**
+  - [X] `GET /api/conversations/:id/export/json` - Export as JSON
+  - [X] `GET /api/conversations/:id/export/csv` - Export as CSV
   - [ ] `GET /api/conversations/:id/export/pdf` - Export as PDF (future)
 
 ### 2.3 Summarization Service

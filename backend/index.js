@@ -8,6 +8,7 @@ const { requireAuth } = require('./middleware/auth');
 const { healthCheck, getBlobContent, listUserFiles } = require('./services/storage');
 const cosmosService = require('./services/cosmos');
 const filesRouter = require('./routes/files');
+const conversationsRouter = require('./routes/conversations');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -77,6 +78,9 @@ app.use((req, res, next) => {
 // Register file management routes
 app.use('/api/files', filesRouter);
 
+// Register conversation management routes
+app.use('/api/conversations', conversationsRouter);
+
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
   try {
@@ -140,12 +144,12 @@ app.options('/api/chat', (req, res) => {
   res.sendStatus(200);
 });
 
-// Chat endpoint - blob storage only
+// Enhanced chat endpoint with conversation support
 app.post('/api/chat', requireAuth, async (req, res) => {
   try {
     const user = req.user; // From SWA authentication middleware
     
-    const { fileName, message } = req.body;
+    const { fileName, message, conversationId } = req.body;
 
     if (!fileName || !message) {
       return res.status(400).json({ 
@@ -181,8 +185,45 @@ app.post('/api/chat', requireAuth, async (req, res) => {
     // Format CSV data for GPT prompt
     const csvString = formatCsvForPrompt(csvRows, fileName);
 
-    // Create system prompt
-    const systemPrompt = `You are a CSV data assistant.
+    // Handle conversation context
+    let conversation = null;
+    let conversationMessages = [];
+    
+    if (conversationId) {
+      try {
+        // Get existing conversation
+        conversation = await cosmosService.getConversation(conversationId, user.id);
+        
+        // Verify the conversation is for the same file
+        if (conversation.fileName !== fileName) {
+          return res.status(400).json({
+            success: false,
+            error: 'File mismatch',
+            message: `Conversation is associated with ${conversation.fileName}, not ${fileName}`
+          });
+        }
+        
+        // Get recent messages for context (last 10 messages to avoid token limits)
+        conversationMessages = await cosmosService.getRecentMessages(conversationId, user.id, 10);
+        console.log(`Using conversation context: ${conversationId} with ${conversationMessages.length} recent messages`);
+      } catch (error) {
+        console.warn(`Failed to load conversation ${conversationId}:`, error.message);
+        // Continue without conversation context
+      }
+    } else {
+      // Auto-create a new conversation if none provided
+      try {
+        const title = cosmosService.generateTitle([{ role: 'user', content: message }], fileName);
+        conversation = await cosmosService.createConversation(user.id, fileName, title);
+        console.log(`Auto-created conversation: ${conversation.id}`);
+      } catch (error) {
+        console.warn('Failed to auto-create conversation:', error.message);
+        // Continue without conversation (backward compatibility)
+      }
+    }
+
+    // Create system prompt with conversation context
+    let systemPrompt = `You are a CSV data assistant.
       Rules:
       - Only use the provided CSV data. Do not infer or add outside knowledge.
       - If the answer is not in the CSV, reply exactly: "No relevant data found."
@@ -194,25 +235,66 @@ app.post('/api/chat', requireAuth, async (req, res) => {
 
 ${csvString}`;
 
+    // Add conversation context if available
+    if (conversationMessages.length > 0) {
+      systemPrompt += `\n\nPrevious conversation context:\n`;
+      conversationMessages.forEach(msg => {
+        systemPrompt += `${msg.role}: ${msg.content}\n`;
+      });
+      systemPrompt += `\nContinue the conversation based on this context.`;
+    }
+
+    // Prepare messages for OpenAI
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: message }
+    ];
 
     // Call Azure OpenAI GPT-4.1
     const completion = await openai.chat.completions.create({
       model: 'gpt-4.1', // This matches your Azure deployment name
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: message }
-      ],
+      messages,
       max_tokens: 500,
       temperature: 0.1
     });
 
     const reply = completion.choices[0].message.content;
 
+    // Save messages to conversation if we have one
+    if (conversation) {
+      try {
+        // Add user message
+        await cosmosService.addMessage(conversation.id, user.id, {
+          role: 'user',
+          content: message
+        });
+        
+        // Add assistant response
+        await cosmosService.addMessage(conversation.id, user.id, {
+          role: 'assistant',
+          content: reply
+        });
+        
+        // Check if conversation needs archiving
+        const updatedConversation = await cosmosService.getConversation(conversation.id, user.id);
+        const archiveCheck = cosmosService.shouldArchiveConversation(updatedConversation);
+        
+        if (archiveCheck.shouldArchive) {
+          console.log(`Conversation ${conversation.id} should be archived:`, archiveCheck.reasons);
+          // Auto-archive could be implemented here or as a background job
+        }
+      } catch (error) {
+        console.error('Failed to save conversation messages:', error.message);
+        // Don't fail the chat response, just log the error
+      }
+    }
 
     res.json({
       success: true,
       reply,
-      fileName: fileName
+      fileName: fileName,
+      conversationId: conversation?.id || null,
+      conversationTitle: conversation?.title || null
     });
 
   } catch (error) {
