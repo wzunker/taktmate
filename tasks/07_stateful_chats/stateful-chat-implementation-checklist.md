@@ -28,39 +28,39 @@ Transform TaktMate from stateless single-turn conversations to persistent multi-
   - [X] Set up autoscale provisioned throughput (400-4000 RU/s)
   - [X] Enable automatic failover for high availability
 
-- [ ] **Database and Container Configuration**
+- [X] **Database and Container Configuration**
   - [X] Create database: `taktmate-conversations`
-  - [ ] Create container: `conversations`
-  - [ ] Set partition key: `/userId` for user isolation
-  - [ ] Configure TTL for automatic cleanup of old conversations
-  - [ ] Set up indexing policy for efficient queries
+  - [X] Create container: `conversations`
+  - [X] Set partition key: `/userId` for user isolation
+  - [X] Configure TTL for automatic cleanup of old conversations
+  - [X] Set up indexing policy for efficient queries
 
-- [ ] **Security Configuration**
-  - [ ] Configure Managed Identity access for backend App Service
-  - [ ] Set up RBAC permissions (Cosmos DB Data Contributor)
-  - [ ] Add connection string to Azure Key Vault
-  - [ ] Configure network access rules if needed
+- [X] **Security Configuration**
+  - [X] Configure Managed Identity access for backend App Service
+  - [X] Set up RBAC permissions (Cosmos DB Data Contributor)
+  - [X] Add connection string to Azure Key Vault
+  - [X] Configure network access rules if needed
 
 ### 1.2 Backend Dependencies & Configuration
-- [ ] **Install Cosmos DB SDK**
-  - [ ] Add `@azure/cosmos` package to backend
-  - [ ] Add `@azure/identity` for authentication (if not already present)
-  - [ ] Update `package.json` and run `npm install`
+- [X] **Install Cosmos DB SDK**
+  - [X] Add `@azure/cosmos` package to backend
+  - [X] Add `@azure/identity` for authentication (if not already present)
+  - [X] Update `package.json` and run `npm install`
 
-- [ ] **Environment Variables**
-  - [ ] Add `COSMOS_DB_ENDPOINT` to Azure App Service configuration
-  - [ ] Add `COSMOS_DB_DATABASE_NAME=taktmate-conversations`
-  - [ ] Add `COSMOS_DB_CONTAINER_NAME=conversations`
-  - [ ] Update local `.env` file for development
+- [X] **Environment Variables**
+  - [X] Add `COSMOS_DB_ENDPOINT` to Azure App Service configuration
+  - [X] Add `COSMOS_DB_DATABASE_NAME=taktmate-conversations`
+  - [X] Add `COSMOS_DB_CONTAINER_NAME=conversations`
+  - [X] Update local `.env` file for development
 
-- [ ] **Configuration Service**
-  - [ ] Create `backend/services/cosmos.js` for Cosmos DB client
-  - [ ] Initialize Cosmos client with Managed Identity
-  - [ ] Add connection health check to existing health endpoint
-  - [ ] Add error handling and retry logic
+- [X] **Configuration Service**
+  - [X] Create `backend/services/cosmos.js` for Cosmos DB client
+  - [X] Initialize Cosmos client with Managed Identity
+  - [X] Add connection health check to existing health endpoint
+  - [X] Add error handling and retry logic
 
 ### 1.3 Data Models & Schema Design
-- [ ] **Conversation Document Schema**
+- [X] **Conversation Document Schema**
   ```json
   {
     "id": "uuid-conversation-id",
@@ -88,35 +88,35 @@ Transform TaktMate from stateless single-turn conversations to persistent multi-
   }
   ```
 
-- [ ] **Message Limits & Archiving Rules**
-  - [ ] Define active message limit (e.g., 50 messages)
-  - [ ] Set conversation archiving threshold
-  - [ ] Design summarization trigger points
-  - [ ] Plan token usage tracking
+- [X] **Message Limits & Archiving Rules**
+  - [X] Define active message limit (e.g., 50 messages)
+  - [X] Set conversation archiving threshold
+  - [X] Design summarization trigger points
+  - [X] Plan token usage tracking
 
 ---
 
 ## Phase 2: Core Backend Implementation
 
 ### 2.1 Cosmos DB Service Layer
-- [ ] **Create `backend/services/conversationService.js`**
-  - [ ] `createConversation(userId, fileName, title?)` - Create new conversation
-  - [ ] `getConversation(conversationId, userId)` - Get conversation by ID
-  - [ ] `listUserConversations(userId, limit?, offset?)` - List user's conversations
-  - [ ] `addMessage(conversationId, userId, message)` - Add message to conversation
-  - [ ] `updateConversation(conversationId, userId, updates)` - Update conversation metadata
-  - [ ] `deleteConversation(conversationId, userId)` - Soft delete conversation
+- [X] **Create `backend/services/conversationService.js`** (implemented in cosmos.js)
+  - [X] `createConversation(userId, fileName, title?)` - Create new conversation
+  - [X] `getConversation(conversationId, userId)` - Get conversation by ID
+  - [X] `listUserConversations(userId, limit?, offset?)` - List user's conversations
+  - [X] `addMessage(conversationId, userId, message)` - Add message to conversation
+  - [X] `updateConversation(conversationId, userId, updates)` - Update conversation metadata
+  - [X] `deleteConversation(conversationId, userId)` - Soft delete conversation
 
-- [ ] **Message Management Functions**
-  - [ ] `getRecentMessages(conversationId, limit=20)` - Get recent messages only
-  - [ ] `getFullConversation(conversationId)` - Get all messages (from archive if needed)
-  - [ ] `archiveConversation(conversationId)` - Move to blob storage + summarize
-  - [ ] `generateTitle(messages)` - Auto-generate conversation title
+- [X] **Message Management Functions**
+  - [X] `getRecentMessages(conversationId, limit=20)` - Get recent messages only
+  - [X] `getFullConversation(conversationId)` - Get all messages (from archive if needed)
+  - [X] `archiveConversation(conversationId)` - Move to blob storage + summarize
+  - [X] `generateTitle(messages)` - Auto-generate conversation title
 
-- [ ] **Search and Filtering**
-  - [ ] `searchConversations(userId, query)` - Search by title/summary
-  - [ ] `getConversationsByFile(userId, fileName)` - Filter by associated file
-  - [ ] `getConversationsByDateRange(userId, startDate, endDate)` - Date filtering
+- [X] **Search and Filtering**
+  - [X] `searchConversations(userId, query)` - Search by title/summary
+  - [X] `getConversationsByFile(userId, fileName)` - Filter by associated file
+  - [X] `getConversationsByDateRange(userId, startDate, endDate)` - Date filtering
 
 ### 2.2 Conversation API Endpoints
 - [ ] **Create `backend/routes/conversations.js`**
