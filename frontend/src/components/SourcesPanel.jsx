@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import Card, { CardHeader, CardContent } from './Card';
 import ConversationItem from './ConversationItem';
 
