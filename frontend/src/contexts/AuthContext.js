@@ -89,24 +89,16 @@ export const AuthProvider = ({ children }) => {
         const emailClaim = data.clientPrincipal.claims?.find(claim =>
           claim.typ === 'email' ||
           claim.typ === 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress' ||
-          claim.typ === 'preferred_username' ||
-          claim.typ === 'upn'
-        );
-        
-        // Extract name from claims (better than using userDetails which shows "unknown")
-        const nameClaim = data.clientPrincipal.claims?.find(claim =>
-          claim.typ === 'name' ||
-          claim.typ === 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'
+          claim.typ === 'preferred_username'
         );
         
         const userEmail = emailClaim ? emailClaim.val : data.clientPrincipal.userDetails;
-        const userName = nameClaim && nameClaim.val !== 'unknown' ? nameClaim.val : userEmail;
         
         dispatch({ 
           type: AUTH_ACTIONS.SET_AUTHENTICATED, 
           payload: {
             id: data.clientPrincipal.userId,
-            name: userName,
+            name: data.clientPrincipal.userDetails,
             email: userEmail,
             roles: data.clientPrincipal.userRoles,
             identityProvider: data.clientPrincipal.identityProvider,
