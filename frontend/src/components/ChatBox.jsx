@@ -3,12 +3,20 @@ import axios from 'axios';
 import Card, { CardHeader, CardContent } from './Card';
 import useAuth from '../hooks/useAuth';
 
-const ChatBox = ({ fileData, className = '' }) => {
+const ChatBox = ({ 
+  fileData, 
+  className = '', 
+  conversationId = null,
+  onConversationCreated,
+  onConversationUpdated 
+}) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [typingDots, setTypingDots] = useState(0);
   const [messageCount, setMessageCount] = useState(0);
+  const [conversationLoading, setConversationLoading] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const { displayName } = useAuth();
@@ -27,9 +35,68 @@ const ChatBox = ({ fileData, className = '' }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Load conversation history
+  const loadConversation = async (convId) => {
+    if (!convId) return;
+    
+    setConversationLoading(true);
+    try {
+      // Get auth info from SWA
+      const authResponse = await fetch('/.auth/me');
+      const authData = await authResponse.json();
+      
+      if (!authData.clientPrincipal) {
+        console.error('No authentication data available');
+        return;
+      }
+
+      // Fetch conversation history
+      const response = await axios.get(`/api/conversations/${convId}/messages`, {
+        headers: {
+          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
+        },
+        timeout: 10000
+      });
+
+      if (response.data.success) {
+        const conversationMessages = response.data.messages.map(msg => ({
+          type: msg.role === 'user' ? 'user' : 'assistant',
+          content: msg.content,
+          timestamp: msg.timestamp
+        }));
+        
+        setMessages(conversationMessages);
+        setMessageCount(conversationMessages.length);
+        setCurrentConversationId(convId);
+      }
+    } catch (error) {
+      console.error('Failed to load conversation:', error);
+      // Show error message in chat
+      setMessages([{
+        type: 'error',
+        content: '❌ Failed to load conversation history. Please try again.',
+        timestamp: new Date().toISOString()
+      }]);
+    } finally {
+      setConversationLoading(false);
+    }
+  };
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Load conversation when conversationId changes
+  useEffect(() => {
+    if (conversationId && conversationId !== currentConversationId) {
+      loadConversation(conversationId);
+    } else if (!conversationId && currentConversationId) {
+      // Clear conversation when no conversation is selected
+      setCurrentConversationId(null);
+      setMessages([]);
+      setMessageCount(0);
+    }
+  }, [conversationId, currentConversationId]);
 
   // Typing animation effect
   useEffect(() => {
@@ -48,8 +115,8 @@ const ChatBox = ({ fileData, className = '' }) => {
   }, [sending]);
 
   useEffect(() => {
-    // Welcome message when file is uploaded
-    if (fileData && (fileData.filename || fileData.name) && fileData.headers) {
+    // Welcome message when file is uploaded (only if no conversation is loaded)
+    if (fileData && (fileData.filename || fileData.name) && fileData.headers && !currentConversationId) {
       const fileName = fileData.filename || fileData.name;
       const rowCount = fileData.rowCount || 'unknown';
       const columnCount = Array.isArray(fileData.headers) ? fileData.headers.length : 'unknown';
@@ -61,11 +128,11 @@ const ChatBox = ({ fileData, className = '' }) => {
         timestamp: new Date().toISOString()
       }]);
       setMessageCount(1);
-    } else {
+    } else if (!fileData && !currentConversationId) {
       setMessages([]);
       setMessageCount(0);
     }
-  }, [fileData]);
+  }, [fileData, currentConversationId]);
 
   // Don't render if no file is selected or if fileData is invalid
   if (!fileData || typeof fileData !== 'object') {
@@ -142,7 +209,8 @@ const ChatBox = ({ fileData, className = '' }) => {
       // Call backend directly with SWA auth data
       const response = await axios.post('/api/chat', {
         fileName: fileData.name || fileData.filename,
-        message: userMessage
+        message: userMessage,
+        conversationId: currentConversationId // Include conversation context
       }, {
         headers: {
           'Content-Type': 'application/json',
@@ -158,6 +226,29 @@ const ChatBox = ({ fileData, className = '' }) => {
           timestamp: new Date().toISOString()
         }]);
         setMessageCount(prev => prev + 1);
+
+        // Handle conversation creation/updates
+        if (response.data.conversationId) {
+          if (!currentConversationId) {
+            // New conversation created
+            setCurrentConversationId(response.data.conversationId);
+            if (onConversationCreated) {
+              onConversationCreated(response.data.conversation || {
+                id: response.data.conversationId,
+                fileName: fileData.name || fileData.filename,
+                title: response.data.title || 'New Conversation',
+                updatedAt: new Date().toISOString()
+              });
+            }
+          } else if (onConversationUpdated) {
+            // Existing conversation updated
+            onConversationUpdated(response.data.conversationId, {
+              title: response.data.title,
+              updatedAt: new Date().toISOString(),
+              messageCount: messageCount + 1
+            });
+          }
+        }
       } else {
         throw new Error(response.data.error || 'Invalid response from server');
       }
@@ -207,11 +298,23 @@ const ChatBox = ({ fileData, className = '' }) => {
   return (
     <Card variant="elevated" padding="sm" className={`flex flex-col h-full ${className}`}>
             <CardHeader
-                title={<span className="text-secondary-600 font-semibold lowercase">taktmate</span>}
+                title={
+          <div className="flex items-center space-x-2">
+            <span className="text-secondary-600 font-semibold lowercase">taktmate</span>
+            {currentConversationId && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
+                conversation
+              </span>
+            )}
+          </div>
+        }
         action={
-          messageCount > 1 && (
+          messageCount > 0 && (
             <span className="body-xs text-text-muted">
-              {messageCount - 1} message{messageCount - 1 !== 1 ? 's' : ''}
+              {currentConversationId ? 
+                `${messageCount} message${messageCount !== 1 ? 's' : ''}` :
+                `${messageCount - 1} message${messageCount - 1 !== 1 ? 's' : ''}`
+              }
             </span>
           )
         }
@@ -220,6 +323,13 @@ const ChatBox = ({ fileData, className = '' }) => {
 
       {/* Messages */}
       <CardContent className="flex-1 overflow-y-auto space-y-4 sm:space-y-6 px-2 sm:px-4">
+        {conversationLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mr-3"></div>
+            <span className="body-normal text-text-secondary">Loading conversation...</span>
+          </div>
+        ) : (
+          <>
         {messages.map((message, index) => (
           <div key={index} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
             {/* Message Bubble with Avatar Inside */}
@@ -304,6 +414,8 @@ const ChatBox = ({ fileData, className = '' }) => {
           </div>
         )}
         <div ref={messagesEndRef} />
+          </>
+        )}
       </CardContent>
 
               {/* Enhanced Input Area */}

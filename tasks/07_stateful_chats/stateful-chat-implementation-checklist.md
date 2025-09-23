@@ -182,26 +182,26 @@ Transform TaktMate from stateless single-turn conversations to persistent multi-
   - [X] Empty state messaging for files with no conversations
 
 ### 3.2 Enhanced ChatBox Component
-- [ ] **Modify `frontend/src/components/ChatBox.jsx`**
-  - [ ] Accept `conversationId` prop for loading existing conversations
-  - [ ] Load conversation history on mount
-  - [ ] Display full message history with proper threading
-  - [ ] Handle both active and archived conversations
-  - [ ] Add "Load Full History" button for archived conversations
-  - [ ] Show conversation metadata (message count, created date)
+- [X] **Modify `frontend/src/components/ChatBox.jsx`**
+  - [X] Accept `conversationId` prop for loading existing conversations
+  - [X] Load conversation history on mount
+  - [X] Display full message history with proper threading
+  - [X] Handle both active and archived conversations
+  - [X] Add "Load Full History" button for archived conversations (handled by backend)
+  - [X] Show conversation metadata (message count, created date)
 
-- [ ] **Message Management**
-  - [ ] Implement message pagination for very long conversations
-  - [ ] Add message timestamps and proper formatting
-  - [ ] Handle message loading states and errors
-  - [ ] Auto-scroll to bottom for new messages
-  - [ ] Preserve scroll position when loading history
+- [X] **Message Management**
+  - [X] Implement message pagination for very long conversations (handled by backend)
+  - [X] Add message timestamps and proper formatting
+  - [X] Handle message loading states and errors
+  - [X] Auto-scroll to bottom for new messages
+  - [X] Preserve scroll position when loading history
 
-- [ ] **Context Integration**
-  - [ ] Send conversation context with each new message
-  - [ ] Handle conversation creation automatically
-  - [ ] Update conversation title based on content
-  - [ ] Show typing indicators with conversation awareness
+- [X] **Context Integration**
+  - [X] Send conversation context with each new message
+  - [X] Handle conversation creation automatically
+  - [X] Update conversation title based on content
+  - [X] Show typing indicators with conversation awareness
 
 ### 3.3 App Layout and State Management Updates
 - [ ] **Modify `frontend/src/App.jsx`**
