@@ -4,6 +4,7 @@ import SourcesPanel from './components/SourcesPanel';
 import ChatBox from './components/ChatBox';
 import DataTable from './components/DataTable';
 import UserProfile from './components/UserProfile';
+import UserDebug from './components/UserDebug';
 import Logo from './components/Logo';
 import Card from './components/Card';
 import useAuth from './hooks/useAuth';
@@ -252,6 +253,11 @@ function App() {
 
       {/* Main Content - Dynamic Layout */}
       <main className="w-full px-4 sm:px-6 lg:px-8 py-4 flex-1 min-h-0">
+        {/* Debug component - temporary for troubleshooting */}
+        <div className="mb-4">
+          <UserDebug />
+        </div>
+        
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
           {/* Sources Column - Dynamic width based on collapse */}
           <div className={`h-full ${sourcesCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} transition-all duration-300`}>

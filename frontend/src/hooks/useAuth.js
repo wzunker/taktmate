@@ -22,15 +22,27 @@ const useAuth = () => {
     if (!user) return null;
     
     // Try to get First Name from External ID user flow attributes
+    // External ID custom attributes are typically prefixed with extension_
     const firstNameClaim = user.claims?.find(claim => 
       claim.typ === 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname' ||
       claim.typ === 'given_name' ||
-      claim.typ === 'FirstName' ||
-      claim.typ === 'extension_FirstName'
+      claim.typ === 'extension_FirstName' ||
+      claim.typ === 'extension_givenName' ||
+      claim.typ === 'FirstName'
     );
     
     if (firstNameClaim) {
       return firstNameClaim.val;
+    }
+    
+    // Try to get name claim
+    const nameClaim = user.claims?.find(claim => 
+      claim.typ === 'name' ||
+      claim.typ === 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'
+    );
+    
+    if (nameClaim) {
+      return nameClaim.val;
     }
     
     // Fallback to user details or email
@@ -73,12 +85,14 @@ const useAuth = () => {
     
     const firstName = getClaimValue('http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname') || 
                      getClaimValue('given_name') || 
-                     getClaimValue('FirstName') || 
-                     getClaimValue('extension_FirstName');
+                     getClaimValue('extension_FirstName') || 
+                     getClaimValue('extension_givenName') ||
+                     getClaimValue('FirstName');
     const lastName = getClaimValue('http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname') || 
                     getClaimValue('family_name') || 
-                    getClaimValue('LastName') || 
-                    getClaimValue('extension_LastName');
+                    getClaimValue('extension_LastName') || 
+                    getClaimValue('extension_surname') ||
+                    getClaimValue('LastName');
     
     if (firstName && lastName) {
       return `${firstName} ${lastName}`;
@@ -89,6 +103,26 @@ const useAuth = () => {
     }
     
     return getUserDisplayName();
+  };
+
+  // Helper function to get company
+  const getCompany = () => {
+    if (!user) return null;
+    
+    return getClaimValue('extension_Company') || 
+           getClaimValue('Company') || 
+           getClaimValue('http://schemas.xmlsoap.org/ws/2005/05/identity/claims/companyname') ||
+           null;
+  };
+
+  // Helper function to get job title
+  const getJobTitle = () => {
+    if (!user) return null;
+    
+    return getClaimValue('extension_JobTitle') || 
+           getClaimValue('JobTitle') || 
+           getClaimValue('http://schemas.xmlsoap.org/ws/2005/05/identity/claims/jobtitle') ||
+           null;
   };
 
   // Helper function to check if authentication is required
@@ -123,6 +157,8 @@ const useAuth = () => {
     getUserDisplayName,
     getUserEmail,
     getFullName,
+    getCompany,
+    getJobTitle,
     hasRole,
     getClaimValue,
     requireAuth,
@@ -132,7 +168,9 @@ const useAuth = () => {
     isLoggedOut: !isAuthenticated && !isLoading,
     displayName: getUserDisplayName(),
     fullName: getFullName(),
-    email: getUserEmail()
+    email: getUserEmail(),
+    company: getCompany(),
+    jobTitle: getJobTitle()
   };
 };
 
