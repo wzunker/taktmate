@@ -23,9 +23,11 @@ function App() {
   const { isAuthenticated, isLoading, error } = useAuth();
 
   // Load files from backend when authenticated
-  const loadFiles = useCallback(async () => {
+  const loadFiles = useCallback(async (showLoading = false) => {
     if (!isAuthenticated) return;
-    setFilesLoading(true);
+    if (showLoading) {
+      setFilesLoading(true);
+    }
     try {
       // Get auth info from SWA
       const authResponse = await fetch('/.auth/me');
@@ -70,14 +72,16 @@ function App() {
       console.error('Failed to load files:', err);
       // Don't show error to user for initial load failure
     } finally {
-      setFilesLoading(false);
+      if (showLoading) {
+        setFilesLoading(false);
+      }
     }
   }, [isAuthenticated, activeFileId]);
 
   // Load files when component mounts and user is authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      loadFiles();
+      loadFiles(true); // Show loading spinner on initial load
     }
   }, [isAuthenticated, isLoading, loadFiles]);
 
@@ -100,8 +104,8 @@ function App() {
       return newFiles;
     });
 
-    // Refresh the file list to get updated quota info
-    loadFiles();
+    // Refresh the file list to get updated quota info (no loading spinner)
+    loadFiles(false);
   };
 
   const handleFileDeleted = async (fileId) => {
@@ -132,8 +136,8 @@ function App() {
         setActiveFileId(remainingFiles.length > 0 ? remainingFiles[0].name : null);
       }
 
-      // Refresh the file list to get updated quota info
-      loadFiles();
+      // Refresh the file list to get updated quota info (no loading spinner)
+      loadFiles(false);
     } catch (err) {
       console.error('Failed to delete file:', err);
       // You might want to show an error message to the user here

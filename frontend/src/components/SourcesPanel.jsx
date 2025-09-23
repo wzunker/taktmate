@@ -198,7 +198,7 @@ const SourcesPanel = ({
           disabled={uploading}
           className="w-full bg-primary-600 text-white px-4 py-2.5 rounded-button body-small font-medium hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors warm-shadow"
         >
-          {uploading ? 'Uploading...' : 'Browse Files'}
+          {uploading ? 'Uploading...' : 'add'}
         </button>
 
         {/* Privacy Info Expandable */}

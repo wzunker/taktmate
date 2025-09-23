@@ -121,19 +121,32 @@ const DataTable = ({ fileData, className = '', isCollapsed, onToggleCollapse }) 
       setCsvData(parsedData);
     } catch (err) {
       console.error('Failed to fetch file content:', err);
-      setError(err.message);
+      
+      // Handle specific error types
+      if (err.response?.status === 404 || err.message.includes('does not exist')) {
+        setError('File not found. It may have been deleted.');
+      } else if (err.response?.status === 429 || err.message.includes('429')) {
+        setError('Too many requests. Please wait a moment and try again.');
+      } else {
+        setError(err.message || 'Failed to load file content');
+      }
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Load file content when fileData changes
+  // Load file content when fileData changes (with debouncing)
   useEffect(() => {
     if (fileData && fileData.name) {
-      fetchFileContent(fileData.name);
-      // Reset sorting when new file is loaded
-      setSortColumn(null);
-      setSortDirection('asc');
+      // Add a small delay to prevent rapid requests
+      const timeoutId = setTimeout(() => {
+        fetchFileContent(fileData.name);
+        // Reset sorting when new file is loaded
+        setSortColumn(null);
+        setSortDirection('asc');
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
     } else {
       setCsvData(null);
     }
