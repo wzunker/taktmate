@@ -75,57 +75,57 @@ This checklist guides you through adding a custom domain to your TaktMate web ap
   - [X] Click "Validate" in Azure Portal
   - [X] Wait for validation to complete (can take up to 24 hours)
 
-- [ ] **Enable SSL certificate**
-  - [ ] Verify "App Service Managed Certificate" is selected
-  - [ ] Wait for SSL certificate provisioning (5-10 minutes)
-  - [ ] Confirm HTTPS access works at new domain
+- [X] **Enable SSL certificate**
+  - [X] Verify "App Service Managed Certificate" is selected
+  - [X] Wait for SSL certificate provisioning (5-10 minutes)
+  - [X] Confirm HTTPS access works at new domain
 
 ### Task 3.2: Update Static Web App Configuration
-- [ ] **Update routing configuration**
-  - [ ] Verify `frontend/staticwebapp.config.json` routes work with custom domain
-  - [ ] Test authentication flows at new domain
-  - [ ] Confirm API proxy routing functions correctly
+- [X] **Update routing configuration**
+  - [X] Verify `frontend/staticwebapp.config.json` routes work with custom domain
+  - [X] Test authentication flows at new domain
+  - [X] Confirm API proxy routing functions correctly
 
 ---
 
 ## Phase 4: Azure Backend Domain Configuration
 
 ### Task 4.1: Configure App Service Custom Domain
-- [ ] **Add custom domain to App Service**
-  - [ ] Navigate to: Azure Portal → App Services → `taktmate-backend-api` → Custom domains
-  - [ ] Click "Add custom domain"
-  - [ ] Enter domain: `api.taktconnect.com` (or your chosen domain)
-  - [ ] Select "CNAME" validation
+- [X] **Add custom domain to App Service**
+  - [X] Navigate to: Azure Portal → App Services → `taktmate-backend-api` → Custom domains
+  - [X] Click "Add custom domain"
+  - [X] Enter domain: `api.taktconnect.com` (or your chosen domain)
+  - [X] Select "CNAME" validation
 
-- [ ] **Complete domain validation**
-  - [ ] Add Azure-provided TXT record to Porkbun DNS
-  - [ ] Click "Validate" in Azure Portal
-  - [ ] Wait for validation completion
+- [X] **Complete domain validation**
+  - [X] Add Azure-provided TXT record to Porkbun DNS
+  - [X] Click "Validate" in Azure Portal
+  - [X] Wait for validation completion
 
-- [ ] **Configure SSL certificate**
-  - [ ] Navigate to: TLS/SSL settings → Private Key Certificates (.pfx)
-  - [ ] Click "Create App Service Managed Certificate"
-  - [ ] Select your custom domain
-  - [ ] Wait for certificate creation
-  - [ ] Navigate to: TLS/SSL settings → Bindings
-  - [ ] Add TLS binding for your custom domain
+- [X] **Configure SSL certificate**
+  - [X] Navigate to: TLS/SSL settings → Private Key Certificates (.pfx)
+  - [X] Click "Create App Service Managed Certificate"
+  - [X] Select your custom domain
+  - [X] Wait for certificate creation
+  - [X] Navigate to: TLS/SSL settings → Bindings
+  - [X] Add TLS binding for your custom domain
 
 ---
 
 ## Phase 5: Authentication Configuration Updates
 
 ### Task 5.1: Update Entra ID App Registration
-- [ ] **Add new redirect URIs**
-  - [ ] Navigate to: Azure Portal → Microsoft Entra ID → App registrations
-  - [ ] Find your TaktMate application registration
-  - [ ] Go to Authentication → Redirect URIs
-  - [ ] Add new redirect URI: `https://app.taktconnect.com/.auth/login/aad/callback`
-  - [ ] Keep existing URI: `https://orange-flower-0b350780f.1.azurestaticapps.net/.auth/login/aad/callback`
-  - [ ] Save changes
+- [X] **Add new redirect URIs**
+  - [X] Navigate to: Azure Portal → Microsoft Entra ID → App registrations
+  - [X] Find your TaktMate application registration
+  - [X] Go to Authentication → Redirect URIs
+  - [X] Add new redirect URI: `https://app.taktconnect.com/.auth/login/aad/callback`
+  - [X] Keep existing URI: `https://orange-flower-0b350780f.1.azurestaticapps.net/.auth/login/aad/callback`
+  - [X] Save changes
 
-- [ ] **Update CORS settings if needed**
-  - [ ] Check if additional CORS origins need to be configured
-  - [ ] Add `https://app.taktconnect.com` to allowed origins if required
+- [X] **Update CORS settings if needed**
+  - [X] Check if additional CORS origins need to be configured
+  - [X] Add `https://app.taktconnect.com` to allowed origins if required
 
 ### Task 5.2: Verify Authentication Configuration
 - [ ] **Test authentication flow**
@@ -139,9 +139,9 @@ This checklist guides you through adding a custom domain to your TaktMate web ap
 ## Phase 6: Backend Configuration Updates
 
 ### Task 6.1: Update CORS Configuration
-- [ ] **Update backend CORS origins**
-  - [ ] Locate CORS configuration in `backend/index.js` (lines 30-42)
-  - [ ] Add custom domain to `allowedOrigins` array:
+- [X] **Update backend CORS origins**
+  - [X] Locate CORS configuration in `backend/index.js` (lines 30-42)
+  - [X] Add custom domain to `allowedOrigins` array:
     ```javascript
     const allowedOrigins = [
       'http://localhost:3000', 
@@ -150,38 +150,49 @@ This checklist guides you through adding a custom domain to your TaktMate web ap
       'https://app.taktconnect.com'  // Add this line
     ];
     ```
-  - [ ] Deploy updated backend code
+  - [X] Deploy updated backend code
 
 ### Task 6.2: Update Environment Variables
-- [ ] **Update Azure App Service settings**
-  - [ ] Navigate to: App Service → Environment variables
-  - [ ] Update `FRONTEND_URL` or `CORS_ORIGIN` to include new domain
-  - [ ] Consider adding both old and new domains during transition:
+- [X] **Update Azure App Service settings**
+  - [X] Navigate to: App Service → Environment variables
+  - [X] Update `FRONTEND_URL` or `CORS_ORIGIN` to include new domain
+  - [X] Consider adding both old and new domains during transition:
     ```
     CORS_ORIGIN=https://orange-flower-0b350780f.1.azurestaticapps.net,https://app.taktconnect.com
     ```
 
 ### Task 6.3: Update Content Security Policy
-- [ ] **Review CSP headers**
-  - [ ] Check `backend/index.js` CSP configuration (lines 61-70)
-  - [ ] Ensure new domains are included in `connect-src` directive if needed
-  - [ ] Update if API calls are made from custom domain
+- [X] **Review CSP headers**
+  - [X] Check `backend/index.js` CSP configuration (lines 61-70)
+  - [X] Ensure new domains are included in `connect-src` directive if needed
+  - [X] Update if API calls are made from custom domain
+  - [X] **Result**: No changes needed - CSP correctly configured for proxy architecture
+
+### Task 6.4: Update Azure Blob Storage CORS
+- [X] **Configure blob storage CORS for custom domain**
+  - [X] Navigate to: Azure Portal → Storage Account → `taktmateblob` → Resource sharing (CORS)
+  - [X] Add custom domain to allowed origins: `https://app.taktconnect.com`
+  - [X] Verify allowed methods include: `PUT,OPTIONS,GET`
+  - [X] Confirm allowed headers and exposed headers are configured
+  - [X] Required for direct file upload functionality from custom domain
 
 ---
 
 ## Phase 7: Frontend Configuration Updates
 
 ### Task 7.1: Update API Endpoints (If Needed)
-- [ ] **Review API endpoint configuration**
-  - [ ] Current setup uses relative URLs (`/api/*`) - ✅ No changes needed
-  - [ ] If any hardcoded URLs exist, update them to use custom backend domain
-  - [ ] Verify Static Web App proxy configuration routes to custom backend domain
+- [X] **Review API endpoint configuration**
+  - [X] Current setup uses relative URLs (`/api/*`) - ✅ No changes needed
+  - [X] If any hardcoded URLs exist, update them to use custom backend domain
+  - [X] Verify Static Web App proxy configuration routes to custom backend domain
+  - [X] **Result**: Perfect configuration - all API calls use relative URLs
 
 ### Task 7.2: Update Static Web App Proxy (Optional)
-- [ ] **Consider updating staticwebapp.config.json**
-  - [ ] Current proxy routes to: `taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net`
-  - [ ] Option to update to custom domain: `api.taktconnect.com`
-  - [ ] ⚠️ **Recommendation**: Keep Azure hostname for reliability; custom domain as alias
+- [X] **Consider updating staticwebapp.config.json**
+  - [X] Current proxy routes to: `taktmate-backend-api-csheb3aeg8f5bcbv.eastus-01.azurewebsites.net`
+  - [X] Option to update to custom domain: `api.taktconnect.com`
+  - [X] ⚠️ **Recommendation**: Keep Azure hostname for reliability; custom domain as alias
+  - [X] **Decision**: No explicit proxy config needed - Azure handles routing automatically
 
 ---
 

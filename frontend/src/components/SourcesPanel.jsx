@@ -10,7 +10,8 @@ const SourcesPanel = ({
   onFileDownload, 
   onFileDeleted,
   isCollapsed,
-  onToggleCollapse
+  onToggleCollapse,
+  filesLoading
 }) => {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -33,29 +34,54 @@ const SourcesPanel = ({
     e.stopPropagation();
     setDragActive(false);
     
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFiles(e.dataTransfer.files);
     }
   };
 
   const handleFileInput = (e) => {
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files && e.target.files.length > 0) {
       handleFiles(e.target.files);
     }
   };
 
-  const handleFiles = async (files) => {
-    const file = files[0];
+  const handleFiles = async (fileList) => {
+    const files = Array.from(fileList);
+    const maxFiles = 5;
     
-    // Validate file type
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      setError('Please select a CSV file');
+    // Validate we don't exceed file limit
+    if (files.length > maxFiles) {
+      setError(`Please select no more than ${maxFiles} files at once`);
       return;
     }
     
-    // Validate file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('File size must be less than 5MB');
+    // Validate each file
+    const validFiles = [];
+    const errors = [];
+    
+    for (const file of files) {
+      // Validate file type
+      if (!file.name.toLowerCase().endsWith('.csv')) {
+        errors.push(`${file.name}: Must be a CSV file`);
+        continue;
+      }
+      
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        errors.push(`${file.name}: File size must be less than 5MB`);
+        continue;
+      }
+      
+      validFiles.push(file);
+    }
+    
+    if (errors.length > 0) {
+      setError(errors.join(', '));
+      return;
+    }
+    
+    if (validFiles.length === 0) {
+      setError('No valid files to upload');
       return;
     }
 
@@ -71,47 +97,52 @@ const SourcesPanel = ({
         throw new Error('Authentication required. Please log in.');
       }
 
-      // Step 1: Request SAS token from backend
-      const sasResponse = await fetch('/api/files/sas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
-        },
-        body: JSON.stringify({
-          fileName: file.name,
-          contentType: file.type || 'text/csv',
-          sizeBytes: file.size
-        })
-      });
+      const authHeaders = {
+        'Content-Type': 'application/json',
+        'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
+      };
 
-      const sasData = await sasResponse.json();
-      
-      if (!sasData.success) {
-        throw new Error(sasData.message || sasData.error || 'Failed to get upload URL');
+      // Upload each file
+      for (const file of validFiles) {
+        // Step 1: Request SAS token from backend
+        const sasResponse = await fetch('/api/files/sas', {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({
+            fileName: file.name,
+            contentType: file.type || 'text/csv',
+            sizeBytes: file.size
+          })
+        });
+
+        const sasData = await sasResponse.json();
+        
+        if (!sasData.success) {
+          throw new Error(`Failed to get upload URL for ${file.name}: ${sasData.message || sasData.error || 'Unknown error'}`);
+        }
+
+        // Step 2: Upload file to Azure Blob Storage
+        const uploadResponse = await fetch(sasData.uploadUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': file.type || 'text/csv',
+            'x-ms-blob-type': 'BlockBlob'
+          },
+          body: file
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error(`Upload failed for ${file.name}: ${uploadResponse.statusText}`);
+        }
+
+        // Step 3: Notify parent component for each successful upload
+        await onFileUploaded({
+          name: file.name,
+          size: file.size,
+          type: file.type || 'text/csv',
+          lastModified: new Date().toISOString()
+        });
       }
-
-      // Step 2: Upload file to Azure Blob Storage
-      const uploadResponse = await fetch(sasData.uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': file.type || 'text/csv',
-          'x-ms-blob-type': 'BlockBlob'
-        },
-        body: file
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error(`Upload failed: ${uploadResponse.statusText}`);
-      }
-
-      // Step 3: Notify parent component of successful upload
-      await onFileUploaded({
-        name: file.name,
-        size: file.size,
-        type: file.type || 'text/csv',
-        lastModified: new Date().toISOString()
-      });
       
     } catch (error) {
       console.error('Upload error:', error);
@@ -167,7 +198,7 @@ const SourcesPanel = ({
           disabled={uploading}
           className="w-full bg-primary-600 text-white px-4 py-2.5 rounded-button body-small font-medium hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors warm-shadow"
         >
-          {uploading ? 'Uploading...' : 'Add'}
+          {uploading ? 'Uploading...' : 'Browse Files'}
         </button>
 
         {/* Privacy Info Expandable */}
@@ -193,6 +224,7 @@ const SourcesPanel = ({
           ref={fileInputRef}
           type="file"
           accept=".csv"
+          multiple
           onChange={handleFileInput}
           className="hidden"
         />
@@ -205,7 +237,7 @@ const SourcesPanel = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
             </div>
-            <p className="body-large font-medium text-primary-600">Drop your CSV file here</p>
+            <p className="body-large font-medium text-primary-600">Drop your CSV files here</p>
             <p className="body-small text-primary-500 mt-1">Up to 5MB each</p>
           </div>
         )}
@@ -222,7 +254,12 @@ const SourcesPanel = ({
 
         {/* File List */}
         <div className="flex-1 min-h-0">
-          {uploadedFiles.length > 0 ? (
+          {filesLoading ? (
+            <div className="flex flex-col items-center justify-center py-8 space-y-3">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+              <p className="body-small text-text-muted">Loading files...</p>
+            </div>
+          ) : uploadedFiles.length > 0 ? (
             <div className="space-y-2">
               <h4 className="body-small font-medium text-text-secondary">Files ({uploadedFiles.length}/5)</h4>
               <div className="space-y-1 max-h-full overflow-y-auto mobile-scrollbar">

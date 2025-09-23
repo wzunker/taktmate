@@ -19,11 +19,13 @@ function App() {
   });
   const [sourcesCollapsed, setSourcesCollapsed] = useState(false);
   const [previewCollapsed, setPreviewCollapsed] = useState(false);
+  const [filesLoading, setFilesLoading] = useState(false);
   const { isAuthenticated, isLoading, error } = useAuth();
 
   // Load files from backend when authenticated
   const loadFiles = useCallback(async () => {
     if (!isAuthenticated) return;
+    setFilesLoading(true);
     try {
       // Get auth info from SWA
       const authResponse = await fetch('/.auth/me');
@@ -67,6 +69,8 @@ function App() {
     } catch (err) {
       console.error('Failed to load files:', err);
       // Don't show error to user for initial load failure
+    } finally {
+      setFilesLoading(false);
     }
   }, [isAuthenticated, activeFileId]);
 
@@ -257,6 +261,7 @@ function App() {
               onFileDeleted={handleFileDeleted}
               isCollapsed={sourcesCollapsed}
               onToggleCollapse={setSourcesCollapsed}
+              filesLoading={filesLoading}
             />
           </div>
           
