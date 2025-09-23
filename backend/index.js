@@ -7,6 +7,7 @@ const { parseCsv, formatCsvForPrompt } = require('./processCsv');
 const { requireAuth } = require('./middleware/auth');
 const { healthCheck, getBlobContent, listUserFiles } = require('./services/storage');
 const cosmosService = require('./services/cosmos');
+const summarizerService = require('./services/summarizerService');
 const filesRouter = require('./routes/files');
 const conversationsRouter = require('./routes/conversations');
 
@@ -90,8 +91,13 @@ app.get('/api/health', async (req, res) => {
     // Check Cosmos DB connectivity
     const cosmosHealth = await cosmosService.healthCheck();
     
+    // Check Summarizer service connectivity
+    const summarizerHealth = await summarizerService.healthCheck();
+    
     const overallStatus = 
-      storageHealth.status === 'healthy' && cosmosHealth.status === 'healthy' 
+      storageHealth.status === 'healthy' && 
+      cosmosHealth.status === 'healthy' && 
+      summarizerHealth.status === 'healthy'
         ? 'OK' : 'DEGRADED';
     const statusCode = overallStatus === 'OK' ? 200 : 503;
     
@@ -101,7 +107,8 @@ app.get('/api/health', async (req, res) => {
       services: {
         api: 'healthy',
         storage: storageHealth,
-        cosmos: cosmosHealth
+        cosmos: cosmosHealth,
+        summarizer: summarizerHealth
       },
       environment: {
         nodeVersion: process.version,
@@ -275,13 +282,26 @@ ${csvString}`;
           content: reply
         });
         
-        // Check if conversation needs archiving
+        // Check if conversation needs archiving or summarization
         const updatedConversation = await cosmosService.getConversation(conversation.id, user.id);
         const archiveCheck = cosmosService.shouldArchiveConversation(updatedConversation);
+        const needsSummary = cosmosService.shouldSummarizeConversation(updatedConversation);
         
         if (archiveCheck.shouldArchive) {
           console.log(`Conversation ${conversation.id} should be archived:`, archiveCheck.reasons);
-          // Auto-archive could be implemented here or as a background job
+          // Trigger background archiving (non-blocking)
+          summarizerService.archiveConversationComplete(conversation.id, user.id)
+            .then(() => console.log(`✅ Background archiving completed for ${conversation.id}`))
+            .catch(error => console.error(`❌ Background archiving failed for ${conversation.id}:`, error.message));
+        } else if (needsSummary) {
+          console.log(`Conversation ${conversation.id} needs summarization`);
+          // Generate summary in background (non-blocking)
+          summarizerService.summarizeConversation(updatedConversation.messages, updatedConversation.fileName)
+            .then(summary => {
+              return cosmosService.updateConversation(conversation.id, user.id, { summary });
+            })
+            .then(() => console.log(`✅ Background summarization completed for ${conversation.id}`))
+            .catch(error => console.error(`❌ Background summarization failed for ${conversation.id}:`, error.message));
         }
       } catch (error) {
         console.error('Failed to save conversation messages:', error.message);
@@ -337,5 +357,16 @@ app.listen(PORT, async () => {
     }
   } catch (error) {
     console.error('ERROR: Failed to check Cosmos DB connectivity on startup:', error.message);
+  }
+
+  // Test Summarizer service connectivity on startup
+  try {
+    const summarizerHealth = await summarizerService.healthCheck();
+    console.log(`Summarizer service connectivity: ${summarizerHealth.status}`);
+    if (summarizerHealth.status !== 'healthy') {
+      console.warn('WARNING: Summarizer service is not healthy:', summarizerHealth.error);
+    }
+  } catch (error) {
+    console.error('ERROR: Failed to check Summarizer service connectivity on startup:', error.message);
   }
 });

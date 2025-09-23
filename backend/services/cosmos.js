@@ -407,11 +407,27 @@ class CosmosService {
     try {
       const conversation = await this.getConversation(conversationId, userId);
       
-      // If conversation is archived and has a blob URL, we would fetch from blob here
-      // For now, return the conversation as-is (Phase 2.3 will implement blob retrieval)
+      // If conversation is archived and has a blob URL, fetch from blob storage
       if (conversation.status === CONVERSATION_CONFIG.STATUS.ARCHIVED && conversation.archiveBlobUrl) {
-        console.log(`📁 Conversation ${conversationId} is archived. Full blob retrieval not yet implemented.`);
-        // TODO: Implement blob retrieval in Phase 2.3
+        console.log(`📁 Conversation ${conversationId} is archived, retrieving from blob storage`);
+        try {
+          // Dynamically import to avoid circular dependency
+          const summarizerService = require('./summarizerService');
+          const archivedConversation = await summarizerService.getArchivedConversation(conversation.archiveBlobUrl);
+          
+          // Merge archived data with current metadata
+          const fullConversation = {
+            ...conversation,
+            messages: archivedConversation.messages || conversation.messages,
+            originalMessageCount: archivedConversation.messageCount || conversation.messageCount
+          };
+          
+          console.log(`✅ Retrieved full archived conversation: ${conversationId}`);
+          return fullConversation;
+        } catch (blobError) {
+          console.warn(`⚠️ Failed to retrieve archived conversation from blob, using trimmed version:`, blobError.message);
+          // Fall back to the trimmed version in Cosmos DB
+        }
       }
       
       console.log(`✅ Retrieved full conversation: ${conversationId}`);
@@ -430,29 +446,12 @@ class CosmosService {
    */
   async archiveConversation(conversationId, userId) {
     try {
-      const conversation = await this.getConversation(conversationId, userId);
+      // Use the full summarization service for complete archiving
+      const summarizerService = require('./summarizerService');
+      const archivedConversation = await summarizerService.archiveConversationComplete(conversationId, userId);
       
-      if (conversation.status === CONVERSATION_CONFIG.STATUS.ARCHIVED) {
-        console.log(`⚠️ Conversation ${conversationId} is already archived`);
-        return conversation;
-      }
-      
-      // TODO: Implement blob storage archiving in Phase 2.3
-      // For now, just update status and keep recent messages
-      const recentMessages = conversation.messages.slice(-10); // Keep last 10 messages
-      
-      const updates = {
-        status: CONVERSATION_CONFIG.STATUS.ARCHIVED,
-        messages: recentMessages,
-        archiveBlobUrl: null, // Will be set when blob archiving is implemented
-        summary: conversation.summary || `Conversation about ${conversation.fileName} with ${conversation.messageCount} messages`,
-        ttl: CONVERSATION_CONFIG.ARCHIVED_TTL // Extend TTL for archived conversations
-      };
-      
-      const updatedConversation = await this.updateConversation(conversationId, userId, updates);
-      
-      console.log(`📁 Archived conversation: ${conversationId}`);
-      return updatedConversation;
+      console.log(`📁 Archived conversation using summarization service: ${conversationId}`);
+      return archivedConversation;
     } catch (error) {
       console.error(`❌ Failed to archive conversation ${conversationId}:`, error.message);
       throw error;

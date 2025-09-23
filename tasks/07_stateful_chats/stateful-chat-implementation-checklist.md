@@ -141,18 +141,18 @@ Transform TaktMate from stateless single-turn conversations to persistent multi-
   - [ ] `GET /api/conversations/:id/export/pdf` - Export as PDF (future)
 
 ### 2.3 Summarization Service
-- [ ] **Create `backend/services/summarizerService.js`**
-  - [ ] `summarizeConversation(messages)` - Generate conversation summary
-  - [ ] `shouldArchive(conversation)` - Check if conversation needs archiving
-  - [ ] `archiveToBlob(conversation)` - Save full conversation to blob storage
-  - [ ] `trimConversation(conversation, keepLast=10)` - Keep only recent messages
+- [X] **Create `backend/services/summarizerService.js`**
+  - [X] `summarizeConversation(messages)` - Generate conversation summary
+  - [X] `shouldArchive(conversation)` - Check if conversation needs archiving
+  - [X] `archiveToBlob(conversation)` - Save full conversation to blob storage
+  - [X] `trimConversation(conversation, keepLast=10)` - Keep only recent messages
 
-- [ ] **Integration with Chat Flow**
-  - [ ] Check message count after each new message
-  - [ ] Trigger summarization when threshold reached
-  - [ ] Archive full conversation to blob storage
-  - [ ] Update Cosmos document with summary + recent messages only
-  - [ ] Store blob URL for full history retrieval
+- [X] **Integration with Chat Flow**
+  - [X] Check message count after each new message
+  - [X] Trigger summarization when threshold reached
+  - [X] Archive full conversation to blob storage
+  - [X] Update Cosmos document with summary + recent messages only
+  - [X] Store blob URL for full history retrieval
 
 ---
 
