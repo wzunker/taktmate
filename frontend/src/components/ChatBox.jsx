@@ -442,34 +442,97 @@ const ChatBox = ({
           <>
         {/* Suggested Questions */}
         {suggestions.length > 0 && messages.length === 0 && (
-          <div className="space-y-3">
+          <div 
+            className="space-y-4 animate-fade-in-up"
+            role="region"
+            aria-label="Suggested questions to get started"
+          >
             <div className="flex justify-center">
-              <div className="text-center">
-                <h3 className="body-normal font-medium text-text-primary mb-2">Try asking:</h3>
-                <div className="space-y-2">
+              <div className="text-center max-w-2xl w-full">
+                {/* Header with icon */}
+                <div className="flex items-center justify-center space-x-2 mb-4">
+                  <div className="flex-shrink-0">
+                    <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <h3 className="heading-small text-text-primary font-medium">
+                    Get started with these questions:
+                  </h3>
+                </div>
+                
+                {/* Suggestion buttons with staggered animation */}
+                <div className="space-y-3">
                   {suggestions.map((suggestion, index) => (
                     <button
                       key={index}
                       onClick={() => handleSuggestionClick(suggestion)}
                       disabled={sending}
-                      className="block w-full text-left px-4 py-3 bg-background-warm-white border border-gray-200 rounded-card hover:border-primary-300 hover:bg-primary-50 transition-all duration-200 warm-shadow hover:warm-shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      className={`
+                        group relative block w-full text-left px-5 py-4 
+                        bg-gradient-to-r from-background-warm-white to-primary-25
+                        border border-gray-200 rounded-lg
+                        hover:border-primary-300 hover:from-primary-50 hover:to-primary-100
+                        focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+                        transform transition-all duration-300 ease-out
+                        hover:scale-[1.02] hover:-translate-y-0.5
+                        disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none
+                        warm-shadow hover:warm-shadow-xl
+                        animate-fade-in-up
+                      `}
+                      style={{ animationDelay: `${index * 150}ms` }}
+                      aria-label={`Ask: ${suggestion}`}
+                      tabIndex={0}
                     >
-                      <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0 mt-0.5">
-                          <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      {/* Gradient overlay on hover */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-primary-100/0 via-primary-100/20 to-primary-200/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"></div>
+                      
+                      <div className="relative flex items-start space-x-4">
+                        <div className="flex-shrink-0 mt-1">
+                          <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center group-hover:bg-primary-200 transition-colors duration-200">
+                            <svg className="w-4 h-4 text-primary-600 group-hover:text-primary-700 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="body-normal text-text-primary leading-relaxed group-hover:text-text-primary font-medium transition-all duration-200">
+                            {suggestion}
+                          </span>
+                          <div className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <span className="body-xs text-primary-600 font-medium">
+                              Click to ask this question →
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Subtle arrow indicator */}
+                        <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transform translate-x-1 group-hover:translate-x-0 transition-all duration-200">
+                          <svg className="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                           </svg>
                         </div>
-                        <span className="body-small sm:body-normal text-text-primary leading-relaxed">
-                          {suggestion}
-                        </span>
                       </div>
                     </button>
                   ))}
                 </div>
-                <p className="body-xs text-text-muted mt-3">
-                  Click a suggestion to get started, or type your own question below.
-                </p>
+                
+                {/* Enhanced help text */}
+                <div className="mt-6 p-4 bg-secondary-25 border border-secondary-200 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <svg className="w-4 h-4 text-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="text-left">
+                      <p className="body-small text-secondary-700 leading-relaxed">
+                        <span className="font-medium">Tip:</span> These questions are tailored to your document's content. 
+                        Click one to get started, or type your own question in the input below.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

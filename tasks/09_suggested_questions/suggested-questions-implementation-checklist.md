@@ -51,19 +51,19 @@ Add starter question suggestions when users begin new conversations with uploade
   - [x] Create suggestion buttons UI component
   - [x] Style buttons to match existing design system
 
-- [ ] **3.2 Implement Suggestion Interaction**
-  - [ ] Add click handlers for suggestion buttons
-  - [ ] Submit selected suggestion as first message
-  - [ ] Hide suggestion buttons after first message is sent
-  - [ ] Add loading states during suggestion generation
-  - [ ] Handle cases where suggestion generation fails
+- [x] **3.2 Implement Suggestion Interaction**
+  - [x] Add click handlers for suggestion buttons
+  - [x] Submit selected suggestion as first message
+  - [x] Hide suggestion buttons after first message is sent
+  - [x] Add loading states during suggestion generation
+  - [x] Handle cases where suggestion generation fails
 
-- [ ] **3.3 UI/UX Polish**
-  - [ ] Add subtle animation for suggestion appearance
-  - [ ] Ensure suggestions are visually distinct from regular messages
-  - [ ] Add helpful text like "Try asking:" or "Suggested questions:"
-  - [ ] Responsive design for mobile devices
-  - [ ] Accessibility considerations (keyboard navigation, screen readers)
+- [x] **3.3 UI/UX Polish**
+  - [x] Add subtle animation for suggestion appearance
+  - [x] Ensure suggestions are visually distinct from regular messages
+  - [x] Add helpful text like "Try asking:" or "Suggested questions:"
+  - [x] Responsive design for mobile devices
+  - [x] Accessibility considerations (keyboard navigation, screen readers)
 
 ### Phase 4: Integration & Testing
 - [ ] **4.1 File Type Integration**
