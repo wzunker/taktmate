@@ -1,11 +1,11 @@
 # TaktMate - Enterprise Document Analytics Platform
 
-A comprehensive, cloud-hosted web application that allows users to upload CSV, PDF, DOCX, and XLSX files and chat with their data using Azure OpenAI's GPT-4.1. Features enterprise-grade security with Entra ID authentication, Azure Blob Storage for persistent file management, and an advanced evaluation framework for testing AI performance across multiple domains.
+A comprehensive, cloud-hosted web application that allows users to upload CSV, PDF, DOCX, XLSX, and TXT files and chat with their data using Azure OpenAI's GPT-4.1. Features enterprise-grade security with Entra ID authentication, Azure Blob Storage for persistent file management, and an advanced evaluation framework for testing AI performance across multiple domains.
 
 ## Features
 
 ### Core Application
-- 📁 **Multi-File Upload**: Upload CSV, PDF, DOCX, and XLSX files up to 5MB with Azure Blob Storage persistence
+- 📁 **Multi-File Upload**: Upload CSV, PDF, DOCX, XLSX, and TXT files up to 5MB with Azure Blob Storage persistence
 - 💬 **AI Chat**: Ask questions about your data in natural language with conversation memory
 - 🧠 **Smart Analysis**: GPT-4.1 analyzes and responds using only your document data
 - 💾 **Stateful Conversations**: Persistent chat history with context across sessions
@@ -257,7 +257,7 @@ This will show:
 Access the live application at: **https://app.taktconnect.com**
 
 1. **Login**: Authenticate using your Microsoft account via Entra ID
-2. **Upload Files**: Click "Add" and choose CSV, PDF, DOCX, or XLSX files (up to 5MB each)
+2. **Upload Files**: Click "Add" and choose CSV, PDF, DOCX, XLSX, or TXT files (up to 5MB each)
 3. **Secure Storage**: Files are automatically stored in your private Azure Blob Storage container
 4. **Wait for Processing**: Files are uploaded and parsed automatically based on type
 5. **Start Chatting**: Ask questions about your data using natural language
@@ -308,17 +308,24 @@ For local testing and development:
 - "Which sheet contains the sales information?"
 - "Compare values across different worksheets"
 
+### TXT Files - Plain Text Analysis
+- "What are the main themes in this text?"
+- "Extract all the important information"
+- "Summarize the content in key points"
+- "Find specific information or keywords"
+- "What questions does this text answer?"
+
 ## API Endpoints
 
 ### File Management
 
 #### POST /upload
-Upload a CSV, PDF, DOCX, or XLSX file for processing.
+Upload a CSV, PDF, DOCX, XLSX, or TXT file for processing.
 
 **Request:**
 - Content-Type: multipart/form-data
 - Body: File in 'file' field
-- Supported formats: .csv, .pdf, .docx, .xlsx
+- Supported formats: .csv, .pdf, .docx, .xlsx, .txt
 
 **Response:**
 ```json
@@ -344,6 +351,24 @@ Send a chat message about uploaded document data with conversation context.
   "message": "What are the key findings in this document?",
   "conversationId": "optional_conversation_id"
 }
+```
+
+**Example requests for different file types:**
+```json
+// CSV file analysis
+{"fileName": "sales_data.csv", "message": "What's the total revenue?"}
+
+// PDF document analysis  
+{"fileName": "report.pdf", "message": "Summarize the main conclusions"}
+
+// DOCX text analysis
+{"fileName": "proposal.docx", "message": "What are the action items?"}
+
+// XLSX spreadsheet analysis
+{"fileName": "budget.xlsx", "message": "Show me the Q4 expenses"}
+
+// TXT plain text analysis
+{"fileName": "notes.txt", "message": "What are the main topics discussed?"}
 ```
 
 **Response:**
@@ -627,10 +652,11 @@ Questions can award bonus points for additional criteria:
 ## Limitations
 
 - **File Size**: Maximum 5MB per file (configurable in Azure)
-- **File Types**: Supports CSV, PDF, DOCX, and XLSX files only
+- **File Types**: Supports CSV, PDF, DOCX, XLSX, and TXT files only
 - **File Limit**: 5 files per user for analysis (storage is unlimited)
 - **Context Window**: Large files may exceed GPT-4.1 limits (~128K tokens)
 - **PDF Parsing**: Text-based PDFs only (no OCR for scanned documents)
+- **TXT Parsing**: UTF-8, Latin1, and ASCII encodings supported (automatic detection)
 - **Regional Availability**: Hosted in East US region
 - **Authentication**: Requires Microsoft account for Entra ID authentication
 
