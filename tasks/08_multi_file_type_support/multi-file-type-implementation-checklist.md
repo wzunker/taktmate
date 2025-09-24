@@ -120,10 +120,10 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), an
 **Files**: `frontend/src/components/SourcesPanel.jsx`
 **Description**: Update user-facing text to reflect new capabilities
 **Requirements**:
-- [ ] Update drag & drop area text to mention supported file types
-- [ ] Update help text and tooltips to include PDF, DOCX, XLSX
-- [ ] Update error messages for unsupported file types
-- [ ] Add brief explanation of what data can be extracted from each file type
+- [x] Update drag & drop area text to mention supported file types
+- [x] Update help text and tooltips to include PDF, DOCX, XLSX
+- [x] Update error messages for unsupported file types
+- [x] Add brief explanation of what data can be extracted from each file type
 **Estimated Effort**: 30 minutes
 
 ### Phase 3: System Integration and Testing
