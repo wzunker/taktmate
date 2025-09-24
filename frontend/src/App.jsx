@@ -196,6 +196,12 @@ function App() {
 
   // Conversation management functions
   const handleConversationSelected = (conversation) => {
+    if (!conversation) {
+      // Clear active conversation to start fresh
+      setActiveConversationId(null);
+      return;
+    }
+    
     setActiveConversationId(conversation.id);
     
     // Auto-load the associated file if it exists

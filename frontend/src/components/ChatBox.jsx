@@ -322,7 +322,7 @@ const ChatBox = ({
       />
 
       {/* Messages */}
-      <CardContent className="flex-1 overflow-y-auto space-y-4 sm:space-y-6 px-2 sm:px-4">
+      <CardContent className="flex-1 overflow-y-auto space-y-4 sm:space-y-6 px-2 sm:px-4 min-h-0">
         {conversationLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mr-3"></div>

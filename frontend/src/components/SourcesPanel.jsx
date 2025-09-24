@@ -395,20 +395,36 @@ const SourcesPanel = ({
               <h4 className="body-small font-medium text-text-secondary">
                 {activeFileId ? 'File Conversations' : 'Recent Conversations'}
               </h4>
-              <button
-                onClick={() => setShowConversations(!showConversations)}
-                className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
-                title={showConversations ? "Collapse conversations" : "Expand conversations"}
-              >
-                <svg 
-                  className={`w-4 h-4 transition-transform duration-200 ${showConversations ? 'rotate-90' : ''}`}
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
+              <div className="flex items-center space-x-1">
+                {activeFileId && (
+                  <button
+                    onClick={() => {
+                      // Clear active conversation to start fresh
+                      if (onConversationSelected) {
+                        onConversationSelected(null);
+                      }
+                    }}
+                    className="px-2 py-1 text-xs bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors"
+                    title="Start new conversation with this file"
+                  >
+                    New Chat
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowConversations(!showConversations)}
+                  className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+                  title={showConversations ? "Collapse conversations" : "Expand conversations"}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
+                  <svg 
+                    className={`w-4 h-4 transition-transform duration-200 ${showConversations ? 'rotate-90' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {/* Conversations List */}
