@@ -192,22 +192,3 @@ code {
           display: flex;
           flex-direction: column;
         }
-
-        /* Ensure header doesn't shrink and main content fills remaining space */
-        .full-height-layout > header {
-          flex-shrink: 0;
-        }
-
-        .full-height-layout > main {
-          flex: 1;
-          min-height: 0; /* Critical for flex child to allow shrinking */
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-        }
-
-        /* Main content grid container should fill remaining space after padding */
-        .full-height-layout > main > .grid {
-          flex: 1;
-          min-height: 0;
-        }

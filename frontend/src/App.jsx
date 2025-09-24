@@ -427,10 +427,10 @@ function App() {
 
 
       {/* Main Content - Dynamic Layout */}
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-4">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-4 flex-1 min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full min-h-0">
           {/* Sources Column - Dynamic width based on collapse */}
-          <div className={`h-full ${sourcesCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} transition-all duration-300`}>
+          <div className={`h-full overflow-y-auto min-h-0 ${sourcesCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} transition-all duration-300`}>
             <SourcesPanel 
               onFileUploaded={handleFileUploaded}
               uploadedFiles={uploadedFiles}
@@ -454,7 +454,7 @@ function App() {
           </div>
           
           {/* Chat Column - Dynamic width based on both collapses */}
-          <div className={`h-full ${
+          <div className={`h-full overflow-y-auto min-h-0 ${
             sourcesCollapsed && previewCollapsed ? 'lg:col-span-10' :
             sourcesCollapsed ? 'lg:col-span-8' :
             previewCollapsed ? 'lg:col-span-8' :
@@ -470,7 +470,7 @@ function App() {
           </div>
           
           {/* Data Table Column - Dynamic width based on collapse */}
-          <div className={`h-full ${previewCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} transition-all duration-300`}>
+          <div className={`h-full overflow-y-auto min-h-0 ${previewCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} transition-all duration-300`}>
             {activeFileData ? (
               <DataTable 
                 fileData={activeFileData} 
