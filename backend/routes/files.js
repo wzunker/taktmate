@@ -78,7 +78,10 @@ const MAX_FILENAME_LENGTH = 255;
 const ALLOWED_CONTENT_TYPES = [
   'text/csv',
   'application/csv',
-  'text/plain'
+  'text/plain',
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 ];
 
 /**
@@ -160,7 +163,7 @@ function validateContentType(contentType) {
   }
 
   if (!ALLOWED_CONTENT_TYPES.includes(contentType.toLowerCase())) {
-    return { valid: false, error: `Only CSV files are allowed. Supported types: ${ALLOWED_CONTENT_TYPES.join(', ')}` };
+    return { valid: false, error: `File type not supported. Supported types: CSV, PDF, DOCX, XLSX (${ALLOWED_CONTENT_TYPES.join(', ')})` };
   }
 
   return { valid: true };

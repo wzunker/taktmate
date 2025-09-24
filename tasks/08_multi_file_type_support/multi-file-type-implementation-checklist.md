@@ -54,12 +54,12 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), an
 **Files**: `backend/routes/files.js`
 **Description**: Extend allowed content types for new file formats
 **Requirements**:
-- [ ] Update `ALLOWED_CONTENT_TYPES` array (lines 78-82) to include:
+- [x] Update `ALLOWED_CONTENT_TYPES` array (lines 78-82) to include:
   - `'application/pdf'` for PDF files
   - `'application/vnd.openxmlformats-officedocument.wordprocessingml.document'` for DOCX
   - `'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'` for XLSX
   - Keep existing CSV types: `'text/csv'`, `'application/csv'`, `'text/plain'`
-- [ ] Update validation error message to reflect supported file types
+- [x] Update validation error message to reflect supported file types
 **Estimated Effort**: 15 minutes
 
 #### 1.4 Update File Extension Validation
