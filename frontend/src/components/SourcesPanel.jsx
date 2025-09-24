@@ -55,6 +55,104 @@ const SourcesPanel = ({
     return conversations.filter(conv => conv.fileName === fileName).length;
   };
 
+  // Get file type from filename
+  const getFileType = (fileName) => {
+    const extension = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
+    switch (extension) {
+      case '.csv': return 'csv';
+      case '.pdf': return 'pdf';
+      case '.docx': return 'docx';
+      case '.xlsx': return 'xlsx';
+      default: return 'unknown';
+    }
+  };
+
+  // Get file type colors and styles
+  const getFileTypeStyles = (fileType) => {
+    switch (fileType) {
+      case 'csv':
+        return {
+          bgColor: 'bg-blue-100',
+          textColor: 'text-blue-600',
+          label: 'CSV',
+          labelBg: 'bg-blue-100',
+          labelText: 'text-blue-700'
+        };
+      case 'pdf':
+        return {
+          bgColor: 'bg-red-100',
+          textColor: 'text-red-600',
+          label: 'PDF',
+          labelBg: 'bg-red-100',
+          labelText: 'text-red-700'
+        };
+      case 'docx':
+        return {
+          bgColor: 'bg-indigo-100',
+          textColor: 'text-indigo-600',
+          label: 'DOCX',
+          labelBg: 'bg-indigo-100',
+          labelText: 'text-indigo-700'
+        };
+      case 'xlsx':
+        return {
+          bgColor: 'bg-green-100',
+          textColor: 'text-green-600',
+          label: 'XLSX',
+          labelBg: 'bg-green-100',
+          labelText: 'text-green-700'
+        };
+      default:
+        return {
+          bgColor: 'bg-secondary-100',
+          textColor: 'text-secondary-600',
+          label: 'FILE',
+          labelBg: 'bg-secondary-100',
+          labelText: 'text-secondary-700'
+        };
+    }
+  };
+
+  // Get file type icon SVG
+  const getFileTypeIcon = (fileType) => {
+    switch (fileType) {
+      case 'csv':
+        return (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+            <path d="M9,13H11V15H9V13M9,16H11V18H9V16M12,13H14V15H12V13M12,16H14V18H12V16M15,13H17V15H15V13M15,16H17V18H15V16Z" />
+          </svg>
+        );
+      case 'pdf':
+        return (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+            <path d="M9,13H11V15H9V13M9,16H11V18H9V16M12,13H14V15H12V13M15,13H17V15H15V13Z" />
+          </svg>
+        );
+      case 'docx':
+        return (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+            <path d="M8,12H16V13.5H8V12M8,14.5H16V16H8V14.5M8,17H13V18.5H8V17Z" />
+          </svg>
+        );
+      case 'xlsx':
+        return (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+            <path d="M8,12H10V14H8V12M10,12H12V14H10V12M12,12H14V14H12V12M14,12H16V14H14V12M8,14H10V16H8V14M10,14H12V16H10V14M12,14H14V16H12V14M14,14H16V16H14V14M8,16H10V18H8V16M10,16H12V18H10V16M12,16H14V18H12V16M14,16H16V18H14V16Z" />
+          </svg>
+        );
+      default:
+        return (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+          </svg>
+        );
+    }
+  };
+
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -314,15 +412,21 @@ const SourcesPanel = ({
                     onClick={() => onFileSelected(file.fileId)}
                   >
                     <div className="flex items-start space-x-2">
-                      <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${
-                        activeFileId === file.fileId ? 'bg-primary-100' : 'bg-secondary-100'
-                      }`}>
-                        <svg className={`w-4 h-4 ${
-                          activeFileId === file.fileId ? 'text-primary-600' : 'text-secondary-600'
-                        }`} fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-                        </svg>
-                      </div>
+                      {(() => {
+                        const fileType = getFileType(file.name);
+                        const styles = getFileTypeStyles(fileType);
+                        return (
+                          <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${
+                            activeFileId === file.fileId ? 'bg-primary-100' : styles.bgColor
+                          }`}>
+                            <div className={`${
+                              activeFileId === file.fileId ? 'text-primary-600' : styles.textColor
+                            }`}>
+                              {getFileTypeIcon(fileType)}
+                            </div>
+                          </div>
+                        );
+                      })()}
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
@@ -336,6 +440,15 @@ const SourcesPanel = ({
                           )}
                         </div>
                         <div className="flex items-center space-x-2 mt-1">
+                          {(() => {
+                            const fileType = getFileType(file.name);
+                            const styles = getFileTypeStyles(fileType);
+                            return (
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${styles.labelBg} ${styles.labelText}`}>
+                                {styles.label}
+                              </span>
+                            );
+                          })()}
                           <span className="body-xs text-text-muted">
                             {(file.size / 1024).toFixed(1)} KB
                           </span>

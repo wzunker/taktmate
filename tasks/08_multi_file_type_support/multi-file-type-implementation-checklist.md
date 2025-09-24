@@ -106,14 +106,14 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), an
 **Files**: `frontend/src/components/SourcesPanel.jsx`
 **Description**: Improve UX with visual file type indicators
 **Requirements**:
-- [ ] Add file type detection function based on extension
-- [ ] Display file type badges/labels next to file names
-- [ ] Use different colors or icons for each file type:
+- [x] Add file type detection function based on extension
+- [x] Display file type badges/labels next to file names
+- [x] Use different colors or icons for each file type:
   - CSV: Blue/data icon
   - PDF: Red/document icon  
-  - DOCX: Blue/word icon
+  - DOCX: Indigo/word icon
   - XLSX: Green/spreadsheet icon
-- [ ] Update file list display to show file type information
+- [x] Update file list display to show file type information
 **Estimated Effort**: 1 hour
 
 #### 2.3 Update Upload Instructions and Help Text
