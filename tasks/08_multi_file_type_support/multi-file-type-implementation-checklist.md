@@ -30,23 +30,23 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), an
 **Requirements**:
 
 **Create `backend/processPdf.js`**:
-- [ ] Export `parsePdf(buffer)` function using `pdf-parse`
-- [ ] Return plain text string from PDF content
-- [ ] Handle parsing errors gracefully with try/catch
-- [ ] Add basic validation for PDF buffer format
+- [x] Export `parsePdf(buffer)` function using `pdf-parse`
+- [x] Return plain text string from PDF content
+- [x] Handle parsing errors gracefully with try/catch
+- [x] Add basic validation for PDF buffer format
 
 **Create `backend/processDocx.js`**:
-- [ ] Export `parseDocx(buffer)` function using `mammoth`
-- [ ] Convert DOCX to HTML then strip to plain text
-- [ ] Handle parsing errors gracefully with try/catch
-- [ ] Preserve basic formatting (paragraphs, line breaks)
+- [x] Export `parseDocx(buffer)` function using `mammoth`
+- [x] Convert DOCX to HTML then strip to plain text
+- [x] Handle parsing errors gracefully with try/catch
+- [x] Preserve basic formatting (paragraphs, line breaks)
 
 **Create `backend/processXlsx.js`**:
-- [ ] Export `parseXlsx(buffer)` function using `xlsx`
-- [ ] Convert each worksheet to CSV format
-- [ ] Concatenate multiple sheets with sheet name headers
-- [ ] Return combined text representation of all sheets
-- [ ] Handle parsing errors gracefully with try/catch
+- [x] Export `parseXlsx(buffer)` function using `xlsx`
+- [x] Convert each worksheet to CSV format
+- [x] Concatenate multiple sheets with sheet name headers
+- [x] Return combined text representation of all sheets
+- [x] Handle parsing errors gracefully with try/catch
 
 **Estimated Effort**: 2-3 hours
 
