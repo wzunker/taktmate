@@ -40,7 +40,7 @@ class SummarizerService {
       // Ensure the container exists
       const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
       await containerClient.createIfNotExists({
-        access: 'private'
+        access: 'container'
       });
 
       this.isInitialized = true;
