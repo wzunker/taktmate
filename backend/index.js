@@ -290,6 +290,9 @@ app.post('/api/chat', requireAuth, async (req, res) => {
     // Save messages to conversation if we have one
     if (conversation) {
       try {
+        // Clear suggestions after first user message (if this is the first message)
+        const shouldClearSuggestions = conversation.messageCount === 0 && conversation.suggestions;
+        
         // Add user message
         await cosmosService.addMessage(conversation.id, user.id, {
           role: 'user',
@@ -301,6 +304,12 @@ app.post('/api/chat', requireAuth, async (req, res) => {
           role: 'assistant',
           content: reply
         });
+        
+        // Clear suggestions after first user message
+        if (shouldClearSuggestions) {
+          console.log(`🧹 Clearing suggestions for conversation ${conversation.id} after first message`);
+          await cosmosService.updateConversation(conversation.id, user.id, { suggestions: null });
+        }
         
         // Check if conversation needs archiving or summarization
         const updatedConversation = await cosmosService.getConversation(conversation.id, user.id);

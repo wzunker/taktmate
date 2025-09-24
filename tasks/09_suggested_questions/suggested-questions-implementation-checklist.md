@@ -33,16 +33,15 @@ Add starter question suggestions when users begin new conversations with uploade
   - [x] Parse JSON response and add `suggestions` array to conversation object
   - [x] Handle errors gracefully (fallback to empty suggestions array)
 
-- [ ] **2.2 Add Suggestions to Existing Endpoints**
-  - [ ] Update `cosmosService.createConversation()` to accept suggestions parameter
-  - [ ] Modify conversation schema to include `suggestions` field
-  - [ ] Update GET `/api/conversations/:id` to return suggestions for new conversations
-  - [ ] Ensure suggestions are only generated once per conversation
+- [x] **2.2 Add Suggestions to Existing Endpoints**
+  - [x] Update `cosmosService.createConversation()` to accept suggestions parameter
+  - [x] Modify conversation schema to include `suggestions` field
+  - [x] Update GET `/api/conversations/:id` to return suggestions for new conversations
+  - [x] Ensure suggestions are only generated once per conversation
 
-- [ ] **2.3 Update Chat Endpoint**
-  - [ ] Modify `/api/chat` endpoint to clear suggestions after first user message
-  - [ ] Update conversation record to remove suggestions once used
-  - [ ] Maintain backward compatibility with existing conversations
+- [x] **2.3 Update Chat Endpoint**
+  - [x] Modify `/api/chat` endpoint to clear suggestions after first user message
+  - [x] Update conversation record to remove suggestions once used
 
 ### Phase 3: Frontend UI Implementation
 - [ ] **3.1 Update ChatBox Component**
