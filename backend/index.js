@@ -4,6 +4,9 @@ const { OpenAI } = require('openai');
 require('dotenv').config();
 
 const { parseCsv, formatCsvForPrompt } = require('./processCsv');
+const { parsePdf, formatPdfForPrompt } = require('./processPdf');
+const { parseDocx, formatDocxForPrompt } = require('./processDocx');
+const { parseXlsx, formatXlsxForPrompt } = require('./processXlsx');
 const { requireAuth } = require('./middleware/auth');
 const { healthCheck, getBlobContent, listUserFiles } = require('./services/storage');
 const cosmosService = require('./services/cosmos');
@@ -151,6 +154,46 @@ app.options('/api/chat', (req, res) => {
   res.sendStatus(200);
 });
 
+/**
+ * Parse file content based on file extension
+ * @param {Buffer} buffer - File buffer
+ * @param {string} fileName - File name with extension
+ * @returns {Promise<string>} - Formatted content for GPT prompt
+ */
+async function parseFileContent(buffer, fileName) {
+  // Get file extension (case-insensitive)
+  const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
+  
+  try {
+    switch (fileExtension) {
+      case '.csv':
+        const csvRows = await parseCsv(buffer);
+        if (!csvRows || csvRows.length === 0) {
+          throw new Error('CSV file is empty or contains no data');
+        }
+        return formatCsvForPrompt(csvRows, fileName);
+        
+      case '.pdf':
+        const pdfText = await parsePdf(buffer);
+        return formatPdfForPrompt(pdfText, fileName);
+        
+      case '.docx':
+        const docxText = await parseDocx(buffer);
+        return formatDocxForPrompt(docxText, fileName);
+        
+      case '.xlsx':
+        const xlsxText = await parseXlsx(buffer);
+        return formatXlsxForPrompt(xlsxText, fileName);
+        
+      default:
+        throw new Error(`Unsupported file type: ${fileExtension}`);
+    }
+  } catch (error) {
+    console.error(`Error parsing ${fileExtension} file "${fileName}":`, error.message);
+    throw new Error(`Failed to parse ${fileExtension.toUpperCase()} file: ${error.message}`);
+  }
+}
+
 // Enhanced chat endpoint with conversation support
 app.post('/api/chat', requireAuth, async (req, res) => {
   try {
@@ -161,7 +204,7 @@ app.post('/api/chat', requireAuth, async (req, res) => {
     if (!fileName || !message) {
       return res.status(400).json({ 
         error: 'fileName and message are required',
-        message: 'Please provide the name of the CSV file you want to chat with'
+        message: 'Please provide the name of the file you want to chat with'
       });
     }
 
@@ -178,19 +221,9 @@ app.post('/api/chat', requireAuth, async (req, res) => {
       });
     }
 
-    // Get blob content and parse CSV
+    // Get blob content and parse file based on type
     const blobBuffer = await getBlobContent(user.id, fileName);
-    const csvRows = await parseCsv(blobBuffer);
-    
-    if (!csvRows || csvRows.length === 0) {
-      return res.status(400).json({ 
-        error: 'CSV file is empty or invalid',
-        message: 'The CSV file could not be parsed or contains no data'
-      });
-    }
-
-    // Format CSV data for GPT prompt
-    const csvString = formatCsvForPrompt(csvRows, fileName);
+    const fileContent = await parseFileContent(blobBuffer, fileName);
 
     // Handle conversation context
     let conversation = null;
@@ -230,18 +263,18 @@ app.post('/api/chat', requireAuth, async (req, res) => {
     }
 
     // Create system prompt with conversation context
-    let systemPrompt = `You are a helpful CSV data assistant.  
-        Your role is to answer questions using only the provided CSV data.  
+    let systemPrompt = `You are a helpful document analysis assistant.  
+        Your role is to answer questions using only the provided document data.  
 
         Guidelines:
-        - Use **only** the CSV data. If the answer is not present, reply exactly: "No relevant data found."  
+        - Use **only** the document data provided. If the answer is not present, reply exactly: "No relevant data found."  
         - Give the most accurate and complete answer possible while staying concise.  
         - Respond in a warm, professional tone (polite, clear, approachable).   
         - For lists, provide the relevant items in a clean format (bulleted list or comma-separated, depending on clarity).  
         - For numbers, include units if available.  
         - Do not over-explain your reasoning or add outside commentary unless the user explicitly asks for it.  
 
-${csvString}`;
+${fileContent}`;
 
     // Add conversation context if available
     if (conversationMessages.length > 0) {
