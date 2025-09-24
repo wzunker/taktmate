@@ -427,7 +427,7 @@ function App() {
 
 
       {/* Main Content - Dynamic Layout */}
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-4 flex-1 min-h-0">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-4 flex-1 min-h-0 layout-full-height">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
           {/* Sources Column - Dynamic width based on collapse */}
           <div className={`h-full ${sourcesCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} transition-all duration-300`}>
