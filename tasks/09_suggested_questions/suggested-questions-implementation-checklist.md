@@ -26,12 +26,12 @@ Add starter question suggestions when users begin new conversations with uploade
   - [x] Handle different file types (CSV, PDF, DOCX, XLSX, TXT) appropriately
 
 ### Phase 2: Backend API Enhancement
-- [ ] **2.1 Update Conversation Creation**
-  - [ ] Modify `backend/routes/conversations.js` POST `/api/conversations` endpoint
-  - [ ] Add logic to generate suggestions when creating new conversation
-  - [ ] Call GPT with `suggestionPrompt` using file content
-  - [ ] Parse JSON response and add `suggestions` array to conversation object
-  - [ ] Handle errors gracefully (fallback to empty suggestions array)
+- [x] **2.1 Update Conversation Creation**
+  - [x] Modify `backend/routes/conversations.js` POST `/api/conversations` endpoint
+  - [x] Add logic to generate suggestions when creating new conversation
+  - [x] Call GPT with `suggestionPrompt` using file content
+  - [x] Parse JSON response and add `suggestions` array to conversation object
+  - [x] Handle errors gracefully (fallback to empty suggestions array)
 
 - [ ] **2.2 Add Suggestions to Existing Endpoints**
   - [ ] Update `cosmosService.createConversation()` to accept suggestions parameter

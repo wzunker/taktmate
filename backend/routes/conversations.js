@@ -2,9 +2,172 @@ const express = require('express');
 const router = express.Router();
 const cosmosService = require('../services/cosmos');
 const { requireAuth } = require('../middleware/auth');
+const { getBlobContent } = require('../services/storage');
+const { suggestionPrompt } = require('../prompts/suggestionPrompt');
+const { OpenAI } = require('openai');
+
+// Import file processing functions
+const { parseCsv, formatCsvForPrompt } = require('../processCsv');
+const { parsePdf, formatPdfForPrompt } = require('../processPdf');
+const { parseDocx, formatDocxForPrompt } = require('../processDocx');
+const { parseXlsx, formatXlsxForPrompt } = require('../processXlsx');
+const { parseTxt, formatTxtForPrompt } = require('../processTxt');
+
+// Initialize OpenAI client for suggestions
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: process.env.AZURE_OPENAI_ENDPOINT ? 
+    `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4.1'}` : 
+    undefined,
+  defaultQuery: process.env.AZURE_OPENAI_API_VERSION ? 
+    { 'api-version': process.env.AZURE_OPENAI_API_VERSION } : 
+    undefined,
+  defaultHeaders: process.env.AZURE_OPENAI_ENDPOINT ? 
+    { 'api-key': process.env.OPENAI_API_KEY } : 
+    undefined,
+});
 
 // Apply authentication to all conversation routes
 router.use(requireAuth);
+
+/**
+ * Parse file content based on file extension
+ * @param {Buffer} buffer - File buffer
+ * @param {string} fileName - File name with extension
+ * @returns {Promise<string>} - Formatted content for GPT prompt
+ */
+async function parseFileContent(buffer, fileName) {
+  // Get file extension (case-insensitive)
+  const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
+  
+  try {
+    switch (fileExtension) {
+      case '.csv':
+        const csvRows = await parseCsv(buffer);
+        if (!csvRows || csvRows.length === 0) {
+          throw new Error('CSV file is empty or contains no data');
+        }
+        return formatCsvForPrompt(csvRows, fileName);
+        
+      case '.pdf':
+        const pdfText = await parsePdf(buffer);
+        return formatPdfForPrompt(pdfText, fileName);
+        
+      case '.docx':
+        const docxText = await parseDocx(buffer);
+        return formatDocxForPrompt(docxText, fileName);
+        
+      case '.xlsx':
+        const xlsxText = await parseXlsx(buffer);
+        return formatXlsxForPrompt(xlsxText, fileName);
+        
+      case '.txt':
+        const txtText = await parseTxt(buffer);
+        return formatTxtForPrompt(txtText, fileName);
+        
+      default:
+        throw new Error(`Unsupported file type: ${fileExtension}`);
+    }
+  } catch (error) {
+    console.error(`Error parsing ${fileExtension} file "${fileName}":`, error.message);
+    throw new Error(`Failed to parse ${fileExtension.toUpperCase()} file: ${error.message}`);
+  }
+}
+
+/**
+ * Generate suggested questions for a file using GPT
+ * @param {string} fileName - Name of the file
+ * @param {string} fileContent - Processed file content
+ * @returns {Promise<Array<string>>} - Array of suggested questions
+ */
+async function generateSuggestions(fileName, fileContent) {
+  try {
+    // Extract file type from extension
+    const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.') + 1);
+    
+    // Generate the suggestion prompt
+    const prompt = suggestionPrompt(fileName, fileExtension, fileContent);
+    
+    console.log(`🤖 Generating suggestions for file: ${fileName}`);
+    
+    // Call GPT to generate suggestions
+    const response = await openai.chat.completions.create({
+      model: process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4.1',
+      messages: [
+        { role: 'system', content: prompt }
+      ],
+      temperature: 0.3, // Slightly creative but consistent
+      max_tokens: 300,   // Limit response size
+      timeout: 15000     // 15 second timeout
+    });
+    
+    const content = response.choices[0]?.message?.content?.trim();
+    if (!content) {
+      throw new Error('No response from GPT');
+    }
+    
+    // Parse JSON response
+    const parsed = JSON.parse(content);
+    if (!parsed.suggestions || !Array.isArray(parsed.suggestions)) {
+      throw new Error('Invalid suggestion format received');
+    }
+    
+    // Validate we have exactly 2 suggestions
+    const suggestions = parsed.suggestions.slice(0, 2); // Ensure max 2 suggestions
+    if (suggestions.length === 0) {
+      throw new Error('No suggestions generated');
+    }
+    
+    console.log(`✅ Generated ${suggestions.length} suggestions for ${fileName}`);
+    return suggestions;
+    
+  } catch (error) {
+    console.error(`❌ Failed to generate suggestions for ${fileName}:`, error.message);
+    
+    // Return fallback suggestions based on file type
+    const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.') + 1);
+    return getFallbackSuggestions(fileExtension, fileName);
+  }
+}
+
+/**
+ * Get fallback suggestions when GPT generation fails
+ * @param {string} fileExtension - File extension
+ * @param {string} fileName - File name
+ * @returns {Array<string>} - Fallback suggestions
+ */
+function getFallbackSuggestions(fileExtension, fileName) {
+  const fallbacks = {
+    csv: [
+      "What are the main columns and data types in this dataset?",
+      "Can you show me a summary of the key statistics from this data?"
+    ],
+    pdf: [
+      "What are the main topics covered in this document?",
+      "Can you summarize the key findings or conclusions?"
+    ],
+    docx: [
+      "What is the main purpose of this document?",
+      "What are the key points or action items mentioned?"
+    ],
+    xlsx: [
+      "What sheets are available and what data do they contain?",
+      "Can you analyze the numerical data in this spreadsheet?"
+    ],
+    txt: [
+      "What are the main themes discussed in this text?",
+      "Can you provide a summary of the content?"
+    ]
+  };
+  
+  const suggestions = fallbacks[fileExtension] || [
+    `What information is contained in this ${fileName} file?`,
+    "Can you help me understand the content and structure of this document?"
+  ];
+  
+  console.log(`📋 Using fallback suggestions for ${fileExtension} file`);
+  return suggestions;
+}
 
 /**
  * GET /api/conversations
@@ -64,7 +227,7 @@ router.get('/', async (req, res) => {
 
 /**
  * POST /api/conversations
- * Create new conversation
+ * Create new conversation with suggested questions
  */
 router.post('/', async (req, res) => {
   try {
@@ -75,11 +238,31 @@ router.post('/', async (req, res) => {
       return res.status(400).json({
         success: false,
         error: 'fileName is required',
-        message: 'Please specify the CSV file name for this conversation'
+        message: 'Please specify the file name for this conversation'
       });
     }
 
-    const conversation = await cosmosService.createConversation(user.id, fileName, title);
+    console.log(`🔄 Creating conversation for user ${user.id} with file: ${fileName}`);
+
+    // Generate suggestions by analyzing the file content
+    let suggestions = [];
+    try {
+      // Get file content from blob storage
+      const fileBuffer = await getBlobContent(user.id, fileName);
+      const fileContent = await parseFileContent(fileBuffer, fileName);
+      
+      // Generate suggestions using GPT
+      suggestions = await generateSuggestions(fileName, fileContent);
+      console.log(`📋 Generated suggestions: ${JSON.stringify(suggestions)}`);
+    } catch (suggestionError) {
+      console.warn(`⚠️ Failed to generate suggestions for ${fileName}:`, suggestionError.message);
+      // Continue with conversation creation without suggestions
+      const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.') + 1);
+      suggestions = getFallbackSuggestions(fileExtension, fileName);
+    }
+
+    // Create conversation with suggestions
+    const conversation = await cosmosService.createConversation(user.id, fileName, title, suggestions);
 
     res.status(201).json({
       success: true,

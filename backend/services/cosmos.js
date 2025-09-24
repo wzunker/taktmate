@@ -96,7 +96,7 @@ class CosmosService {
     }
   }
 
-  async createConversation(userId, fileName, title = null) {
+  async createConversation(userId, fileName, title = null, suggestions = []) {
     try {
       if (!this.isInitialized) {
         await this.initialize();
@@ -117,6 +117,7 @@ class CosmosService {
         messages: [],
         summary: null,
         archiveBlobUrl: null,
+        suggestions: suggestions.length > 0 ? suggestions : null, // Store suggestions if provided
         metadata: {
           totalTokens: 0,
           averageResponseTime: 0,
@@ -129,7 +130,7 @@ class CosmosService {
       };
 
       const { resource } = await this.container.items.create(conversation);
-      console.log(`✅ Created conversation: ${conversationId} for user: ${userId}`);
+      console.log(`✅ Created conversation: ${conversationId} for user: ${userId} with ${suggestions.length} suggestions`);
       
       return resource;
     } catch (error) {
