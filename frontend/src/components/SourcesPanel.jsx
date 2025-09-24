@@ -97,8 +97,12 @@ const SourcesPanel = ({
     
     for (const file of files) {
       // Validate file type
-      if (!file.name.toLowerCase().endsWith('.csv')) {
-        errors.push(`${file.name}: Must be a CSV file`);
+      const allowedExtensions = ['.csv', '.pdf', '.docx', '.xlsx'];
+      const fileName = file.name.toLowerCase();
+      const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+      
+      if (!hasValidExtension) {
+        errors.push(`${file.name}: Must be a CSV, PDF, DOCX, or XLSX file`);
         continue;
       }
       
@@ -259,7 +263,7 @@ const SourcesPanel = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv"
+          accept=".csv,.pdf,.docx,.xlsx"
           multiple
           onChange={handleFileInput}
           className="hidden"
@@ -273,7 +277,7 @@ const SourcesPanel = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
             </div>
-            <p className="body-large font-medium text-primary-600">Drop your CSV files here</p>
+            <p className="body-large font-medium text-primary-600">Drop your files here</p>
             <p className="body-small text-primary-500 mt-1">Up to 5MB each</p>
           </div>
         )}
@@ -382,7 +386,7 @@ const SourcesPanel = ({
                 </svg>
               </div>
               <p className="body-small text-text-muted mb-2">No files uploaded yet</p>
-              <p className="body-xs text-text-muted">Drag & drop CSV files or click Add</p>
+              <p className="body-xs text-text-muted">Drag & drop CSV, PDF, DOCX, or XLSX files or click Add</p>
             </div>
           ) : null}
         </div>

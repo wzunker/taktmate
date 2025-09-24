@@ -91,15 +91,15 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), an
 **Files**: `frontend/src/components/SourcesPanel.jsx`
 **Description**: Extend file upload to accept multiple file types
 **Requirements**:
-- [ ] Update file input `accept` attribute (around line 100) to:
+- [x] Update file input `accept` attribute (around line 100) to:
   ```html
   accept=".csv,.pdf,.docx,.xlsx"
   ```
-- [ ] Update file validation logic in `handleFiles()` function:
+- [x] Update file validation logic in `handleFiles()` function:
   - Remove CSV-only check (`!file.name.toLowerCase().endsWith('.csv')`)
   - Add multi-extension validation for `.csv`, `.pdf`, `.docx`, `.xlsx`
   - Update error messages to reflect supported file types
-- [ ] Keep existing file size limit (5MB) and file count limit (5 files)
+- [x] Keep existing file size limit (5MB) and file count limit (5 files)
 **Estimated Effort**: 30 minutes
 
 #### 2.2 Add File Type Icons and Labels
