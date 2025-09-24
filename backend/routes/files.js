@@ -149,6 +149,14 @@ function validateFileName(fileName) {
     return { valid: false, error: 'File name contains non-normalized Unicode characters' };
   }
 
+  // Validate file extension (case-insensitive)
+  const allowedExtensions = ['.csv', '.pdf', '.docx', '.xlsx'];
+  const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
+  
+  if (!allowedExtensions.includes(fileExtension)) {
+    return { valid: false, error: `File extension not supported. Allowed extensions: ${allowedExtensions.join(', ')}` };
+  }
+
   return { valid: true };
 }
 

@@ -66,9 +66,9 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), an
 **Files**: `backend/routes/files.js`
 **Description**: Enhance file name validation to accept new extensions
 **Requirements**:
-- [ ] Update `validateFileName()` function to accept `.pdf`, `.docx`, `.xlsx` extensions
-- [ ] Ensure case-insensitive extension checking
-- [ ] Update error messages to reflect supported file types
+- [x] Update `validateFileName()` function to accept `.pdf`, `.docx`, `.xlsx` extensions
+- [x] Ensure case-insensitive extension checking
+- [x] Update error messages to reflect supported file types
 **Estimated Effort**: 30 minutes
 
 #### 1.5 Integrate Document Parsing in Chat Endpoint
