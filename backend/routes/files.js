@@ -150,7 +150,7 @@ function validateFileName(fileName) {
   }
 
   // Validate file extension (case-insensitive)
-  const allowedExtensions = ['.csv', '.pdf', '.docx', '.xlsx'];
+  const allowedExtensions = ['.csv', '.pdf', '.docx', '.xlsx', '.txt'];
   const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
   
   if (!allowedExtensions.includes(fileExtension)) {

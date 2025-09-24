@@ -77,10 +77,10 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), Ex
 **Description**: Enhance file name validation to accept new extensions
 **Requirements**:
 - [x] Update `validateFileName()` function to accept `.pdf`, `.docx`, `.xlsx` extensions
-- [ ] Add `.txt` extension to allowed extensions array
+- [x] Add `.txt` extension to allowed extensions array
 - [x] Ensure case-insensitive extension checking
 - [x] Update error messages to reflect supported file types
-- [ ] Update error messages to include TXT files
+- [x] Update error messages to include TXT files
 **Estimated Effort**: 30 minutes
 
 #### 1.5 Integrate Document Parsing in Chat Endpoint
@@ -88,13 +88,13 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), Ex
 **Description**: Update chat endpoint to handle multiple file types
 **Requirements**:
 - [x] Import new parsing utilities (`processPdf.js`, `processDocx.js`, `processXlsx.js`)
-- [ ] Import TXT parsing utility (`processTxt.js`)
+- [x] Import TXT parsing utility (`processTxt.js`)
 - [x] Update `/api/chat` endpoint (around line 155) to:
   - Detect file type by extension or MIME type
   - Call appropriate parser based on file type
   - Fall back to CSV parsing for `.csv` files
   - Handle parsing errors with user-friendly messages
-- [ ] Add TXT file type case to `parseFileContent()` function
+- [x] Add TXT file type case to `parseFileContent()` function
 - [x] Update `formatCsvForPrompt()` or create `formatDocumentForPrompt()` function
 - [x] Ensure parsed content is properly formatted for GPT-4.1 context
 **Estimated Effort**: 1-2 hours

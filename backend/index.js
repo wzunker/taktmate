@@ -7,6 +7,7 @@ const { parseCsv, formatCsvForPrompt } = require('./processCsv');
 const { parsePdf, formatPdfForPrompt } = require('./processPdf');
 const { parseDocx, formatDocxForPrompt } = require('./processDocx');
 const { parseXlsx, formatXlsxForPrompt } = require('./processXlsx');
+const { parseTxt, formatTxtForPrompt } = require('./processTxt');
 const { requireAuth } = require('./middleware/auth');
 const { healthCheck, getBlobContent, listUserFiles } = require('./services/storage');
 const cosmosService = require('./services/cosmos');
@@ -184,6 +185,10 @@ async function parseFileContent(buffer, fileName) {
       case '.xlsx':
         const xlsxText = await parseXlsx(buffer);
         return formatXlsxForPrompt(xlsxText, fileName);
+        
+      case '.txt':
+        const txtText = await parseTxt(buffer);
+        return formatTxtForPrompt(txtText, fileName);
         
       default:
         throw new Error(`Unsupported file type: ${fileExtension}`);
