@@ -109,13 +109,13 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), Ex
   ```html
   accept=".csv,.pdf,.docx,.xlsx"
   ```
-- [ ] Add `.txt` to accept attribute: `accept=".csv,.pdf,.docx,.xlsx,.txt"`
+- [x] Add `.txt` to accept attribute: `accept=".csv,.pdf,.docx,.xlsx,.txt"`
 - [x] Update file validation logic in `handleFiles()` function:
   - Remove CSV-only check (`!file.name.toLowerCase().endsWith('.csv')`)
   - Add multi-extension validation for `.csv`, `.pdf`, `.docx`, `.xlsx`
   - Update error messages to reflect supported file types
-- [ ] Add `.txt` to allowedExtensions array in validation logic
-- [ ] Update error messages to include TXT files
+- [x] Add `.txt` to allowedExtensions array in validation logic
+- [x] Update error messages to include TXT files
 - [x] Keep existing file size limit (5MB) and file count limit (5 files)
 **Estimated Effort**: 30 minutes
 
@@ -124,15 +124,15 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), Ex
 **Description**: Improve UX with visual file type indicators
 **Requirements**:
 - [x] Add file type detection function based on extension
-- [ ] Add TXT file type to `getFileType()` function
+- [x] Add TXT file type to `getFileType()` function
 - [x] Display file type badges/labels next to file names
 - [x] Use different colors or icons for each file type:
   - CSV: Blue/data icon
   - PDF: Red/document icon  
   - DOCX: Indigo/word icon
   - XLSX: Green/spreadsheet icon
-- [ ] Add TXT file type styling: Gray/text icon
-- [ ] Add TXT case to `getFileTypeStyles()` and `getFileTypeIcon()` functions
+- [x] Add TXT file type styling: Gray/text icon
+- [x] Add TXT case to `getFileTypeStyles()` and `getFileTypeIcon()` functions
 - [x] Update file list display to show file type information
 **Estimated Effort**: 1 hour
 
@@ -141,12 +141,12 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), Ex
 **Description**: Update user-facing text to reflect new capabilities
 **Requirements**:
 - [x] Update drag & drop area text to mention supported file types
-- [ ] Update text to include TXT files
+- [x] Update text to include TXT files
 - [x] Update help text and tooltips to include PDF, DOCX, XLSX
-- [ ] Update help text to include TXT files
+- [x] Update help text to include TXT files
 - [x] Update error messages for unsupported file types
 - [x] Add brief explanation of what data can be extracted from each file type
-- [ ] Add TXT file explanation: "Analyze plain text content, extract information, answer questions"
+- [x] Add TXT file explanation: "Analyze plain text content, extract information, answer questions"
 **Estimated Effort**: 30 minutes
 
 ### Phase 3: System Integration and Testing

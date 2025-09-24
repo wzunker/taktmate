@@ -63,6 +63,7 @@ const SourcesPanel = ({
       case '.pdf': return 'pdf';
       case '.docx': return 'docx';
       case '.xlsx': return 'xlsx';
+      case '.txt': return 'txt';
       default: return 'unknown';
     }
   };
@@ -101,6 +102,14 @@ const SourcesPanel = ({
           label: 'XLSX',
           labelBg: 'bg-green-100',
           labelText: 'text-green-700'
+        };
+      case 'txt':
+        return {
+          bgColor: 'bg-gray-100',
+          textColor: 'text-gray-600',
+          label: 'TXT',
+          labelBg: 'bg-gray-100',
+          labelText: 'text-gray-700'
         };
       default:
         return {
@@ -142,6 +151,13 @@ const SourcesPanel = ({
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
             <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
             <path d="M8,12H10V14H8V12M10,12H12V14H10V12M12,12H14V14H12V12M14,12H16V14H14V12M8,14H10V16H8V14M10,14H12V16H10V14M12,14H14V16H12V14M14,14H16V16H14V14M8,16H10V18H8V16M10,16H12V18H10V16M12,16H14V18H12V16M14,16H16V18H14V16Z" />
+          </svg>
+        );
+      case 'txt':
+        return (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+            <path d="M8,12H16V13H8V12M8,14H16V15H8V14M8,16H13V17H8V16Z" />
           </svg>
         );
       default:
@@ -195,12 +211,12 @@ const SourcesPanel = ({
     
     for (const file of files) {
       // Validate file type
-      const allowedExtensions = ['.csv', '.pdf', '.docx', '.xlsx'];
+      const allowedExtensions = ['.csv', '.pdf', '.docx', '.xlsx', '.txt'];
       const fileName = file.name.toLowerCase();
       const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
       
       if (!hasValidExtension) {
-        errors.push(`${file.name}: Must be a CSV, PDF, DOCX, or XLSX file`);
+        errors.push(`${file.name}: Must be a CSV, PDF, DOCX, XLSX, or TXT file`);
         continue;
       }
       
@@ -369,6 +385,7 @@ const SourcesPanel = ({
                     <p><span className="font-medium">PDF:</span> Extract and search text content from documents</p>
                     <p><span className="font-medium">DOCX:</span> Analyze text, find information, summarize content</p>
                     <p><span className="font-medium">XLSX:</span> Process spreadsheet data from multiple sheets and tables</p>
+                    <p><span className="font-medium">TXT:</span> Analyze plain text content, extract information, answer questions</p>
                   </div>
                 </div>
               </div>
@@ -380,7 +397,7 @@ const SourcesPanel = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept=".csv,.pdf,.docx,.xlsx"
+          accept=".csv,.pdf,.docx,.xlsx,.txt"
           multiple
           onChange={handleFileInput}
           className="hidden"
@@ -518,7 +535,7 @@ const SourcesPanel = ({
                 </svg>
               </div>
               <p className="body-small text-text-muted mb-2">No files uploaded yet</p>
-              <p className="body-xs text-text-muted">Drag & drop CSV, PDF, DOCX, or XLSX files or click Add</p>
+              <p className="body-xs text-text-muted">Drag & drop CSV, PDF, DOCX, XLSX, or TXT files or click Add</p>
             </div>
           ) : null}
         </div>
