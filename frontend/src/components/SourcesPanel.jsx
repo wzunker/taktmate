@@ -17,6 +17,7 @@ const SourcesPanel = ({
   conversations = [],
   activeConversationId,
   onConversationSelected,
+  onConversationCreated,
   onConversationRename,
   onConversationDelete,
   onConversationExport,
@@ -27,6 +28,7 @@ const SourcesPanel = ({
   const [error, setError] = useState(null);
   const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
   const [showConversations, setShowConversations] = useState(false);
+  const [creatingConversation, setCreatingConversation] = useState(false);
   const fileInputRef = useRef(null);
 
   // Get conversations for the currently selected file
@@ -551,16 +553,79 @@ const SourcesPanel = ({
               <div className="flex items-center space-x-1">
                 {activeFileId && (
                   <button
-                    onClick={() => {
-                      // Clear active conversation to start fresh
-                      if (onConversationSelected) {
-                        onConversationSelected(null);
+                    onClick={async () => {
+                      if (creatingConversation) return;
+                      
+                      setCreatingConversation(true);
+                      try {
+                        // Get the active file
+                        const activeFile = uploadedFiles.find(file => file.name === activeFileId);
+                        if (!activeFile) {
+                          console.error('Active file not found');
+                          return;
+                        }
+
+                        // Get auth info from SWA
+                        const authResponse = await fetch('/.auth/me');
+                        const authData = await authResponse.json();
+                        
+                        if (!authData.clientPrincipal) {
+                          console.error('No authentication data available');
+                          return;
+                        }
+
+                        console.log('Creating new conversation with suggestions for:', activeFile.name);
+
+                        // Create new conversation with suggestions
+                        const response = await fetch('/api/conversations', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
+                          },
+                          body: JSON.stringify({
+                            fileName: activeFile.name,
+                            title: `New conversation about ${activeFile.name}`
+                          })
+                        });
+
+                        if (response.ok) {
+                          const data = await response.json();
+                          if (data.success && data.conversation) {
+                            console.log('Created conversation with suggestions:', data.conversation);
+                            // Select the new conversation
+                            if (onConversationSelected) {
+                              onConversationSelected(data.conversation);
+                            }
+                            // Notify parent about new conversation
+                            if (onConversationCreated) {
+                              onConversationCreated(data.conversation);
+                            }
+                          } else {
+                            console.error('Conversation creation failed:', data);
+                          }
+                        } else {
+                          const errorData = await response.text();
+                          console.error('Failed to create conversation:', response.statusText, errorData);
+                        }
+                      } catch (error) {
+                        console.error('Error creating new conversation:', error);
+                      } finally {
+                        setCreatingConversation(false);
                       }
                     }}
-                    className="px-2 py-1 text-xs bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors"
+                    disabled={creatingConversation}
+                    className="px-2 py-1 text-xs bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Start new conversation with this file"
                   >
-                    New Chat
+                    {creatingConversation ? (
+                      <div className="flex items-center space-x-1">
+                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Creating...</span>
+                      </div>
+                    ) : (
+                      'New Chat'
+                    )}
                   </button>
                 )}
                 <button

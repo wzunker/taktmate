@@ -446,6 +446,7 @@ function App() {
               conversations={conversations}
               activeConversationId={activeConversationId}
               onConversationSelected={handleConversationSelected}
+              onConversationCreated={handleConversationCreated}
               onConversationRename={handleConversationRename}
               onConversationDelete={handleConversationDelete}
               onConversationExport={handleConversationExport}
