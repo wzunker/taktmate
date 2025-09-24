@@ -202,4 +202,12 @@ code {
           flex: 1;
           min-height: 0; /* Critical for flex child to allow shrinking */
           overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        /* Main content grid container should fill remaining space after padding */
+        .full-height-layout > main > .grid {
+          flex: 1;
+          min-height: 0;
         }
