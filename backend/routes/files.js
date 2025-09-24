@@ -171,7 +171,7 @@ function validateContentType(contentType) {
   }
 
   if (!ALLOWED_CONTENT_TYPES.includes(contentType.toLowerCase())) {
-    return { valid: false, error: `File type not supported. Supported types: CSV, PDF, DOCX, XLSX (${ALLOWED_CONTENT_TYPES.join(', ')})` };
+    return { valid: false, error: `File type not supported. Supported types: CSV, PDF, DOCX, XLSX, TXT (${ALLOWED_CONTENT_TYPES.join(', ')})` };
   }
 
   return { valid: true };

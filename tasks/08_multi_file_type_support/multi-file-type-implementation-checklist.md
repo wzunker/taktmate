@@ -1,7 +1,7 @@
 # Multi-File Type Support Implementation Checklist
 
 ## Overview
-Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), and Excel (XLSX) documents. This MVP implementation focuses on core functionality to get multi-file type support working without advanced features like OCR, chunking, or async processing.
+Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), Excel (XLSX), and plain text (TXT) documents. This MVP implementation focuses on core functionality to get multi-file type support working without advanced features like OCR, chunking, or async processing.
 
 ## Current State Analysis
 - **Frontend**: CSV-only file validation in `SourcesPanel.jsx` (line 100: `!file.name.toLowerCase().endsWith('.csv')`)
@@ -21,6 +21,7 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), an
 - [x] Add `pdf-parse` dependency for PDF text extraction
 - [x] Add `mammoth` dependency for DOCX to HTML/text conversion
 - [x] Add `xlsx` (SheetJS) dependency for Excel file parsing
+- [x] TXT files use native Node.js file reading (no additional dependencies needed)
 - [x] Update package-lock.json with `npm install`
 **Estimated Effort**: 15 minutes
 
@@ -48,6 +49,13 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), an
 - [x] Return combined text representation of all sheets
 - [x] Handle parsing errors gracefully with try/catch
 
+**Create `backend/processTxt.js`**:
+- [x] Export `parseTxt(buffer)` function using native Node.js
+- [x] Convert buffer to UTF-8 string with encoding detection
+- [x] Handle different text encodings gracefully
+- [x] Return plain text string with basic formatting preservation
+- [x] Handle parsing errors gracefully with try/catch
+
 **Estimated Effort**: 2-3 hours
 
 #### 1.3 Update Content Type Validation
@@ -59,7 +67,9 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), an
   - `'application/vnd.openxmlformats-officedocument.wordprocessingml.document'` for DOCX
   - `'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'` for XLSX
   - Keep existing CSV types: `'text/csv'`, `'application/csv'`, `'text/plain'`
+- [x] Add `'text/plain'` content type support for TXT files (already included above)
 - [x] Update validation error message to reflect supported file types
+- [x] Update error message to include TXT files
 **Estimated Effort**: 15 minutes
 
 #### 1.4 Update File Extension Validation
@@ -67,8 +77,10 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), an
 **Description**: Enhance file name validation to accept new extensions
 **Requirements**:
 - [x] Update `validateFileName()` function to accept `.pdf`, `.docx`, `.xlsx` extensions
+- [ ] Add `.txt` extension to allowed extensions array
 - [x] Ensure case-insensitive extension checking
 - [x] Update error messages to reflect supported file types
+- [ ] Update error messages to include TXT files
 **Estimated Effort**: 30 minutes
 
 #### 1.5 Integrate Document Parsing in Chat Endpoint
@@ -76,11 +88,13 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), an
 **Description**: Update chat endpoint to handle multiple file types
 **Requirements**:
 - [x] Import new parsing utilities (`processPdf.js`, `processDocx.js`, `processXlsx.js`)
+- [ ] Import TXT parsing utility (`processTxt.js`)
 - [x] Update `/api/chat` endpoint (around line 155) to:
   - Detect file type by extension or MIME type
   - Call appropriate parser based on file type
   - Fall back to CSV parsing for `.csv` files
   - Handle parsing errors with user-friendly messages
+- [ ] Add TXT file type case to `parseFileContent()` function
 - [x] Update `formatCsvForPrompt()` or create `formatDocumentForPrompt()` function
 - [x] Ensure parsed content is properly formatted for GPT-4.1 context
 **Estimated Effort**: 1-2 hours
@@ -95,10 +109,13 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), an
   ```html
   accept=".csv,.pdf,.docx,.xlsx"
   ```
+- [ ] Add `.txt` to accept attribute: `accept=".csv,.pdf,.docx,.xlsx,.txt"`
 - [x] Update file validation logic in `handleFiles()` function:
   - Remove CSV-only check (`!file.name.toLowerCase().endsWith('.csv')`)
   - Add multi-extension validation for `.csv`, `.pdf`, `.docx`, `.xlsx`
   - Update error messages to reflect supported file types
+- [ ] Add `.txt` to allowedExtensions array in validation logic
+- [ ] Update error messages to include TXT files
 - [x] Keep existing file size limit (5MB) and file count limit (5 files)
 **Estimated Effort**: 30 minutes
 
@@ -107,12 +124,15 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), an
 **Description**: Improve UX with visual file type indicators
 **Requirements**:
 - [x] Add file type detection function based on extension
+- [ ] Add TXT file type to `getFileType()` function
 - [x] Display file type badges/labels next to file names
 - [x] Use different colors or icons for each file type:
   - CSV: Blue/data icon
   - PDF: Red/document icon  
   - DOCX: Indigo/word icon
   - XLSX: Green/spreadsheet icon
+- [ ] Add TXT file type styling: Gray/text icon
+- [ ] Add TXT case to `getFileTypeStyles()` and `getFileTypeIcon()` functions
 - [x] Update file list display to show file type information
 **Estimated Effort**: 1 hour
 
@@ -121,9 +141,12 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), an
 **Description**: Update user-facing text to reflect new capabilities
 **Requirements**:
 - [x] Update drag & drop area text to mention supported file types
+- [ ] Update text to include TXT files
 - [x] Update help text and tooltips to include PDF, DOCX, XLSX
+- [ ] Update help text to include TXT files
 - [x] Update error messages for unsupported file types
 - [x] Add brief explanation of what data can be extracted from each file type
+- [ ] Add TXT file explanation: "Analyze plain text content, extract information, answer questions"
 **Estimated Effort**: 30 minutes
 
 ### Phase 3: System Integration and Testing
@@ -133,9 +156,12 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), an
 **Description**: Update documentation to reflect new file type support
 **Requirements**:
 - [x] Update "Features" section to mention multi-file type support
+- [ ] Update features to include TXT file support
 - [x] Update "Usage" section with examples for different file types
 - [x] Update API endpoint documentation for `/upload` and `/chat`
+- [ ] Update API documentation to include TXT file examples
 - [x] Add example questions for different document types
+- [ ] Add TXT file example questions
 - [x] Update limitations section with any new constraints
 **Estimated Effort**: 30 minutes
 
@@ -145,11 +171,12 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), an
 - [ ] Test PDF upload and chat functionality with sample PDF
 - [ ] Test DOCX upload and chat functionality with sample Word document  
 - [ ] Test XLSX upload and chat functionality with sample Excel file
+- [ ] Test TXT upload and chat functionality with sample text file
 - [ ] Test CSV upload still works (regression testing)
-- [ ] Verify file type validation works correctly
+- [ ] Verify file type validation works correctly for all types including TXT
 - [ ] Test error handling for corrupted/invalid files
 - [ ] Verify file size limits still enforced
-- [ ] Test multi-file upload with mixed file types
+- [ ] Test multi-file upload with mixed file types including TXT
 **Estimated Effort**: 1-2 hours
 
 #### 3.3 Update Environment Configuration
@@ -195,6 +222,7 @@ backend/
 ├── processPdf.js          # PDF parsing utility
 ├── processDocx.js         # DOCX parsing utility  
 ├── processXlsx.js         # XLSX parsing utility
+├── processTxt.js          # TXT parsing utility (new)
 └── package.json           # Updated with new dependencies
 ```
 
@@ -214,11 +242,11 @@ README.md                  # Update documentation
 ## Success Criteria
 
 ### MVP Completion Checklist
-- [ ] Users can upload PDF, DOCX, and XLSX files through the existing interface
+- [ ] Users can upload PDF, DOCX, XLSX, and TXT files through the existing interface
 - [ ] Uploaded documents are parsed and their content extracted as plain text
 - [ ] Users can chat with document content using natural language
 - [ ] GPT-4.1 receives document content and responds appropriately
-- [ ] File type validation works correctly for all supported formats
+- [ ] File type validation works correctly for all supported formats including TXT
 - [ ] Existing CSV functionality remains unaffected (no regressions)
 - [ ] Error handling provides clear feedback for unsupported or corrupted files
 - [ ] System performance remains acceptable with new parsing libraries
@@ -238,6 +266,7 @@ README.md                  # Update documentation
 - [ ] Users can successfully analyze data from Excel files
 - [ ] Users can successfully ask questions about PDF content
 - [ ] Users can successfully query Word document information
+- [ ] Users can successfully analyze plain text file content
 
 ## Implementation Notes
 
@@ -245,6 +274,7 @@ README.md                  # Update documentation
 - **pdf-parse**: Lightweight PDF text extraction, works with most PDF formats
 - **mammoth**: Converts DOCX to HTML/text, preserves basic formatting
 - **xlsx**: Industry standard for Excel file processing, handles multiple sheets
+- **Native Node.js**: TXT files use built-in file system and buffer operations (no additional dependencies)
 
 ### Azure Considerations
 - All parsing happens in-memory on Azure App Service
