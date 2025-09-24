@@ -6,13 +6,28 @@ A comprehensive, cloud-hosted web application that allows users to upload CSV fi
 
 ### Core Application
 - 📁 **CSV Upload**: Upload CSV files up to 5MB with Azure Blob Storage persistence
-- 💬 **AI Chat**: Ask questions about your data in natural language
+- 💬 **AI Chat**: Ask questions about your data in natural language with conversation memory
 - 🧠 **Smart Analysis**: GPT-4.1 analyzes and responds using only your CSV data
+- 💾 **Stateful Conversations**: Persistent chat history with context across sessions
+- 📚 **Conversation Management**: Create, rename, delete, and export chat histories
+- 🔄 **Auto-Archiving**: Intelligent conversation archiving with AI summarization
 - 🎨 **Modern UI**: Clean, responsive interface built with React and TailwindCSS
 - ⚡ **Real-time**: Instant responses and file processing
 - 🔒 **Enterprise Security**: Entra ID authentication with user isolation
 - ☁️ **Cloud-Native**: Fully hosted on Azure with auto-scaling
 - 🔍 **Debug Mode**: Environment-based prompt debugging for development
+
+### Stateful Conversation Memory
+- 🗨️ **Persistent Chat History**: All conversations automatically saved with context
+- 📝 **Conversation Management**: Create, rename, delete, and organize chat sessions
+- 🏷️ **Auto-Generated Titles**: AI creates meaningful conversation titles
+- 📊 **Export Capabilities**: Export conversations as JSON or CSV formats
+- 🗂️ **File Association**: Conversations linked to specific CSV files for context
+- ⚡ **Smart Loading**: Recent messages loaded for conversation context
+- 🔄 **Hybrid Storage**: Active conversations in Cosmos DB, archived in Blob Storage
+- 🤖 **AI Summarization**: Long conversations automatically summarized
+- 📅 **TTL Management**: Automatic cleanup of old conversations
+- 🔍 **Conversation Search**: Find past conversations by file or content
 
 ### Advanced Evaluation System
 - 🧪 **Multi-Domain Testing**: 5 diverse datasets (Sports, Astronomy, HR, Inventory, Transportation)
@@ -27,7 +42,8 @@ A comprehensive, cloud-hosted web application that allows users to upload CSV fi
 - **Azure Static Web Apps**: Frontend hosting and deployment
 - **Azure App Service**: Backend API hosting with auto-scaling
 - **Azure Blob Storage**: Persistent file storage with user isolation
-- **Azure OpenAI Service**: GPT-4.1 for natural language processing
+- **Azure Cosmos DB**: NoSQL database for conversation storage and management
+- **Azure OpenAI Service**: GPT-4.1 for natural language processing and summarization
 - **Microsoft Entra ID (External ID)**: Authentication and user management
 - **Azure Key Vault**: Secure secrets management
 - **Azure Application Insights**: Monitoring and telemetry
@@ -42,8 +58,11 @@ A comprehensive, cloud-hosted web application that allows users to upload CSV fi
 - Node.js with Express.js
 - Azure OpenAI GPT-4.1 integration
 - Azure Blob Storage SDK (@azure/storage-blob)
+- Azure Cosmos DB SDK (@azure/cosmos)
 - Azure Identity SDK (@azure/identity) for Managed Identity
 - csv-parser for CSV processing
+- Conversation management and archiving services
+- AI-powered conversation summarization
 - Environment-based debug logging
 - CORS enabled with Azure domain support
 
@@ -84,6 +103,14 @@ The application is deployed using the following Azure resources:
 - **Type**: Azure OpenAI Service
 - **Endpoint**: `https://taktmate.openai.azure.com`
 - **Deployment**: `gpt-4.1` (API version: 2025-01-01-preview)
+
+#### Cosmos DB
+- **Resource Name**: `taktmate-conversations-db`
+- **Type**: Azure Cosmos DB (NoSQL API)
+- **Database**: `taktmate-conversations`
+- **Container**: `conversations`
+- **Partition Key**: `/userId`
+- **Features**: User isolation, TTL cleanup, automatic indexing
 
 #### Authentication (Entra ID)
 - **Tenant**: `taktmate.onmicrosoft.com`
@@ -235,7 +262,10 @@ Access the live application at: **https://app.taktconnect.com**
 4. **Wait for Processing**: File is uploaded and parsed automatically
 5. **Start Chatting**: Ask questions about your data using natural language
 6. **Get Insights**: AI responds using only your CSV data with GPT-4.1
-7. **File Management**: View, download, or delete your uploaded files
+7. **Conversation Memory**: All chats are automatically saved with persistent history
+8. **Manage Conversations**: Create new chats, rename, delete, or export conversation history
+9. **File Association**: Each conversation is linked to its specific CSV file for context
+10. **File Management**: View, download, or delete your uploaded files
 
 ### Local Development
 For local testing and development:
@@ -265,7 +295,9 @@ For local testing and development:
 
 ## API Endpoints
 
-### POST /upload
+### File Management
+
+#### POST /upload
 Upload a CSV file for processing.
 
 **Request:**
@@ -284,14 +316,17 @@ Upload a CSV file for processing.
 }
 ```
 
-### POST /chat
-Send a chat message about uploaded CSV data.
+### Chat & Conversations
+
+#### POST /chat
+Send a chat message about uploaded CSV data with conversation context.
 
 **Request:**
 ```json
 {
-  "fileId": "unique_file_id",
-  "message": "What's the average salary?"
+  "fileName": "data.csv",
+  "message": "What's the average salary?",
+  "conversationId": "optional_conversation_id"
 }
 ```
 
@@ -300,19 +335,65 @@ Send a chat message about uploaded CSV data.
 {
   "success": true,
   "reply": "The average salary is $75,000",
-  "fileId": "unique_file_id",
-  "filename": "data.csv"
+  "conversationId": "conversation_id",
+  "title": "Salary Analysis Discussion"
 }
 ```
 
-### GET /health
-Health check endpoint.
+### Conversation Management
+
+#### GET /api/conversations
+List all user conversations.
+
+**Response:**
+```json
+{
+  "success": true,
+  "conversations": [
+    {
+      "id": "conv_123",
+      "title": "Employee Salary Analysis",
+      "fileName": "payroll.csv",
+      "status": "active",
+      "messageCount": 5,
+      "createdAt": "2024-01-01T10:00:00Z",
+      "updatedAt": "2024-01-01T11:00:00Z"
+    }
+  ]
+}
+```
+
+#### POST /api/conversations
+Create a new conversation.
+
+#### GET /api/conversations/:id
+Get specific conversation with messages.
+
+#### PUT /api/conversations/:id
+Update conversation (rename, etc.).
+
+#### DELETE /api/conversations/:id
+Soft delete a conversation.
+
+#### GET /api/conversations/:id/export/json
+Export conversation as JSON.
+
+#### GET /api/conversations/:id/export/csv
+Export conversation as CSV.
+
+### System
+
+#### GET /health
+Health check endpoint with service status.
 
 **Response:**
 ```json
 {
   "status": "OK",
-  "message": "TaktMate Backend is running"
+  "message": "TaktMate Backend is running",
+  "cosmos": "healthy",
+  "openai": "healthy",
+  "blob": "healthy"
 }
 ```
 
@@ -382,9 +463,12 @@ taktmate/
 │   ├── middleware/
 │   │   └── auth.js            # Authentication middleware
 │   ├── routes/
-│   │   └── files.js           # File management API routes
+│   │   ├── files.js           # File management API routes
+│   │   └── conversations.js   # Conversation management API routes
 │   ├── services/
-│   │   └── storage.js         # Azure Blob Storage service
+│   │   ├── storage.js         # Azure Blob Storage service
+│   │   ├── cosmos.js          # Azure Cosmos DB service for conversations
+│   │   └── summarizerService.js # AI summarization and archiving service
 │   ├── ENVIRONMENT_VARIABLES.md # Azure deployment guide
 │   └── package.json
 ├── frontend/                   # React frontend (Azure Static Web Apps)
@@ -392,11 +476,12 @@ taktmate/
 │   │   ├── App.jsx            # Main application with authentication
 │   │   ├── components/
 │   │   │   ├── Card.jsx       # UI card component
-│   │   │   ├── ChatBox.jsx    # Chat interface
+│   │   │   ├── ChatBox.jsx    # Chat interface with conversation support
+│   │   │   ├── ConversationItem.jsx # Individual conversation display component
 │   │   │   ├── DataTable.jsx  # Data display component
 │   │   │   ├── Logo.jsx       # TaktMate logo component
 │   │   │   ├── LogoutButton.jsx # User logout
-│   │   │   ├── SourcesPanel.jsx # File upload & management
+│   │   │   ├── SourcesPanel.jsx # File upload & conversation management
 │   │   │   └── UserProfile.jsx # User profile display
 │   │   ├── contexts/
 │   │   │   └── AuthContext.js # Authentication state management
@@ -446,7 +531,8 @@ taktmate/
 │   ├── 03_file_upload/        # File upload enhancements
 │   ├── 04_blob_storage/       # Azure Blob Storage integration
 │   ├── 05_interface_update/   # UI/UX improvements
-│   └── 06_custom_domain/      # Custom domain setup
+│   ├── 06_custom_domain/      # Custom domain setup
+│   └── 07_stateful_chats/     # Conversation memory implementation
 ├── prompts/                    # Example prompts and templates
 │   ├── astronomy_events_qa.txt
 │   ├── employee_payroll_qa.txt
@@ -618,18 +704,22 @@ Internet → Azure Front Door → Static Web App (Frontend)
                                     ↓ (API calls)
                            Azure App Service (Backend)
                                     ↓ (Managed Identity)
-                    ┌─── Azure OpenAI (GPT-4.1)
+                    ┌─── Azure OpenAI (GPT-4.1 + Summarization)
                     │
-                    └─── Azure Blob Storage (User Files)
+                    ├─── Azure Cosmos DB (Conversations)
+                    │
+                    ├─── Azure Blob Storage (User Files + Archives)
                     │
                     └─── Entra ID (Authentication)
 ```
 
 ### Key Architecture Features
 - **Zero-Trust Security**: All communication encrypted, managed identities used
-- **User Isolation**: Each user gets a private blob storage container
+- **User Isolation**: Each user gets private blob storage container and Cosmos DB partition
+- **Hybrid Storage**: Active conversations in Cosmos DB, archived conversations in Blob Storage
 - **Auto-Scaling**: Both frontend and backend scale automatically
 - **High Availability**: Multi-region deployment capability
+- **AI-Powered**: GPT-4.1 for chat responses and conversation summarization
 - **Monitoring**: Application Insights for performance and error tracking
 
 ### Azure OpenAI Integration
@@ -637,8 +727,10 @@ The application uses Azure OpenAI GPT-4.1 with:
 - **Endpoint**: `https://taktmate.openai.azure.com`
 - **API Version**: `2025-01-01-preview`
 - **Model**: `gpt-4.1` deployment
-- **Temperature**: 0.1 for consistent responses
-- **Max Tokens**: 500 for concise answers
+- **Chat Temperature**: 0.1 for consistent responses
+- **Summarization Temperature**: 0.3 for creative summarization
+- **Max Tokens**: 500 for concise answers, 150 for summaries
+- **Use Cases**: Data analysis, conversation context, automatic summarization
 - **Authentication**: API key via Azure Key Vault
 - **Error Handling**: Comprehensive retry logic and fallback responses
 
