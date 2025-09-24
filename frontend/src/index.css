@@ -184,8 +184,22 @@ code {
           max-height: calc(100vh - 140px);
         }
 
-        /* Prevent body scrolling when layout is full height */
+        /* Viewport-constrained layout using flexbox */
         .full-height-layout {
           height: 100vh;
+          max-height: 100vh;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        /* Ensure header doesn't shrink and main content fills remaining space */
+        .full-height-layout > header {
+          flex-shrink: 0;
+        }
+
+        .full-height-layout > main {
+          flex: 1;
+          min-height: 0; /* Critical for flex child to allow shrinking */
           overflow: hidden;
         }

@@ -399,9 +399,9 @@ function App() {
   }
 
   return (
-    <div className="full-height-layout bg-background-cream flex flex-col">
+    <div className="full-height-layout bg-background-cream">
       {/* Header */}
-      <header className="bg-gradient-to-r from-background-warm-white to-background-cream shadow-sm border-b border-gray-200 z-50 backdrop-blur-sm bg-opacity-95 sticky-header flex-shrink-0">
+      <header className="bg-gradient-to-r from-background-warm-white to-background-cream shadow-sm border-b border-gray-200 z-50 backdrop-blur-sm bg-opacity-95 sticky-header">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
                 <div className="flex items-center min-w-0 flex-1">
@@ -427,7 +427,7 @@ function App() {
 
 
       {/* Main Content - Dynamic Layout */}
-      <main className="w-full px-4 sm:px-6 lg:px-8 py-4 flex-1 min-h-0 layout-full-height">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-4">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
           {/* Sources Column - Dynamic width based on collapse */}
           <div className={`h-full ${sourcesCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} transition-all duration-300`}>
