@@ -132,11 +132,11 @@ Extend TaktMate's current CSV-only upload system to support PDF, Word (DOCX), an
 **Files**: `README.md`
 **Description**: Update documentation to reflect new file type support
 **Requirements**:
-- [ ] Update "Features" section to mention multi-file type support
-- [ ] Update "Usage" section with examples for different file types
-- [ ] Update API endpoint documentation for `/upload` and `/chat`
-- [ ] Add example questions for different document types
-- [ ] Update limitations section with any new constraints
+- [x] Update "Features" section to mention multi-file type support
+- [x] Update "Usage" section with examples for different file types
+- [x] Update API endpoint documentation for `/upload` and `/chat`
+- [x] Add example questions for different document types
+- [x] Update limitations section with any new constraints
 **Estimated Effort**: 30 minutes
 
 #### 3.2 Basic Manual Testing

@@ -1,13 +1,13 @@
-# TaktMate - Enterprise CSV Analytics Platform
+# TaktMate - Enterprise Document Analytics Platform
 
-A comprehensive, cloud-hosted web application that allows users to upload CSV files and chat with their data using Azure OpenAI's GPT-4.1. Features enterprise-grade security with Entra ID authentication, Azure Blob Storage for persistent file management, and an advanced evaluation framework for testing AI performance across multiple domains.
+A comprehensive, cloud-hosted web application that allows users to upload CSV, PDF, DOCX, and XLSX files and chat with their data using Azure OpenAI's GPT-4.1. Features enterprise-grade security with Entra ID authentication, Azure Blob Storage for persistent file management, and an advanced evaluation framework for testing AI performance across multiple domains.
 
 ## Features
 
 ### Core Application
-- 📁 **CSV Upload**: Upload CSV files up to 5MB with Azure Blob Storage persistence
+- 📁 **Multi-File Upload**: Upload CSV, PDF, DOCX, and XLSX files up to 5MB with Azure Blob Storage persistence
 - 💬 **AI Chat**: Ask questions about your data in natural language with conversation memory
-- 🧠 **Smart Analysis**: GPT-4.1 analyzes and responds using only your CSV data
+- 🧠 **Smart Analysis**: GPT-4.1 analyzes and responds using only your document data
 - 💾 **Stateful Conversations**: Persistent chat history with context across sessions
 - 📚 **Conversation Management**: Create, rename, delete, and export chat histories
 - 🔄 **Auto-Archiving**: Intelligent conversation archiving with AI summarization
@@ -22,7 +22,7 @@ A comprehensive, cloud-hosted web application that allows users to upload CSV fi
 - 📝 **Conversation Management**: Create, rename, delete, and organize chat sessions
 - 🏷️ **Auto-Generated Titles**: AI creates meaningful conversation titles
 - 📊 **Export Capabilities**: Export conversations as JSON or CSV formats
-- 🗂️ **File Association**: Conversations linked to specific CSV files for context
+- 🗂️ **File Association**: Conversations linked to specific files for context
 - ⚡ **Smart Loading**: Recent messages loaded for conversation context
 - 🔄 **Hybrid Storage**: Active conversations in Cosmos DB, archived in Blob Storage
 - 🤖 **AI Summarization**: Long conversations automatically summarized
@@ -257,14 +257,14 @@ This will show:
 Access the live application at: **https://app.taktconnect.com**
 
 1. **Login**: Authenticate using your Microsoft account via Entra ID
-2. **Upload CSV**: Click "Select CSV File" and choose a CSV file (up to 5MB)
+2. **Upload Files**: Click "Add" and choose CSV, PDF, DOCX, or XLSX files (up to 5MB each)
 3. **Secure Storage**: Files are automatically stored in your private Azure Blob Storage container
-4. **Wait for Processing**: File is uploaded and parsed automatically
+4. **Wait for Processing**: Files are uploaded and parsed automatically based on type
 5. **Start Chatting**: Ask questions about your data using natural language
-6. **Get Insights**: AI responds using only your CSV data with GPT-4.1
+6. **Get Insights**: AI responds using only your document data with GPT-4.1
 7. **Conversation Memory**: All chats are automatically saved with persistent history
 8. **Manage Conversations**: Create new chats, rename, delete, or export conversation history
-9. **File Association**: Each conversation is linked to its specific CSV file for context
+9. **File Association**: Each conversation is linked to its specific file for context
 10. **File Management**: View, download, or delete your uploaded files
 
 ### Local Development
@@ -278,54 +278,70 @@ For local testing and development:
 
 ## Example Questions
 
-### General Data Exploration
+### General Data Exploration (All File Types)
+- "What are the main topics covered in this document?"
+- "How much data is available?"
+- "Summarize the key information"
+
+### CSV Files - Structured Data Analysis
 - "What are the column names in this data?"
-- "How many rows are there?"
-- "Show me the first 5 records"
-
-### Statistical Analysis
 - "What's the average value in the salary column?"
-- "Who has the highest score?"
-- "Show me all records where status is 'active'"
-
-### Filtering and Comparison
 - "Find employees earning more than $80,000"
 - "Which products are out of stock?"
 - "Show events happening in March 2024"
+
+### PDF Files - Document Analysis
+- "What is the main conclusion of this document?"
+- "Extract all the key dates mentioned"
+- "What are the main recommendations?"
+- "Find all mentions of specific terms or concepts"
+
+### DOCX Files - Text Analysis
+- "Summarize the document in bullet points"
+- "What are the action items mentioned?"
+- "Extract all the names and contact information"
+- "What is the document's purpose?"
+
+### XLSX Files - Spreadsheet Analysis
+- "What data is in each sheet?"
+- "Calculate totals from the financial data"
+- "Which sheet contains the sales information?"
+- "Compare values across different worksheets"
 
 ## API Endpoints
 
 ### File Management
 
 #### POST /upload
-Upload a CSV file for processing.
+Upload a CSV, PDF, DOCX, or XLSX file for processing.
 
 **Request:**
 - Content-Type: multipart/form-data
-- Body: CSV file in 'csvFile' field
+- Body: File in 'file' field
+- Supported formats: .csv, .pdf, .docx, .xlsx
 
 **Response:**
 ```json
 {
   "success": true,
   "fileId": "unique_file_id",
-  "filename": "data.csv",
-  "rowCount": 100,
-  "headers": ["col1", "col2", "col3"],
-  "data": [...]
+  "filename": "document.pdf",
+  "fileType": "pdf",
+  "size": 1024000,
+  "processed": true
 }
 ```
 
 ### Chat & Conversations
 
 #### POST /chat
-Send a chat message about uploaded CSV data with conversation context.
+Send a chat message about uploaded document data with conversation context.
 
 **Request:**
 ```json
 {
-  "fileName": "data.csv",
-  "message": "What's the average salary?",
+  "fileName": "report.pdf",
+  "message": "What are the key findings in this document?",
   "conversationId": "optional_conversation_id"
 }
 ```
@@ -334,9 +350,9 @@ Send a chat message about uploaded CSV data with conversation context.
 ```json
 {
   "success": true,
-  "reply": "The average salary is $75,000",
+  "reply": "Based on the document, the key findings include...",
   "conversationId": "conversation_id",
-  "title": "Salary Analysis Discussion"
+  "title": "Document Analysis Discussion"
 }
 ```
 
@@ -610,9 +626,11 @@ Questions can award bonus points for additional criteria:
 
 ## Limitations
 
-- **File Size**: Maximum 5MB per CSV file (configurable in Azure)
+- **File Size**: Maximum 5MB per file (configurable in Azure)
+- **File Types**: Supports CSV, PDF, DOCX, and XLSX files only
 - **File Limit**: 5 files per user for analysis (storage is unlimited)
 - **Context Window**: Large files may exceed GPT-4.1 limits (~128K tokens)
+- **PDF Parsing**: Text-based PDFs only (no OCR for scanned documents)
 - **Regional Availability**: Hosted in East US region
 - **Authentication**: Requires Microsoft account for Entra ID authentication
 
