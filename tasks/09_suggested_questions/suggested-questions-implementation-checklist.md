@@ -44,12 +44,12 @@ Add starter question suggestions when users begin new conversations with uploade
   - [x] Update conversation record to remove suggestions once used
 
 ### Phase 3: Frontend UI Implementation
-- [ ] **3.1 Update ChatBox Component**
-  - [ ] Modify `frontend/src/components/ChatBox.jsx`
-  - [ ] Add state for managing suggestions: `const [suggestions, setSuggestions] = useState([])`
-  - [ ] Load suggestions when conversation is loaded
-  - [ ] Create suggestion buttons UI component
-  - [ ] Style buttons to match existing design system
+- [x] **3.1 Update ChatBox Component**
+  - [x] Modify `frontend/src/components/ChatBox.jsx`
+  - [x] Add state for managing suggestions: `const [suggestions, setSuggestions] = useState([])`
+  - [x] Load suggestions when conversation is loaded
+  - [x] Create suggestion buttons UI component
+  - [x] Style buttons to match existing design system
 
 - [ ] **3.2 Implement Suggestion Interaction**
   - [ ] Add click handlers for suggestion buttons

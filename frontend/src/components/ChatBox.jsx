@@ -17,6 +17,7 @@ const ChatBox = ({
   const [messageCount, setMessageCount] = useState(0);
   const [conversationLoading, setConversationLoading] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const { displayName } = useAuth();
@@ -35,7 +36,110 @@ const ChatBox = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Load conversation history
+  // Handle suggestion click
+  const handleSuggestionClick = async (suggestion) => {
+    if (sending || !fileData) return;
+
+    // Clear suggestions immediately since we're about to send the first message
+    setSuggestions([]);
+    setSending(true);
+
+    // Add user message to chat with timestamp
+    const userMessageObj = { 
+      type: 'user', 
+      content: suggestion,
+      timestamp: new Date().toISOString()
+    };
+    
+    const newMessages = [...messages, userMessageObj];
+    setMessages(newMessages);
+    setMessageCount(prev => prev + 1);
+
+    try {
+      // Get auth info from SWA
+      const authResponse = await fetch('/.auth/me');
+      const authData = await authResponse.json();
+      
+      if (!authData.clientPrincipal) {
+        setMessages(prev => [...prev, { 
+          type: 'error', 
+          content: '🔒 Authentication required. Please refresh the page and log in.',
+          timestamp: new Date().toISOString()
+        }]);
+        return;
+      }
+      
+      // Call backend directly with SWA auth data
+      const response = await axios.post('/api/chat', {
+        fileName: fileData.name || fileData.filename,
+        message: suggestion,
+        conversationId: currentConversationId
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
+        },
+        timeout: 30000
+      });
+
+      if (response.data.success) {
+        setMessages(prev => [...prev, { 
+          type: 'assistant', 
+          content: response.data.reply,
+          timestamp: new Date().toISOString()
+        }]);
+        setMessageCount(prev => prev + 1);
+
+        // Handle conversation creation/updates
+        if (response.data.conversationId) {
+          if (!currentConversationId) {
+            // New conversation created
+            setCurrentConversationId(response.data.conversationId);
+            if (onConversationCreated) {
+              onConversationCreated(response.data.conversation || {
+                id: response.data.conversationId,
+                fileName: fileData.name || fileData.filename,
+                title: response.data.title || 'New Conversation',
+                updatedAt: new Date().toISOString()
+              });
+            }
+          } else if (onConversationUpdated) {
+            // Existing conversation updated
+            onConversationUpdated(response.data.conversationId, {
+              title: response.data.title,
+              updatedAt: new Date().toISOString(),
+              messageCount: messageCount + 1
+            });
+          }
+        }
+      } else {
+        throw new Error(response.data.error || 'Invalid response from server');
+      }
+    } catch (err) {
+      let errorMessage = '❌ I apologize, but I encountered an error processing your request.';
+      
+      if (err.code === 'ECONNABORTED') {
+        errorMessage = '⏱️ The request timed out. Please try asking a simpler question or try again.';
+      } else if (err.response?.status === 429) {
+        errorMessage = '🚦 Too many requests. Please wait a moment before asking another question.';
+      } else if (err.response?.data?.error) {
+        errorMessage = `🤖 ${err.response.data.error}`;
+      } else if (err.message) {
+        errorMessage = `⚠️ ${err.message}`;
+      }
+      
+      setMessages(prev => [...prev, { 
+        type: 'error', 
+        content: errorMessage,
+        timestamp: new Date().toISOString()
+      }]);
+      setMessageCount(prev => prev + 1);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // Load conversation history and suggestions
   const loadConversation = async (convId) => {
     if (!convId) return;
     
@@ -50,16 +154,19 @@ const ChatBox = ({
         return;
       }
 
-      // Fetch conversation history
-      const response = await axios.get(`/api/conversations/${convId}/messages`, {
+      // Fetch full conversation (includes messages and suggestions)
+      const response = await axios.get(`/api/conversations/${convId}`, {
         headers: {
           'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
         },
         timeout: 10000
       });
 
-      if (response.data.success) {
-        const conversationMessages = response.data.messages.map(msg => ({
+      if (response.data.success && response.data.conversation) {
+        const conversation = response.data.conversation;
+        
+        // Load messages
+        const conversationMessages = (conversation.messages || []).map(msg => ({
           type: msg.role === 'user' ? 'user' : 'assistant',
           content: msg.content,
           timestamp: msg.timestamp
@@ -68,6 +175,14 @@ const ChatBox = ({
         setMessages(conversationMessages);
         setMessageCount(conversationMessages.length);
         setCurrentConversationId(convId);
+        
+        // Load suggestions (only if no messages exist yet)
+        if (conversation.suggestions && conversationMessages.length === 0) {
+          setSuggestions(conversation.suggestions);
+          console.log('Loaded suggestions:', conversation.suggestions);
+        } else {
+          setSuggestions([]);
+        }
       }
     } catch (error) {
       console.error('Failed to load conversation:', error);
@@ -77,6 +192,7 @@ const ChatBox = ({
         content: '❌ Failed to load conversation history. Please try again.',
         timestamp: new Date().toISOString()
       }]);
+      setSuggestions([]);
     } finally {
       setConversationLoading(false);
     }
@@ -95,6 +211,7 @@ const ChatBox = ({
       setCurrentConversationId(null);
       setMessages([]);
       setMessageCount(0);
+      setSuggestions([]);
     }
   }, [conversationId, currentConversationId]);
 
@@ -175,6 +292,11 @@ const ChatBox = ({
     const userMessage = inputMessage.trim();
     setInputMessage('');
     setSending(true);
+
+    // Clear suggestions if this is the first message
+    if (suggestions.length > 0) {
+      setSuggestions([]);
+    }
 
     // Add user message to chat with timestamp
     const userMessageObj = { 
@@ -318,6 +440,41 @@ const ChatBox = ({
           </div>
         ) : (
           <>
+        {/* Suggested Questions */}
+        {suggestions.length > 0 && messages.length === 0 && (
+          <div className="space-y-3">
+            <div className="flex justify-center">
+              <div className="text-center">
+                <h3 className="body-normal font-medium text-text-primary mb-2">Try asking:</h3>
+                <div className="space-y-2">
+                  {suggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      disabled={sending}
+                      className="block w-full text-left px-4 py-3 bg-background-warm-white border border-gray-200 rounded-card hover:border-primary-300 hover:bg-primary-50 transition-all duration-200 warm-shadow hover:warm-shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <span className="body-small sm:body-normal text-text-primary leading-relaxed">
+                          {suggestion}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <p className="body-xs text-text-muted mt-3">
+                  Click a suggestion to get started, or type your own question below.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {messages.map((message, index) => (
           <div key={index} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
             {/* Message Bubble with Avatar Inside */}
