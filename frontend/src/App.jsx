@@ -188,10 +188,59 @@ function App() {
     }
   };
 
-  const handleFileSelected = (fileId) => {
+  const handleFileSelected = async (fileId) => {
     setActiveFileId(fileId);
     // Clear active conversation when switching files
     setActiveConversationId(null);
+    
+    // Auto-create a new conversation with suggestions for the selected file
+    try {
+      const activeFile = uploadedFiles.find(file => file.name === fileId);
+      if (!activeFile) {
+        console.error('Active file not found');
+        return;
+      }
+
+      // Get auth info from SWA
+      const authResponse = await fetch('/.auth/me');
+      const authData = await authResponse.json();
+      
+      if (!authData.clientPrincipal) {
+        console.error('No authentication data available');
+        return;
+      }
+
+      console.log('Auto-creating conversation with suggestions for selected file:', activeFile.name);
+
+      // Create new conversation with suggestions
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
+        },
+        body: JSON.stringify({
+          fileName: activeFile.name,
+          title: `Conversation about ${activeFile.name}`
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.conversation) {
+          console.log('Auto-created conversation with suggestions:', data.conversation);
+          // Select the new conversation
+          setActiveConversationId(data.conversation.id);
+          // Add to conversations list
+          setConversations(prev => [data.conversation, ...prev]);
+        }
+      } else {
+        const errorData = await response.text();
+        console.error('Failed to auto-create conversation:', response.statusText, errorData);
+      }
+    } catch (error) {
+      console.error('Error auto-creating conversation:', error);
+    }
   };
 
   // Conversation management functions

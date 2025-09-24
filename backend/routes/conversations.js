@@ -88,7 +88,13 @@ async function generateSuggestions(fileName, fileContent) {
     // Generate the suggestion prompt
     const prompt = suggestionPrompt(fileName, fileExtension, fileContent);
     
-    console.log(`🤖 Generating suggestions for file: ${fileName}`);
+    console.log(`🤖 Generating suggestions for file: ${fileName} (${fileExtension})`);
+    console.log(`📄 File content preview (first 200 chars): ${fileContent.substring(0, 200)}...`);
+    
+    // Debug: Log OpenAI configuration
+    console.log(`🔧 OpenAI Config - Model: ${process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4.1'}`);
+    console.log(`🔧 OpenAI Config - Endpoint: ${process.env.AZURE_OPENAI_ENDPOINT ? 'Set' : 'Not Set'}`);
+    console.log(`🔧 OpenAI Config - API Key: ${process.env.OPENAI_API_KEY ? 'Set' : 'Not Set'}`);
     
     // Call GPT to generate suggestions
     const response = await openai.chat.completions.create({
@@ -101,14 +107,27 @@ async function generateSuggestions(fileName, fileContent) {
       timeout: 15000     // 15 second timeout
     });
     
+    console.log(`📡 GPT Response received, choices: ${response.choices?.length}`);
+    
     const content = response.choices[0]?.message?.content?.trim();
     if (!content) {
       throw new Error('No response from GPT');
     }
     
+    console.log(`📝 GPT Raw Response: ${content}`);
+    
     // Parse JSON response
-    const parsed = JSON.parse(content);
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch (parseError) {
+      console.error(`❌ JSON Parse Error: ${parseError.message}`);
+      console.error(`📝 Unparseable content: ${content}`);
+      throw new Error(`Failed to parse GPT response as JSON: ${parseError.message}`);
+    }
+    
     if (!parsed.suggestions || !Array.isArray(parsed.suggestions)) {
+      console.error(`❌ Invalid suggestion format. Received:`, parsed);
       throw new Error('Invalid suggestion format received');
     }
     
@@ -118,11 +137,12 @@ async function generateSuggestions(fileName, fileContent) {
       throw new Error('No suggestions generated');
     }
     
-    console.log(`✅ Generated ${suggestions.length} suggestions for ${fileName}`);
+    console.log(`✅ Generated ${suggestions.length} suggestions for ${fileName}:`, suggestions);
     return suggestions;
     
   } catch (error) {
     console.error(`❌ Failed to generate suggestions for ${fileName}:`, error.message);
+    console.error(`❌ Full error:`, error);
     
     // Return fallback suggestions based on file type
     const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.') + 1);
