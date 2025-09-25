@@ -130,7 +130,6 @@ class CosmosService {
       };
 
       const { resource } = await this.container.items.create(conversation);
-      console.log(`✅ Created conversation: ${conversationId} for user: ${userId} with ${suggestions.length} suggestions`);
       
       return resource;
     } catch (error) {

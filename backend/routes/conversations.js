@@ -84,32 +84,20 @@ async function generateSuggestions(fileName, fileContent) {
     // Generate the suggestion prompt
     const prompt = suggestionPrompt(fileName, fileExtension, fileContent);
     
-    console.log(`🤖 Generating suggestions for file: ${fileName} (${fileExtension})`);
-    console.log(`📄 File content preview (first 200 chars): ${fileContent.substring(0, 200)}...`);
-    
-    // Debug: Log OpenAI configuration
-    console.log(`🔧 OpenAI Config - Model: ${process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4.1'}`);
-    console.log(`🔧 OpenAI Config - Endpoint: ${process.env.AZURE_OPENAI_ENDPOINT ? 'Set' : 'Not Set'}`);
-    console.log(`🔧 OpenAI Config - API Key: ${process.env.OPENAI_API_KEY ? 'Set' : 'Not Set'}`);
-    
-    // Call GPT to generate suggestions
+    // Call GPT to generate suggestions (matching main chat parameters exactly)
     const response = await openai.chat.completions.create({
-      model: 'gpt-4.1', // Use hardcoded model name to match main chat
+      model: 'gpt-4.1', // This matches your Azure deployment name
       messages: [
         { role: 'system', content: prompt }
       ],
-      temperature: 0.3, // Slightly creative but consistent
-      max_tokens: 300   // Limit response size
+      max_tokens: 500,
+      temperature: 0.1
     });
-    
-    console.log(`📡 GPT Response received, choices: ${response.choices?.length}`);
     
     const content = response.choices[0]?.message?.content?.trim();
     if (!content) {
       throw new Error('No response from GPT');
     }
-    
-    console.log(`📝 GPT Raw Response: ${content}`);
     
     // Parse JSON response
     let parsed;
@@ -132,12 +120,10 @@ async function generateSuggestions(fileName, fileContent) {
       throw new Error('No suggestions generated');
     }
     
-    console.log(`✅ Generated ${suggestions.length} suggestions for ${fileName}:`, suggestions);
     return suggestions;
     
   } catch (error) {
-    console.error(`❌ Failed to generate suggestions for ${fileName}:`, error.message);
-    console.error(`❌ Full error:`, error);
+    console.error(`Failed to generate suggestions for ${fileName}:`, error.message);
     
     // Return fallback suggestions based on file type
     const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.') + 1);
@@ -180,7 +166,6 @@ function getFallbackSuggestions(fileExtension, fileName) {
     "Can you help me understand the content and structure of this document?"
   ];
   
-  console.log(`📋 Using fallback suggestions for ${fileExtension} file`);
   return suggestions;
 }
 
@@ -257,8 +242,6 @@ router.post('/', async (req, res) => {
       });
     }
 
-    console.log(`🔄 Creating conversation for user ${user.id} with file: ${fileName}`);
-
     // Generate suggestions by analyzing the file content
     let suggestions = [];
     try {
@@ -268,9 +251,8 @@ router.post('/', async (req, res) => {
       
       // Generate suggestions using GPT
       suggestions = await generateSuggestions(fileName, fileContent);
-      console.log(`📋 Generated suggestions: ${JSON.stringify(suggestions)}`);
     } catch (suggestionError) {
-      console.warn(`⚠️ Failed to generate suggestions for ${fileName}:`, suggestionError.message);
+      console.warn(`Failed to generate suggestions for ${fileName}:`, suggestionError.message);
       // Continue with conversation creation without suggestions
       const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.') + 1);
       suggestions = getFallbackSuggestions(fileExtension, fileName);
