@@ -35,7 +35,33 @@ function App() {
       setFilesLoading(true);
     }
     try {
-      // Get auth info from SWA
+      // LOCAL DEVELOPMENT: Skip SWA auth and use mock headers
+      if (process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost') {
+        const response = await axios.get('/api/files', {
+          timeout: 10000
+        });
+        
+        if (response.data.success) {
+          const filesData = response.data.files.map(file => ({
+            name: file.name,
+            size: file.size,
+            type: file.type || 'text/csv',
+            lastModified: file.lastModified,
+            fileId: file.name
+          }));
+          
+          setUploadedFiles(filesData);
+          setStorageQuota({
+            used: response.data.quota.used || 0,
+            total: response.data.quota.limit || (200 * 1024 * 1024),
+            usedDisplay: response.data.quota.usedDisplay || '0 KB',
+            limitDisplay: response.data.quota.limitDisplay || '200 MB'
+          });
+        }
+        return;
+      }
+      
+      // PRODUCTION: Get auth info from SWA
       const authResponse = await fetch('/.auth/me');
       const authData = await authResponse.json();
       
@@ -88,7 +114,19 @@ function App() {
       setConversationsLoading(true);
     }
     try {
-      // Get auth info from SWA
+      // LOCAL DEVELOPMENT: Skip SWA auth and use mock headers
+      if (process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost') {
+        const response = await axios.get('/api/conversations', {
+          timeout: 10000
+        });
+
+        if (response.data.success) {
+          setConversations(response.data.conversations || []);
+        }
+        return;
+      }
+      
+      // PRODUCTION: Get auth info from SWA
       const authResponse = await fetch('/.auth/me');
       const authData = await authResponse.json();
       
