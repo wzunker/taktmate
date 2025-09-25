@@ -13,18 +13,14 @@ const { parseDocx, formatDocxForPrompt } = require('../processDocx');
 const { parseXlsx, formatXlsxForPrompt } = require('../processXlsx');
 const { parseTxt, formatTxtForPrompt } = require('../processTxt');
 
-// Initialize OpenAI client for suggestions
+// Initialize OpenAI client for suggestions (matching main chat config)
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.AZURE_OPENAI_ENDPOINT ? 
-    `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4.1'}` : 
-    undefined,
-  defaultQuery: process.env.AZURE_OPENAI_API_VERSION ? 
-    { 'api-version': process.env.AZURE_OPENAI_API_VERSION } : 
-    undefined,
-  defaultHeaders: process.env.AZURE_OPENAI_ENDPOINT ? 
-    { 'api-key': process.env.OPENAI_API_KEY } : 
-    undefined,
+  baseURL: 'https://taktmate.openai.azure.com/openai/deployments/gpt-4.1',
+  defaultQuery: { 'api-version': '2025-01-01-preview' },
+  defaultHeaders: {
+    'api-key': process.env.OPENAI_API_KEY,
+  },
 });
 
 // Apply authentication to all conversation routes
