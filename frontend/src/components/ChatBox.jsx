@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import { getAuthHeaders } from '../utils/auth';
 import Card, { CardHeader, CardContent } from './Card';
 import useAuth from '../hooks/useAuth';
 
@@ -56,29 +57,16 @@ const ChatBox = ({
     setMessageCount(prev => prev + 1);
 
     try {
-      // Get auth info from SWA
-      const authResponse = await fetch('/.auth/me');
-      const authData = await authResponse.json();
+      // Get authentication headers (handles local development bypass)
+      const authHeaders = await getAuthHeaders();
       
-      if (!authData.clientPrincipal) {
-        setMessages(prev => [...prev, { 
-          type: 'error', 
-          content: '🔒 Authentication required. Please refresh the page and log in.',
-          timestamp: new Date().toISOString()
-        }]);
-        return;
-      }
-      
-      // Call backend directly with SWA auth data
+      // Call backend with auth headers
       const response = await axios.post('/api/chat', {
         fileName: fileData.name || fileData.filename,
         message: suggestion,
         conversationId: currentConversationId
       }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
-        },
+        headers: authHeaders,
         timeout: 30000
       });
 
@@ -145,20 +133,12 @@ const ChatBox = ({
     
     setConversationLoading(true);
     try {
-      // Get auth info from SWA
-      const authResponse = await fetch('/.auth/me');
-      const authData = await authResponse.json();
-      
-      if (!authData.clientPrincipal) {
-        console.error('No authentication data available');
-        return;
-      }
+      // Get authentication headers (handles local development bypass)
+      const authHeaders = await getAuthHeaders();
 
       // Fetch full conversation (includes messages and suggestions)
       const response = await axios.get(`/api/conversations/${convId}`, {
-        headers: {
-          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
-        },
+        headers: authHeaders,
         timeout: 10000
       });
 
@@ -315,29 +295,16 @@ const ChatBox = ({
     }, 100);
 
     try {
-      // Get auth info from SWA
-      const authResponse = await fetch('/.auth/me');
-      const authData = await authResponse.json();
+      // Get authentication headers (handles local development bypass)
+      const authHeaders = await getAuthHeaders();
       
-      if (!authData.clientPrincipal) {
-        setMessages(prev => [...prev, { 
-          type: 'error', 
-          content: '🔒 Authentication required. Please refresh the page and log in.',
-          timestamp: new Date().toISOString()
-        }]);
-        return;
-      }
-      
-      // Call backend directly with SWA auth data
+      // Call backend with auth headers
       const response = await axios.post('/api/chat', {
         fileName: fileData.name || fileData.filename,
         message: userMessage,
         conversationId: currentConversationId // Include conversation context
       }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
-        },
+        headers: authHeaders,
         timeout: 30000 // 30 second timeout for AI responses
       });
 

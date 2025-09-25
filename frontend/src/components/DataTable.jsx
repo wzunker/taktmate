@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { getAuthHeaders } from '../utils/auth';
 import Card, { CardHeader, CardContent } from './Card';
 
 const DataTable = ({ fileData, className = '', isCollapsed, onToggleCollapse }) => {
@@ -83,21 +84,12 @@ const DataTable = ({ fileData, className = '', isCollapsed, onToggleCollapse }) 
     setError(null);
     
     try {
-      // Get auth info from SWA
-      const authResponse = await fetch('/.auth/me');
-      const authData = await authResponse.json();
-      
-      if (!authData.clientPrincipal) {
-        throw new Error('No authentication data available');
-      }
-      
-      // Use relative URL to go through Static Web App proxy
+      // Get authentication headers (handles local development bypass)
+      const authHeaders = await getAuthHeaders();
       
       // Request download SAS token
       const sasResponse = await axios.get(`/api/files/${encodeURIComponent(fileName)}/sas`, {
-        headers: {
-          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
-        },
+        headers: authHeaders,
         timeout: 10000
       });
 

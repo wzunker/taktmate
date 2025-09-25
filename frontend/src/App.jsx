@@ -7,6 +7,7 @@ import UserProfile from './components/UserProfile';
 import Logo from './components/Logo';
 import Card from './components/Card';
 import useAuth from './hooks/useAuth';
+import { getAuthHeaders } from './utils/auth';
 
 function App() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -35,45 +36,11 @@ function App() {
       setFilesLoading(true);
     }
     try {
-      // LOCAL DEVELOPMENT: Skip SWA auth and use mock headers
-      if (process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost') {
-        const response = await axios.get('/api/files', {
-          timeout: 10000
-        });
-        
-        if (response.data.success) {
-          const filesData = response.data.files.map(file => ({
-            name: file.name,
-            size: file.size,
-            type: file.type || 'text/csv',
-            lastModified: file.lastModified,
-            fileId: file.name
-          }));
-          
-          setUploadedFiles(filesData);
-          setStorageQuota({
-            used: response.data.quota.used || 0,
-            total: response.data.quota.limit || (200 * 1024 * 1024),
-            usedDisplay: response.data.quota.usedDisplay || '0 KB',
-            limitDisplay: response.data.quota.limitDisplay || '200 MB'
-          });
-        }
-        return;
-      }
-      
-      // PRODUCTION: Get auth info from SWA
-      const authResponse = await fetch('/.auth/me');
-      const authData = await authResponse.json();
-      
-      if (!authData.clientPrincipal) {
-        console.warn('No authentication data available');
-        return;
-      }
+      // Get authentication headers (handles local development bypass)
+      const authHeaders = await getAuthHeaders();
       
       const response = await axios.get('/api/files', {
-        headers: {
-          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
-        },
+        headers: authHeaders,
         timeout: 10000
       });
 
@@ -114,31 +81,11 @@ function App() {
       setConversationsLoading(true);
     }
     try {
-      // LOCAL DEVELOPMENT: Skip SWA auth and use mock headers
-      if (process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost') {
-        const response = await axios.get('/api/conversations', {
-          timeout: 10000
-        });
-
-        if (response.data.success) {
-          setConversations(response.data.conversations || []);
-        }
-        return;
-      }
-      
-      // PRODUCTION: Get auth info from SWA
-      const authResponse = await fetch('/.auth/me');
-      const authData = await authResponse.json();
-      
-      if (!authData.clientPrincipal) {
-        console.warn('No authentication data available for conversations');
-        return;
-      }
+      // Get authentication headers (handles local development bypass)
+      const authHeaders = await getAuthHeaders();
       
       const response = await axios.get('/api/conversations', {
-        headers: {
-          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
-        },
+        headers: authHeaders,
         timeout: 10000
       });
 
@@ -185,20 +132,12 @@ function App() {
 
   const handleFileDeleted = async (fileId) => {
     try {
-      // Get auth info from SWA
-      const authResponse = await fetch('/.auth/me');
-      const authData = await authResponse.json();
-      
-      if (!authData.clientPrincipal) {
-        console.error('No authentication data available for delete');
-        return;
-      }
+      // Get authentication headers (handles local development bypass)
+      const authHeaders = await getAuthHeaders();
       
       // Call backend delete endpoint
       await axios.delete(`/api/files/${encodeURIComponent(fileId)}`, {
-        headers: {
-          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
-        },
+        headers: authHeaders,
         timeout: 10000
       });
 
@@ -233,24 +172,15 @@ function App() {
         return;
       }
 
-      // Get auth info from SWA
-      const authResponse = await fetch('/.auth/me');
-      const authData = await authResponse.json();
-      
-      if (!authData.clientPrincipal) {
-        console.error('No authentication data available');
-        return;
-      }
+      // Get authentication headers (handles local development bypass)
+      const authHeaders = await getAuthHeaders();
 
       console.log('Auto-creating conversation with suggestions for selected file:', activeFile.name);
 
       // Create new conversation with suggestions
       const response = await fetch('/api/conversations', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
-        },
+        headers: authHeaders,
         body: JSON.stringify({
           fileName: activeFile.name,
           title: `Conversation about ${activeFile.name}`
@@ -316,22 +246,13 @@ function App() {
 
   const handleConversationRename = async (conversationId, newTitle) => {
     try {
-      // Get auth info from SWA
-      const authResponse = await fetch('/.auth/me');
-      const authData = await authResponse.json();
-      
-      if (!authData.clientPrincipal) {
-        console.error('No authentication data available');
-        return;
-      }
+      // Get authentication headers (handles local development bypass)
+      const authHeaders = await getAuthHeaders();
 
       await axios.put(`/api/conversations/${conversationId}`, 
         { title: newTitle },
         {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
-          },
+          headers: authHeaders,
           timeout: 10000
         }
       );
@@ -346,19 +267,11 @@ function App() {
 
   const handleConversationDelete = async (conversationId) => {
     try {
-      // Get auth info from SWA
-      const authResponse = await fetch('/.auth/me');
-      const authData = await authResponse.json();
-      
-      if (!authData.clientPrincipal) {
-        console.error('No authentication data available');
-        return;
-      }
+      // Get authentication headers (handles local development bypass)
+      const authHeaders = await getAuthHeaders();
 
       await axios.delete(`/api/conversations/${conversationId}`, {
-        headers: {
-          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
-        },
+        headers: authHeaders,
         timeout: 10000
       });
 
@@ -377,19 +290,11 @@ function App() {
 
   const handleConversationExport = async (conversation, format) => {
     try {
-      // Get auth info from SWA
-      const authResponse = await fetch('/.auth/me');
-      const authData = await authResponse.json();
-      
-      if (!authData.clientPrincipal) {
-        console.error('No authentication data available');
-        return;
-      }
+      // Get authentication headers (handles local development bypass)
+      const authHeaders = await getAuthHeaders();
 
       const response = await axios.get(`/api/conversations/${conversation.id}/export/${format}`, {
-        headers: {
-          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
-        },
+        headers: authHeaders,
         timeout: 10000,
         responseType: 'blob'
       });
@@ -414,20 +319,12 @@ function App() {
 
   const handleFileDownload = async (file) => {
     try {
-      // Get auth info from SWA
-      const authResponse = await fetch('/.auth/me');
-      const authData = await authResponse.json();
-      
-      if (!authData.clientPrincipal) {
-        console.error('No authentication data available for download');
-        return;
-      }
+      // Get authentication headers (handles local development bypass)
+      const authHeaders = await getAuthHeaders();
       
       // Request download SAS token from backend
       const response = await axios.get(`/api/files/${encodeURIComponent(file.name)}/sas`, {
-        headers: {
-          'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
-        },
+        headers: authHeaders,
         timeout: 10000
       });
 

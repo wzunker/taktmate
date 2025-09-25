@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import Card, { CardHeader, CardContent } from './Card';
 import ConversationItem from './ConversationItem';
+import { getAuthHeaders } from '../utils/auth';
 
 const SourcesPanel = ({ 
   onFileUploaded, 
@@ -245,18 +246,8 @@ const SourcesPanel = ({
     setUploading(true);
     
     try {
-      // Get auth info from SWA
-      const authResponse = await fetch('/.auth/me');
-      const authData = await authResponse.json();
-      
-      if (!authData.clientPrincipal) {
-        throw new Error('Authentication required. Please log in.');
-      }
-
-      const authHeaders = {
-        'Content-Type': 'application/json',
-        'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
-      };
+      // Get authentication headers (handles local development bypass)
+      const authHeaders = await getAuthHeaders();
 
       // Upload each file
       for (const file of validFiles) {
@@ -565,24 +556,15 @@ const SourcesPanel = ({
                           return;
                         }
 
-                        // Get auth info from SWA
-                        const authResponse = await fetch('/.auth/me');
-                        const authData = await authResponse.json();
-                        
-                        if (!authData.clientPrincipal) {
-                          console.error('No authentication data available');
-                          return;
-                        }
+                        // Get authentication headers (handles local development bypass)
+                        const authHeaders = await getAuthHeaders();
 
                         console.log('Creating new conversation with suggestions for:', activeFile.name);
 
                         // Create new conversation with suggestions
                         const response = await fetch('/api/conversations', {
                           method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                            'x-ms-client-principal': btoa(JSON.stringify(authData.clientPrincipal))
-                          },
+                          headers: authHeaders,
                           body: JSON.stringify({
                             fileName: activeFile.name,
                             title: `New conversation about ${activeFile.name}`
