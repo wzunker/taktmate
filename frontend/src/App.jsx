@@ -69,10 +69,7 @@ function App() {
           limitDisplay: response.data.quota.limitDisplay || '200 MB'
         });
 
-        // Set first file as active if none is selected
-        if (filesData.length > 0 && !activeFileId) {
-          setActiveFileId(filesData[0].name);
-        }
+        // Don't auto-select files - let users explicitly choose to start a conversation
       }
     } catch (err) {
       console.error('Failed to load files:', err);
@@ -140,10 +137,7 @@ function App() {
 
     setUploadedFiles(prevFiles => {
       const newFiles = [...prevFiles, newFile];
-      // Set the first uploaded file as active if no file is currently active
-      if (!activeFileId) {
-        setActiveFileId(newFile.name);
-      }
+      // Don't auto-select uploaded files - let users explicitly choose
       return newFiles;
     });
 
@@ -173,10 +167,10 @@ function App() {
       // Update local state immediately for better UX
       setUploadedFiles(prevFiles => prevFiles.filter(file => file.name !== fileId));
       
-      // If the deleted file was active, set the first remaining file as active
+      // If the deleted file was active, clear the selection
       if (activeFileId === fileId) {
-        const remainingFiles = uploadedFiles.filter(file => file.name !== fileId);
-        setActiveFileId(remainingFiles.length > 0 ? remainingFiles[0].name : null);
+        setActiveFileId(null);
+        setActiveConversationId(null);
       }
 
       // Refresh the file list to get updated quota info (no loading spinner)
@@ -229,6 +223,12 @@ function App() {
         const data = await response.json();
         if (data.success && data.conversation) {
           console.log('Auto-created conversation with suggestions:', data.conversation);
+          console.log('🔍 Backend Response Analysis:');
+          console.log('  - Suggestions received:', data.conversation.suggestions);
+          console.log('  - Suggestions count:', data.conversation.suggestions?.length);
+          console.log('  - Are these GPT-generated or fallbacks?', 
+            data.conversation.suggestions?.[0]?.includes('main themes') ? 'FALLBACKS (generic)' : 'LIKELY GPT-GENERATED (specific)');
+          
           // Select the new conversation
           setActiveConversationId(data.conversation.id);
           // Add to conversations list

@@ -440,6 +440,35 @@ const ChatBox = ({
           </div>
         ) : (
           <>
+        {/* No File Selected State */}
+        {!fileData && messages.length === 0 && suggestions.length === 0 && (
+          <div className="flex items-center justify-center py-16">
+            <div className="text-center max-w-md">
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+              </div>
+              <h3 className="heading-small text-text-primary font-medium mb-2">
+                Select a file to start a conversation
+              </h3>
+              <p className="body-normal text-text-secondary mb-6">
+                Choose a file from your sources to analyze and ask questions about your data.
+              </p>
+              <div className="text-center">
+                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-primary-50 text-primary-700 border border-primary-200">
+                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+                  </svg>
+                  Click a file on the left
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Suggested Questions */}
         {suggestions.length > 0 && messages.length === 0 && (
           <div 
@@ -636,9 +665,9 @@ const ChatBox = ({
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-                      placeholder="How can I help you today?"
+                      placeholder={!fileData ? "Select a file to start chatting..." : "How can I help you today?"}
               className="w-full border border-gray-300 rounded-input px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-small sm:body-normal resize-none transition-all duration-200"
-              disabled={sending}
+              disabled={sending || !fileData}
               rows="1"
                     style={{ minHeight: '40px', maxHeight: '150px' }}
               onInput={(e) => {
@@ -657,9 +686,9 @@ const ChatBox = ({
           
                 <button
                   onClick={handleSendMessage}
-                  disabled={!inputMessage.trim() || sending || inputMessage.length > 500}
+                  disabled={!inputMessage.trim() || sending || inputMessage.length > 500 || !fileData}
                   className="bg-primary-600 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0 min-w-[44px] h-10 sm:h-12"
-                  title={!inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
+                  title={!fileData ? "Select a file first" : !inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
                 >
                   {sending ? (
                     <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
