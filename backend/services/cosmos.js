@@ -50,7 +50,7 @@ class CosmosService {
         throw new Error('Missing Cosmos DB configuration. Check environment variables.');
       }
 
-      // Use Managed Identity for authentication
+      // Use Managed Identity for authentication (works for both production and local development)
       const credential = new DefaultAzureCredential();
       
       this.client = new CosmosClient({

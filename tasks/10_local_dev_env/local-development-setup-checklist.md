@@ -131,7 +131,7 @@ const checkAuthStatus = async () => {
 
 ### 3.1 Install Backend Dependencies
 
-- [ ] Open terminal and navigate to backend directory:
+- [x] Open terminal and navigate to backend directory:
 ```bash
 cd backend
 npm install
@@ -139,7 +139,7 @@ npm install
 
 ### 3.2 Install Frontend Dependencies
 
-- [ ] Open another terminal and navigate to frontend directory:
+- [x] Open another terminal and navigate to frontend directory:
 ```bash
 cd frontend
 npm install
@@ -147,7 +147,7 @@ npm install
 
 ### 3.3 Start Development Servers
 
-- [ ] Start backend server (from `backend/` directory):
+- [x] Start backend server (from `backend/` directory):
 ```bash
 npm run dev
 ```
