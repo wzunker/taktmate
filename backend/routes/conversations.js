@@ -94,13 +94,12 @@ async function generateSuggestions(fileName, fileContent) {
     
     // Call GPT to generate suggestions
     const response = await openai.chat.completions.create({
-      model: process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4.1',
+      model: 'gpt-4.1', // Use hardcoded model name to match main chat
       messages: [
         { role: 'system', content: prompt }
       ],
       temperature: 0.3, // Slightly creative but consistent
-      max_tokens: 300,   // Limit response size
-      timeout: 15000     // 15 second timeout
+      max_tokens: 300   // Limit response size
     });
     
     console.log(`📡 GPT Response received, choices: ${response.choices?.length}`);
