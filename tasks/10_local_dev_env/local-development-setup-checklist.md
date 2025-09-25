@@ -17,7 +17,7 @@ This checklist guides you through setting up a local development environment for
 
 ### 1.1 Create Environment Variables File
 
-- [ ] Create `backend/.env` file with the following content:
+- [x] Create `backend/.env` file with the following content:
 
 ```env
 # Development Configuration
