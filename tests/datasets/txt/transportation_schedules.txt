@@ -1,0 +1,13 @@
+route_id	route_name	vehicle_type	departure_time	arrival_time	origin	destination	duration_minutes	fare	capacity	operator
+R001	Blue Line Express	Train	07:30	09:15	Central Station	North Terminal	105	12.5	300	Metro Transit
+R002	Airport Shuttle	Bus	06:00	06:45	Downtown Hub	Airport	45	8.0	50	City Bus
+R003	Coast Highway	Bus	08:15	10:30	Beach City	Mountain View	135	15.75	40	Coastal Lines
+R004	Red Line Local	Train	09:45	11:20	South Station	East Plaza	95	10.25	250	Metro Transit
+R005	Express Route 66	Bus	14:30	16:00	City Center	Suburb Mall	90	6.5	55	Express Bus Co
+R006	Green Line	Train	16:20	17:45	West End	Central Station	85	11.0	280	Metro Transit
+R007	Night Owl	Bus	22:00	23:30	University	Downtown Hub	90	4.0	35	Night Transit
+R008	Morning Commuter	Train	06:30	08:00	Residential Park	Business District	90	13.25	320	Metro Transit
+R009	Shopping Express	Bus	10:00	11:15	Mall Plaza	Outlet Center	75	7.25	45	Retail Transit
+R010	Weekend Special	Train	11:30	13:15	Recreation Center	Sports Complex	105	9.5	200	Weekend Rails
+R011	Cross Town	Bus	13:45	15:20	East Side	West Side	95	8.75	42	Cross City
+R012	Late Evening	Train	20:15	21:40	Central Station	North Terminal	85	12.5	250	Metro Transit

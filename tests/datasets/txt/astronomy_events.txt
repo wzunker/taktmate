@@ -1,0 +1,13 @@
+event_id	event_name	event_type	date	time_utc	duration_minutes	magnitude	constellation	visibility	observer_location
+A001	Lunar Eclipse	Eclipse	2024-03-15	02:30	180	0.8	Leo	Excellent	Global
+A002	Venus Transit	Transit	2024-04-22	14:15	45	2.1	Taurus	Good	Northern Hemisphere
+A003	Meteor Shower	Shower	2024-05-08	23:45	240	3.5	Perseus	Fair	Global
+A004	Solar Eclipse	Eclipse	2024-06-12	18:20	120	1.2	Gemini	Excellent	South America
+A005	Jupiter Opposition	Opposition	2024-07-19	21:10	360	4.2	Sagittarius	Good	Global
+A006	Comet Flyby	Comet	2024-08-03	05:55	480	2.8	Ursa Major	Excellent	Northern Hemisphere
+A007	Mars Conjunction	Conjunction	2024-09-14	16:40	90	1.9	Virgo	Fair	Global
+A008	Supermoon	Moon Phase	2024-10-27	12:15	720	0.5	Cancer	Good	Global
+A009	Asteroid Pass	Asteroid	2024-11-11	07:30	30	5.1	Orion	Fair	Europe/Asia
+A010	Saturn Rings	Planetary	2024-12-25	20:05	300	3.7	Capricorn	Excellent	Global
+A011	Binary Star Eclipse	Eclipse	2024-01-18	03:25	65	4.8	Cygnus	Good	Northern Hemisphere
+A012	Planetary Alignment	Alignment	2024-02-09	19:50	180	2.3	Aquarius	Fair	Southern Hemisphere

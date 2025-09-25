@@ -1,0 +1,15 @@
+player_id	player_name	team	position	games_played	points_scored	assists	rebounds	field_goal_percentage	free_throw_percentage	minutes_per_game	age
+P001	Michael Jordan	Bulls	Guard	82	2580	485	612	0.497	0.835	38.2	28
+P002	LeBron James	Lakers	Forward	75	2145	678	892	0.525	0.731	36.8	35
+P003	Kobe Bryant	Lakers	Guard	78	2323	456	523	0.449	0.837	35.4	32
+P004	Tim Duncan	Spurs	Center	71	1456	289	1047	0.506	0.696	32.1	31
+P005	Magic Johnson	Lakers	Guard	77	1834	987	678	0.52	0.848	36.3	27
+P006	Larry Bird	Celtics	Forward	79	2115	645	834	0.496	0.886	38.4	29
+P007	Shaquille O'Neal	Lakers	Center	67	2145	234	1203	0.582	0.527	35.7	26
+P008	Kareem Abdul-Jabbar	Lakers	Center	82	2822	378	1456	0.559	0.721	37.2	34
+P009	Wilt Chamberlain	Warriors	Center	80	3033	412	2149	0.54	0.511	45.8	30
+P010	Bill Russell	Celtics	Center	78	1423	456	1712	0.44	0.561	42.3	33
+P011	Hakeem Olajuwon	Rockets	Center	82	2356	267	1345	0.512	0.712	36.1	29
+P012	Stephen Curry	Warriors	Guard	76	2987	634	456	0.473	0.908	34.2	31
+P013	Kevin Durant	Nets	Forward	72	2456	523	612	0.498	0.881	35.8	30
+P014	Dirk Nowitzki	Mavericks	Forward	81	2134	345	789	0.471	0.879	33.2	35
