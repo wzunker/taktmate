@@ -79,7 +79,7 @@ function App() {
         setFilesLoading(false);
       }
     }
-  }, [isAuthenticated, activeFileId]);
+  }, [isAuthenticated]);
 
   // Load conversations from backend
   const loadConversations = useCallback(async (showLoading = false) => {
