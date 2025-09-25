@@ -593,6 +593,12 @@ const SourcesPanel = ({
                           const data = await response.json();
                           if (data.success && data.conversation) {
                             console.log('Created conversation with suggestions:', data.conversation);
+                            console.log('🔍 New Chat Backend Response Analysis:');
+                            console.log('  - Suggestions received:', data.conversation.suggestions);
+                            console.log('  - Suggestions count:', data.conversation.suggestions?.length);
+                            console.log('  - Are these GPT-generated or fallbacks?', 
+                              data.conversation.suggestions?.[0]?.includes('main themes') ? 'FALLBACKS (generic)' : 'LIKELY GPT-GENERATED (specific)');
+                            
                             // Select the new conversation
                             if (onConversationSelected) {
                               onConversationSelected(data.conversation);

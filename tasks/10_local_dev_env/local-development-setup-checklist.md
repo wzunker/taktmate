@@ -152,17 +152,17 @@ npm install
 npm run dev
 ```
 
-- [ ] Verify backend startup message shows:
-  - `🔧 Local development mode enabled`
-  - `Debug prompts: ENABLED`
-  - Server running on port 3001
+- [x] Verify backend startup message shows:
+  - `✅ Cosmos DB connection established successfully`
+  - `Storage connectivity: healthy`
+  - `TaktMate Backend running on port 3001`
 
-- [ ] Start frontend server (from `frontend/` directory):
+- [x] Start frontend server (from `frontend/` directory):
 ```bash
 npm start
 ```
 
-- [ ] Verify frontend opens at `http://localhost:3000`
+- [x] Verify frontend opens at `http://localhost:3000`
 
 ---
 

@@ -18,6 +18,13 @@
 function requireAuth(req, res, next) {
   try {
     // LOCAL DEVELOPMENT BYPASS - Multiple safety checks
+    console.log('🔍 Auth Debug:', {
+      LOCAL_DEVELOPMENT: process.env.LOCAL_DEVELOPMENT,
+      NODE_ENV: process.env.NODE_ENV,
+      hostname: req.hostname,
+      host: req.headers.host
+    });
+    
     if (process.env.LOCAL_DEVELOPMENT === 'true' && 
         process.env.NODE_ENV === 'development' && 
         (req.hostname === 'localhost' || req.hostname === '127.0.0.1')) {
