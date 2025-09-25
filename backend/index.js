@@ -32,8 +32,18 @@ const openai = new OpenAI({
 // Middleware
 app.use(cors({
   origin: function (origin, callback) {
+    console.log('🌐 CORS Debug - Origin:', origin);
+    
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
+    
+    // LOCAL DEVELOPMENT: Be more permissive
+    if (process.env.NODE_ENV === 'development' || process.env.LOCAL_DEVELOPMENT === 'true') {
+      console.log('🔧 Local development mode - allowing all localhost origins');
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+    }
     
     const allowedOrigins = [
       'http://localhost:3000', 
@@ -44,9 +54,11 @@ app.use(cors({
     
     // Allow any Azure Static Web Apps origin or the specific origins
     if (allowedOrigins.includes(origin) || origin.includes('azurestaticapps.net')) {
+      console.log('✅ CORS - Origin allowed:', origin);
       return callback(null, true);
     }
     
+    console.log('❌ CORS - Origin rejected:', origin);
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
