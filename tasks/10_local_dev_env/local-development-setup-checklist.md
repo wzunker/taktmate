@@ -23,7 +23,7 @@ This checklist guides you through setting up a local development environment for
 # Development Configuration
 NODE_ENV=development
 LOCAL_DEVELOPMENT=true
-PORT=5000
+PORT=3001
 DEBUG_PROMPTS=true
 
 # CORS Configuration
@@ -80,23 +80,23 @@ function requireAuth(req, res, next) {
 
 ### 2.1 Add API Proxy Configuration
 
-- [ ] Open `frontend/package.json`
-- [ ] Add proxy configuration after the main properties:
+- [x] Open `frontend/package.json`
+- [x] Add proxy configuration after the main properties:
 
 ```json
 {
   "name": "taktmate-frontend",
   "version": "1.0.0",
   "private": true,
-  "proxy": "http://localhost:5000",
+  "proxy": "http://localhost:3001",
   "dependencies": {
     // ... existing dependencies
 ```
 
 ### 2.2 Update Authentication Context
 
-- [ ] Open `frontend/src/contexts/AuthContext.js`
-- [ ] Modify the `checkAuthStatus` function to add local development bypass:
+- [x] Open `frontend/src/contexts/AuthContext.js`
+- [x] Modify the `checkAuthStatus` function to add local development bypass:
 
 ```javascript
 const checkAuthStatus = async () => {
@@ -155,7 +155,7 @@ npm run dev
 - [ ] Verify backend startup message shows:
   - `🔧 Local development mode enabled`
   - `Debug prompts: ENABLED`
-  - Server running on port 5000
+  - Server running on port 3001
 
 - [ ] Start frontend server (from `frontend/` directory):
 ```bash
@@ -250,7 +250,7 @@ If you want to clean up development data:
 - [ ] Ensure `NODE_ENV=development` in frontend
 
 **API calls failing:**
-- [ ] Verify backend is running on port 5000
+- [ ] Verify backend is running on port 3001
 - [ ] Check CORS configuration allows localhost:3000
 - [ ] Inspect network tab for failed requests
 

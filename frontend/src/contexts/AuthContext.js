@@ -80,6 +80,23 @@ export const AuthProvider = ({ children }) => {
     try {
       dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: true });
       
+      // LOCAL DEVELOPMENT BYPASS
+      if (process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost') {
+        console.log('🔧 Using mock authentication for local development');
+        dispatch({ 
+          type: AUTH_ACTIONS.SET_AUTHENTICATED, 
+          payload: {
+            id: 'local-dev-user',
+            name: 'Local Developer',
+            email: 'dev@localhost',
+            roles: ['authenticated'],
+            identityProvider: 'local-mock',
+            claims: []
+          }
+        });
+        return;
+      }
+      
       const response = await fetch('/.auth/me');
       const data = await response.json();
       
