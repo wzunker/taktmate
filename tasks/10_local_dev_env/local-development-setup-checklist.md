@@ -43,8 +43,8 @@ COSMOS_DB_CONTAINER_NAME=conversations
 
 ### 1.2 Update Authentication Middleware
 
-- [ ] Open `backend/middleware/auth.js`
-- [ ] Add local development bypass at the beginning of the `requireAuth` function:
+- [x] Open `backend/middleware/auth.js`
+- [x] Add local development bypass at the beginning of the `requireAuth` function:
 
 ```javascript
 function requireAuth(req, res, next) {
@@ -70,9 +70,9 @@ function requireAuth(req, res, next) {
 
 ### 1.3 Verify CORS Configuration
 
-- [ ] Open `backend/index.js`
-- [ ] Ensure CORS is configured to allow localhost:3000
-- [ ] Look for existing CORS setup and verify it includes development origin
+- [x] Open `backend/index.js`
+- [x] Ensure CORS is configured to allow localhost:3000
+- [x] Look for existing CORS setup and verify it includes development origin
 
 ---
 

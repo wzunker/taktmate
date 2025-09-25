@@ -17,6 +17,23 @@
  */
 function requireAuth(req, res, next) {
   try {
+    // LOCAL DEVELOPMENT BYPASS - Multiple safety checks
+    if (process.env.LOCAL_DEVELOPMENT === 'true' && 
+        process.env.NODE_ENV === 'development' && 
+        (req.hostname === 'localhost' || req.hostname === '127.0.0.1')) {
+      
+      console.log('🔧 Using mock user for local development');
+      req.user = {
+        id: 'local-dev-user',
+        email: 'dev@localhost',
+        name: 'Local Developer',
+        identityProvider: 'local-mock',
+        roles: ['authenticated'],
+        claims: []
+      };
+      return next();
+    }
+
     // Get the SWA client principal header
     const clientPrincipalHeader = req.headers['x-ms-client-principal'];
     
