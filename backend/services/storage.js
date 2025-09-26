@@ -386,6 +386,134 @@ async function healthCheck() {
   }
 }
 
+/**
+ * Generate a user delegation SAS URL for uploading a blob to a project
+ * @param {string} userId - User ID from authentication
+ * @param {string} projectId - Project ID
+ * @param {string} fileName - Name of the file to upload
+ * @param {string} contentType - MIME type of the file
+ * @param {number} minutes - SAS token validity in minutes (default: 10)
+ * @returns {Promise<string>} SAS URL for uploading
+ */
+async function sasForProjectUpload(userId, projectId, fileName, contentType, minutes = 10) {
+  try {
+    if (!userId || !projectId || !fileName || !contentType) {
+      throw new Error('userId, projectId, fileName, and contentType are required');
+    }
+
+    const blobPath = `projects/${projectId}/files/${fileName}`;
+    return await sasForUpload(userId, blobPath, contentType, minutes);
+  } catch (error) {
+    console.error(`Failed to generate project upload SAS:`, error.message);
+    throw new Error(`Project upload SAS generation failed: ${error.message}`);
+  }
+}
+
+/**
+ * Generate a user delegation SAS URL for downloading a blob from a project
+ * @param {string} userId - User ID from authentication
+ * @param {string} projectId - Project ID
+ * @param {string} fileName - Name of the file to download
+ * @param {number} minutes - SAS token validity in minutes (default: 10)
+ * @returns {Promise<string>} SAS URL for downloading
+ */
+async function sasForProjectDownload(userId, projectId, fileName, minutes = 10) {
+  try {
+    if (!userId || !projectId || !fileName) {
+      throw new Error('userId, projectId, and fileName are required');
+    }
+
+    const blobPath = `projects/${projectId}/files/${fileName}`;
+    return await sasForRead(userId, blobPath, minutes);
+  } catch (error) {
+    console.error(`Failed to generate project download SAS:`, error.message);
+    throw new Error(`Project download SAS generation failed: ${error.message}`);
+  }
+}
+
+/**
+ * Delete a blob from a project
+ * @param {string} userId - User ID from authentication
+ * @param {string} projectId - Project ID
+ * @param {string} fileName - Name of the file to delete
+ * @returns {Promise<boolean>} Success status
+ */
+async function deleteProjectBlob(userId, projectId, fileName) {
+  try {
+    if (!userId || !projectId || !fileName) {
+      throw new Error('userId, projectId, and fileName are required');
+    }
+
+    const blobPath = `projects/${projectId}/files/${fileName}`;
+    return await deleteBlob(userId, blobPath);
+  } catch (error) {
+    console.error(`Failed to delete project blob:`, error.message);
+    throw new Error(`Project blob deletion failed: ${error.message}`);
+  }
+}
+
+/**
+ * Get blob content from a project
+ * @param {string} userId - User ID from authentication
+ * @param {string} projectId - Project ID
+ * @param {string} fileName - Name of the file to get
+ * @returns {Promise<Buffer>} File content buffer
+ */
+async function getProjectBlobContent(userId, projectId, fileName) {
+  try {
+    if (!userId || !projectId || !fileName) {
+      throw new Error('userId, projectId, and fileName are required');
+    }
+
+    const blobPath = `projects/${projectId}/files/${fileName}`;
+    return await getBlobContent(userId, blobPath);
+  } catch (error) {
+    console.error(`Failed to get project blob content:`, error.message);
+    throw new Error(`Project blob content retrieval failed: ${error.message}`);
+  }
+}
+
+/**
+ * List all files in a specific project
+ * @param {string} userId - User ID from authentication
+ * @param {string} projectId - Project ID
+ * @returns {Promise<Array>} Array of file objects with name, size, lastModified
+ */
+async function listProjectFiles(userId, projectId) {
+  try {
+    const containerClient = await ensureUserContainer(userId);
+    const files = [];
+    
+    const projectPrefix = `projects/${projectId}/files/`;
+    console.log(`Listing files for user: ${userId}, project: ${projectId}`);
+    
+    // List all blobs with the project prefix
+    for await (const blob of containerClient.listBlobsFlat({ 
+      prefix: projectPrefix,
+      includeMetadata: true 
+    })) {
+      // Remove the project prefix to get just the filename
+      const fileName = blob.name.substring(projectPrefix.length);
+      
+      const size = blob.properties.contentLength || blob.properties.blobSize || 0;
+      files.push({
+        name: fileName,
+        size: size,
+        lastModified: blob.properties.lastModified,
+        contentType: blob.properties.contentType,
+        etag: blob.properties.etag,
+        blobPath: blob.name
+      });
+    }
+    
+    console.log(`Found ${files.length} files for project ${projectId}`);
+    return files;
+  } catch (error) {
+    console.error(`Failed to list project files for user ${userId}, project ${projectId}:`, error.message);
+    throw new Error(`Project file listing failed: ${error.message}`);
+  }
+}
+
 module.exports = {
   ensureUserContainer,
   listUserFiles,
@@ -394,5 +522,11 @@ module.exports = {
   sasForRead,
   deleteBlob,
   getBlobContent,
-  healthCheck
+  healthCheck,
+  // Project-based functions
+  sasForProjectUpload,
+  sasForProjectDownload,
+  deleteProjectBlob,
+  getProjectBlobContent,
+  listProjectFiles
 };
