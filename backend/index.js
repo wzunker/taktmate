@@ -14,7 +14,6 @@ const cosmosService = require('./services/cosmos');
 const summarizerService = require('./services/summarizerService');
 const filesRouter = require('./routes/files');
 const conversationsRouter = require('./routes/conversations');
-const projectsRouter = require('./routes/projects');
 const { normalPrompt } = require('./prompts/normalPrompt');
 
 const app = express();
@@ -99,9 +98,6 @@ app.use('/api/files', filesRouter);
 
 // Register conversation management routes
 app.use('/api/conversations', conversationsRouter);
-
-// Register project management routes
-app.use('/api/projects', projectsRouter);
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {

@@ -33,8 +33,6 @@ class CosmosService {
     this.client = null;
     this.database = null;
     this.container = null;
-    this.projectsContainer = null;
-    this.filesContainer = null;
     this.isInitialized = false;
   }
 
@@ -62,10 +60,6 @@ class CosmosService {
 
       this.database = this.client.database(databaseName);
       this.container = this.database.container(containerName);
-      
-      // Initialize additional containers for project management
-      this.projectsContainer = this.database.container('projects');
-      this.filesContainer = this.database.container('files');
 
       // Test the connection
       await this.database.read();
@@ -102,7 +96,7 @@ class CosmosService {
     }
   }
 
-  async createConversation(userId, fileName, title = null, suggestions = [], projectId = null, fileIds = []) {
+  async createConversation(userId, fileName, title = null, suggestions = []) {
     try {
       if (!this.isInitialized) {
         await this.initialize();
@@ -116,8 +110,6 @@ class CosmosService {
         userId,
         title: title || `Conversation about ${fileName}`,
         fileName,
-        projectId, // Add project association
-        fileIds: fileIds.length > 0 ? fileIds : [fileName], // Support multiple files
         createdAt: now,
         updatedAt: now,
         status: CONVERSATION_CONFIG.STATUS.ACTIVE,
@@ -138,11 +130,6 @@ class CosmosService {
       };
 
       const { resource } = await this.container.items.create(conversation);
-      
-      // Update project conversation count if project is specified
-      if (projectId) {
-        await this.updateProjectStats(projectId, userId);
-      }
       
       return resource;
     } catch (error) {
@@ -551,356 +538,6 @@ class CosmosService {
     } catch (error) {
       console.error(`❌ Failed to get conversations by date range:`, error.message);
       throw error;
-    }
-  }
-
-  // ===== PROJECT MANAGEMENT METHODS =====
-
-  /**
-   * Create a new project
-   * @param {string} userId - The user ID
-   * @param {string} name - Project name
-   * @param {string} description - Project description (optional)
-   * @returns {Object} - Created project document
-   */
-  async createProject(userId, name, description = '') {
-    try {
-      if (!this.isInitialized) {
-        await this.initialize();
-      }
-
-      const projectId = `proj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const now = new Date().toISOString();
-      
-      const project = {
-        id: projectId,
-        userId,
-        name: name.trim(),
-        description: description ? description.trim() : '',
-        createdAt: now,
-        updatedAt: now,
-        fileCount: 0,
-        conversationCount: 0,
-        totalSize: 0,
-        status: 'active',
-        // TTL for automatic cleanup (365 days)
-        ttl: CONVERSATION_CONFIG.ARCHIVED_TTL
-      };
-
-      const { resource } = await this.projectsContainer.items.create(project);
-      
-      console.log(`✅ Created project: ${projectId} for user: ${userId}`);
-      return resource;
-    } catch (error) {
-      console.error('❌ Failed to create project:', error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Get a specific project
-   * @param {string} projectId - The project ID
-   * @param {string} userId - The user ID (for partition key)
-   * @returns {Object} - Project document
-   */
-  async getProject(projectId, userId) {
-    try {
-      if (!this.isInitialized) {
-        await this.initialize();
-      }
-
-      const { resource } = await this.projectsContainer.item(projectId, userId).read();
-      
-      if (!resource) {
-        throw new Error('Project not found');
-      }
-
-      return resource;
-    } catch (error) {
-      console.error(`❌ Failed to get project ${projectId}:`, error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * List user projects
-   * @param {string} userId - The user ID
-   * @param {number} limit - Maximum number of projects to return
-   * @param {number} offset - Number of projects to skip
-   * @returns {Array} - Array of project documents
-   */
-  async listUserProjects(userId, limit = 50, offset = 0) {
-    try {
-      if (!this.isInitialized) {
-        await this.initialize();
-      }
-
-      const querySpec = {
-        query: `
-          SELECT * FROM c 
-          WHERE c.userId = @userId 
-          AND c.status != @deletedStatus
-          ORDER BY c.updatedAt DESC 
-          OFFSET @offset LIMIT @limit
-        `,
-        parameters: [
-          { name: '@userId', value: userId },
-          { name: '@deletedStatus', value: 'deleted' },
-          { name: '@offset', value: offset },
-          { name: '@limit', value: limit }
-        ]
-      };
-
-      const { resources } = await this.projectsContainer.items.query(querySpec).fetchAll();
-      
-      console.log(`✅ Retrieved ${resources.length} projects for user: ${userId}`);
-      return resources;
-    } catch (error) {
-      console.error(`❌ Failed to list projects for user ${userId}:`, error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Update a project
-   * @param {string} projectId - The project ID
-   * @param {string} userId - The user ID (for partition key)
-   * @param {Object} updates - Updates to apply
-   * @returns {Object} - Updated project document
-   */
-  async updateProject(projectId, userId, updates) {
-    try {
-      if (!this.isInitialized) {
-        await this.initialize();
-      }
-
-      const project = await this.getProject(projectId, userId);
-      
-      // Apply updates
-      Object.assign(project, updates, {
-        updatedAt: new Date().toISOString()
-      });
-
-      const { resource } = await this.projectsContainer.item(projectId, userId).replace(project);
-      
-      console.log(`✅ Updated project: ${projectId}`);
-      return resource;
-    } catch (error) {
-      console.error(`❌ Failed to update project ${projectId}:`, error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Delete a project (soft delete)
-   * @param {string} projectId - The project ID
-   * @param {string} userId - The user ID (for partition key)
-   * @returns {Object} - Success response
-   */
-  async deleteProject(projectId, userId) {
-    try {
-      if (!this.isInitialized) {
-        await this.initialize();
-      }
-
-      // Soft delete by updating status
-      await this.updateProject(projectId, userId, {
-        status: 'deleted'
-      });
-      
-      console.log(`✅ Soft deleted project: ${projectId}`);
-      return { success: true, message: 'Project deleted successfully' };
-    } catch (error) {
-      console.error(`❌ Failed to delete project ${projectId}:`, error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Get project files
-   * @param {string} projectId - The project ID
-   * @param {string} userId - The user ID
-   * @returns {Array} - Array of file documents
-   */
-  async getProjectFiles(projectId, userId) {
-    try {
-      if (!this.isInitialized) {
-        await this.initialize();
-      }
-
-      const querySpec = {
-        query: `
-          SELECT * FROM c 
-          WHERE c.userId = @userId 
-          AND c.projectId = @projectId
-          AND c.status != @deletedStatus
-          ORDER BY c.createdAt DESC
-        `,
-        parameters: [
-          { name: '@userId', value: userId },
-          { name: '@projectId', value: projectId },
-          { name: '@deletedStatus', value: 'deleted' }
-        ]
-      };
-
-      const { resources } = await this.filesContainer.items.query(querySpec).fetchAll();
-      
-      console.log(`✅ Retrieved ${resources.length} files for project: ${projectId}`);
-      return resources;
-    } catch (error) {
-      console.error(`❌ Failed to get project files:`, error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Get project conversations
-   * @param {string} projectId - The project ID
-   * @param {string} userId - The user ID
-   * @param {number} limit - Maximum number of conversations to return
-   * @param {number} offset - Number of conversations to skip
-   * @returns {Array} - Array of conversation documents
-   */
-  async getProjectConversations(projectId, userId, limit = 20, offset = 0) {
-    try {
-      if (!this.isInitialized) {
-        await this.initialize();
-      }
-
-      const querySpec = {
-        query: `
-          SELECT * FROM c 
-          WHERE c.userId = @userId 
-          AND c.projectId = @projectId
-          AND c.status != @deletedStatus
-          ORDER BY c.updatedAt DESC 
-          OFFSET @offset LIMIT @limit
-        `,
-        parameters: [
-          { name: '@userId', value: userId },
-          { name: '@projectId', value: projectId },
-          { name: '@deletedStatus', value: CONVERSATION_CONFIG.STATUS.DELETED },
-          { name: '@offset', value: offset },
-          { name: '@limit', value: limit }
-        ]
-      };
-
-      const { resources } = await this.container.items.query(querySpec).fetchAll();
-      
-      console.log(`✅ Retrieved ${resources.length} conversations for project: ${projectId}`);
-      return resources;
-    } catch (error) {
-      console.error(`❌ Failed to get project conversations:`, error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Create a file record
-   * @param {string} userId - The user ID
-   * @param {string} projectId - The project ID
-   * @param {string} fileName - The file name
-   * @param {Object} metadata - File metadata (size, type, etc.)
-   * @returns {Object} - Created file document
-   */
-  async createFileRecord(userId, projectId, fileName, metadata) {
-    try {
-      if (!this.isInitialized) {
-        await this.initialize();
-      }
-
-      const fileId = `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const now = new Date().toISOString();
-      
-      const fileRecord = {
-        id: fileId,
-        userId,
-        projectId,
-        name: fileName,
-        size: metadata.size || 0,
-        type: metadata.type || 'application/octet-stream',
-        createdAt: now,
-        updatedAt: now,
-        status: 'active',
-        blobPath: `projects/${projectId}/files/${fileName}`,
-        // TTL for automatic cleanup (365 days)
-        ttl: CONVERSATION_CONFIG.ARCHIVED_TTL
-      };
-
-      const { resource } = await this.filesContainer.items.create(fileRecord);
-      
-      // Update project file count and total size
-      await this.updateProjectStats(projectId, userId);
-      
-      console.log(`✅ Created file record: ${fileId} for project: ${projectId}`);
-      return resource;
-    } catch (error) {
-      console.error('❌ Failed to create file record:', error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Delete a file record
-   * @param {string} fileId - The file ID
-   * @param {string} userId - The user ID
-   * @returns {Object} - Success response
-   */
-  async deleteFileRecord(fileId, userId) {
-    try {
-      if (!this.isInitialized) {
-        await this.initialize();
-      }
-
-      // Get file record to find project ID
-      const { resource: fileRecord } = await this.filesContainer.item(fileId, userId).read();
-      
-      if (!fileRecord) {
-        throw new Error('File record not found');
-      }
-
-      // Soft delete by updating status
-      await this.filesContainer.item(fileId, userId).replace({
-        ...fileRecord,
-        status: 'deleted',
-        updatedAt: new Date().toISOString()
-      });
-
-      // Update project stats
-      await this.updateProjectStats(fileRecord.projectId, userId);
-      
-      console.log(`✅ Deleted file record: ${fileId}`);
-      return { success: true, message: 'File record deleted successfully' };
-    } catch (error) {
-      console.error(`❌ Failed to delete file record ${fileId}:`, error.message);
-      throw error;
-    }
-  }
-
-  /**
-   * Update project statistics (file count, total size)
-   * @param {string} projectId - The project ID
-   * @param {string} userId - The user ID
-   */
-  async updateProjectStats(projectId, userId) {
-    try {
-      const files = await this.getProjectFiles(projectId, userId);
-      const conversations = await this.getProjectConversations(projectId, userId, 1000, 0);
-      
-      const fileCount = files.length;
-      const totalSize = files.reduce((sum, file) => sum + (file.size || 0), 0);
-      const conversationCount = conversations.length;
-
-      await this.updateProject(projectId, userId, {
-        fileCount,
-        totalSize,
-        conversationCount
-      });
-
-      console.log(`✅ Updated project stats for: ${projectId} (${fileCount} files, ${totalSize} bytes, ${conversationCount} conversations)`);
-    } catch (error) {
-      console.error(`❌ Failed to update project stats for ${projectId}:`, error.message);
-      // Don't throw error as this is a background operation
     }
   }
 }
