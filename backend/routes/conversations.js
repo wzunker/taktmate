@@ -3,7 +3,7 @@ const router = express.Router();
 const cosmosService = require('../services/cosmos');
 const { requireAuth } = require('../middleware/auth');
 const { getBlobContent } = require('../services/storage');
-const { suggestionPrompt } = require('../prompts/suggestionPrompt');
+const { suggestionPrompt, multiFileSuggestionPrompt } = require('../prompts/suggestionPrompt');
 const { OpenAI } = require('openai');
 
 // Import file processing functions
@@ -25,6 +25,80 @@ const openai = new OpenAI({
 
 // Apply authentication to all conversation routes
 router.use(requireAuth);
+
+/**
+ * Parse multiple files and combine their content
+ * @param {Array<string>} fileNames - Array of file names
+ * @param {string} userId - User ID for file access
+ * @returns {Promise<string>} - Combined formatted content for GPT prompt
+ */
+async function parseMultipleFiles(fileNames, userId) {
+  if (!Array.isArray(fileNames) || fileNames.length === 0) {
+    throw new Error('fileNames must be a non-empty array');
+  }
+
+  // Validate file count limit
+  if (fileNames.length > 5) {
+    throw new Error('Maximum of 5 files can be processed at once');
+  }
+
+  const fileContents = [];
+  
+  for (const fileName of fileNames) {
+    try {
+      // Get blob content and parse file
+      const blobBuffer = await getBlobContent(userId, fileName);
+      const content = await parseFileContent(blobBuffer, fileName);
+      
+      // Get file type for formatting
+      const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.') + 1);
+      
+      fileContents.push({
+        fileName,
+        content,
+        type: fileExtension.toUpperCase()
+      });
+    } catch (error) {
+      console.error(`Error processing file "${fileName}":`, error.message);
+      throw new Error(`Failed to process file "${fileName}": ${error.message}`);
+    }
+  }
+  
+  return formatMultiFilePrompt(fileContents);
+}
+
+/**
+ * Format multiple file contents into a single prompt
+ * @param {Array<Object>} filesData - Array of {fileName, content, type}
+ * @returns {string} - Formatted multi-file prompt
+ */
+function formatMultiFilePrompt(filesData) {
+  if (!Array.isArray(filesData) || filesData.length === 0) {
+    throw new Error('filesData must be a non-empty array');
+  }
+
+  // If only one file, return single file format for consistency
+  if (filesData.length === 1) {
+    return filesData[0].content;
+  }
+
+  let prompt = `You are analyzing ${filesData.length} documents. Here are the files:\n\n`;
+  
+  filesData.forEach((file, index) => {
+    prompt += `=== FILE ${index + 1}: ${file.fileName} ===\n`;
+    prompt += `File Type: ${file.type}\n\n`;
+    prompt += file.content;
+    prompt += `\n\n`;
+  });
+  
+  prompt += `When answering questions:
+- Specify which file(s) contain the relevant information
+- Cross-reference data between files when applicable
+- If data spans multiple files, provide a comprehensive answer
+- Use the format "From [filename]:" when citing specific file sources\n\n`;
+  
+  return prompt;
+}
 
 /**
  * Parse file content based on file extension
@@ -132,6 +206,93 @@ async function generateSuggestions(fileName, fileContent) {
 }
 
 /**
+ * Generate suggested questions for multiple files using GPT
+ * @param {Array<Object>} filesData - Array of {fileName, content, type}
+ * @returns {Promise<Array<string>>} - Array of suggested questions
+ */
+async function generateMultiFileSuggestions(filesData) {
+  try {
+    if (!Array.isArray(filesData) || filesData.length === 0) {
+      throw new Error('filesData must be a non-empty array');
+    }
+
+    // Generate the multi-file suggestion prompt
+    const prompt = multiFileSuggestionPrompt(filesData);
+    
+    // Call GPT to generate suggestions (matching main chat parameters exactly)
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4.1', // This matches your Azure deployment name
+      messages: [
+        { role: 'system', content: prompt }
+      ],
+      max_tokens: 500,
+      temperature: 0.1
+    });
+    
+    const content = response.choices[0]?.message?.content?.trim();
+    if (!content) {
+      throw new Error('No response from GPT');
+    }
+    
+    // Parse JSON response
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch (parseError) {
+      console.error(`❌ JSON Parse Error for multi-file suggestions: ${parseError.message}`);
+      console.error(`📝 Unparseable content: ${content}`);
+      throw new Error(`Failed to parse GPT response as JSON: ${parseError.message}`);
+    }
+    
+    if (!parsed.suggestions || !Array.isArray(parsed.suggestions)) {
+      console.error(`❌ Invalid multi-file suggestion format. Received:`, parsed);
+      throw new Error('Invalid suggestion format received');
+    }
+    
+    // Validate we have exactly 2 suggestions
+    const suggestions = parsed.suggestions.slice(0, 2); // Ensure max 2 suggestions
+    if (suggestions.length === 0) {
+      throw new Error('No suggestions generated');
+    }
+    
+    return suggestions;
+    
+  } catch (error) {
+    console.error(`Failed to generate multi-file suggestions:`, error.message);
+    
+    // Return fallback suggestions for multi-file scenarios
+    return getMultiFileFallbackSuggestions(filesData);
+  }
+}
+
+/**
+ * Get fallback suggestions for multi-file scenarios
+ * @param {Array<Object>} filesData - Array of {fileName, content, type}
+ * @returns {Array<string>} - Fallback suggestions
+ */
+function getMultiFileFallbackSuggestions(filesData) {
+  const fileTypes = [...new Set(filesData.map(f => f.type.toLowerCase()))];
+  const fileCount = filesData.length;
+  
+  // Generic multi-file suggestions
+  const suggestions = [
+    `Compare and analyze patterns across all ${fileCount} files`,
+    `What insights can be gained by combining data from these ${fileCount} documents?`
+  ];
+  
+  // Customize based on file types
+  if (fileTypes.includes('csv') && fileTypes.length > 1) {
+    suggestions[0] = 'How do the data patterns in the CSV files relate to the other documents?';
+  } else if (fileTypes.every(type => ['pdf', 'docx', 'txt'].includes(type))) {
+    suggestions[0] = 'What are the common themes and differences across these documents?';
+  } else if (fileTypes.includes('xlsx')) {
+    suggestions[1] = 'What correlations exist between the spreadsheet data and other files?';
+  }
+  
+  return suggestions;
+}
+
+/**
  * Get fallback suggestions when GPT generation fails
  * @param {string} fileExtension - File extension
  * @param {string} fileName - File name
@@ -178,23 +339,8 @@ router.get('/', async (req, res) => {
     const user = req.user;
     const limit = parseInt(req.query.limit) || 20;
     const offset = parseInt(req.query.offset) || 0;
-    const fileName = req.query.fileName; // Optional filter by file
-    const search = req.query.search; // Optional search query
-    const startDate = req.query.startDate; // Optional date range start
-    const endDate = req.query.endDate; // Optional date range end
 
-    let conversations;
-
-    // Handle different query types
-    if (search) {
-      conversations = await cosmosService.searchConversations(user.id, search, limit);
-    } else if (fileName) {
-      conversations = await cosmosService.getConversationsByFile(user.id, fileName, limit);
-    } else if (startDate && endDate) {
-      conversations = await cosmosService.getConversationsByDateRange(user.id, startDate, endDate, limit);
-    } else {
-      conversations = await cosmosService.listUserConversations(user.id, limit, offset);
-    }
+    const conversations = await cosmosService.listUserConversations(user.id, limit, offset);
 
     // Add metadata for pagination
     const response = {
@@ -205,12 +351,6 @@ router.get('/', async (req, res) => {
         offset,
         count: conversations.length,
         hasMore: conversations.length === limit
-      },
-      filters: {
-        fileName,
-        search,
-        startDate,
-        endDate
       }
     };
 
@@ -232,34 +372,82 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const user = req.user;
-    const { fileName, title } = req.body;
+    const { fileName, fileNames, title } = req.body;
 
-    if (!fileName) {
+    // Support both single file (backward compatibility) and multiple files
+    let targetFileNames = [];
+    if (fileNames && Array.isArray(fileNames)) {
+      targetFileNames = fileNames;
+    } else if (fileName) {
+      targetFileNames = [fileName];
+    }
+
+    if (targetFileNames.length === 0) {
       return res.status(400).json({
         success: false,
-        error: 'fileName is required',
-        message: 'Please specify the file name for this conversation'
+        error: 'fileName or fileNames is required',
+        message: 'Please specify the file name(s) for this conversation'
       });
     }
 
-    // Generate suggestions by analyzing the file content
+    // Validate file count limit
+    if (targetFileNames.length > 5) {
+      return res.status(400).json({
+        success: false,
+        error: 'Too many files',
+        message: 'Maximum of 5 files can be processed at once'
+      });
+    }
+
+    // Generate suggestions by analyzing the file content(s)
     let suggestions = [];
     try {
-      // Get file content from blob storage
-      const fileBuffer = await getBlobContent(user.id, fileName);
-      const fileContent = await parseFileContent(fileBuffer, fileName);
-      
-      // Generate suggestions using GPT
-      suggestions = await generateSuggestions(fileName, fileContent);
+      if (targetFileNames.length === 1) {
+        // Single file suggestions (existing logic)
+        const fileBuffer = await getBlobContent(user.id, targetFileNames[0]);
+        const fileContent = await parseFileContent(fileBuffer, targetFileNames[0]);
+        suggestions = await generateSuggestions(targetFileNames[0], fileContent);
+      } else {
+        // Multi-file suggestions - parse files and generate proper multi-file suggestions
+        const filesData = [];
+        for (const fileName of targetFileNames) {
+          const fileBuffer = await getBlobContent(user.id, fileName);
+          const content = await parseFileContent(fileBuffer, fileName);
+          const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.') + 1);
+          
+          filesData.push({
+            fileName,
+            content,
+            type: fileExtension.toUpperCase()
+          });
+        }
+        suggestions = await generateMultiFileSuggestions(filesData);
+      }
     } catch (suggestionError) {
-      console.warn(`Failed to generate suggestions for ${fileName}:`, suggestionError.message);
-      // Continue with conversation creation without suggestions
-      const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.') + 1);
-      suggestions = getFallbackSuggestions(fileExtension, fileName);
+      console.warn(`Failed to generate suggestions for files [${targetFileNames.join(', ')}]:`, suggestionError.message);
+      // Continue with conversation creation using appropriate fallback
+      if (targetFileNames.length === 1) {
+        const fileExtension = targetFileNames[0].toLowerCase().substring(targetFileNames[0].lastIndexOf('.') + 1);
+        suggestions = getFallbackSuggestions(fileExtension, targetFileNames[0]);
+      } else {
+        // Create mock filesData for fallback
+        const fallbackFilesData = targetFileNames.map(fileName => ({
+          fileName,
+          type: fileName.toLowerCase().substring(fileName.lastIndexOf('.') + 1).toUpperCase(),
+          content: ''
+        }));
+        suggestions = getMultiFileFallbackSuggestions(fallbackFilesData);
+      }
     }
 
     // Create conversation with suggestions
-    const conversation = await cosmosService.createConversation(user.id, fileName, title, suggestions);
+    const conversation = await cosmosService.createConversation(
+      user.id, 
+      targetFileNames[0], // Primary file for backward compatibility
+      title, 
+      suggestions, 
+      targetFileNames // All files
+    );
 
     res.status(201).json({
       success: true,
@@ -525,84 +713,5 @@ router.post('/:id/archive', async (req, res) => {
   }
 });
 
-/**
- * GET /api/conversations/:id/export/json
- * Export conversation as JSON
- */
-router.get('/:id/export/json', async (req, res) => {
-  try {
-    const user = req.user;
-    const conversationId = req.params.id;
-
-    const conversation = await cosmosService.getFullConversation(conversationId, user.id);
-
-    // Set headers for file download
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename="conversation-${conversationId}.json"`);
-
-    res.json(conversation);
-  } catch (error) {
-    console.error(`Failed to export conversation ${req.params.id}:`, error.message);
-    
-    if (error.message.includes('not found')) {
-      return res.status(404).json({
-        success: false,
-        error: 'Conversation not found',
-        message: 'The requested conversation does not exist or you do not have access to it'
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      error: 'Failed to export conversation',
-      message: error.message
-    });
-  }
-});
-
-/**
- * GET /api/conversations/:id/export/csv
- * Export conversation as CSV
- */
-router.get('/:id/export/csv', async (req, res) => {
-  try {
-    const user = req.user;
-    const conversationId = req.params.id;
-
-    const conversation = await cosmosService.getFullConversation(conversationId, user.id);
-
-    // Convert messages to CSV format
-    const csvHeader = 'timestamp,role,content\n';
-    const csvRows = conversation.messages.map(msg => {
-      const timestamp = msg.timestamp || new Date().toISOString();
-      const content = `"${msg.content.replace(/"/g, '""')}"`;
-      return `${timestamp},${msg.role},${content}`;
-    }).join('\n');
-
-    const csvContent = csvHeader + csvRows;
-
-    // Set headers for CSV download
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="conversation-${conversationId}.csv"`);
-
-    res.send(csvContent);
-  } catch (error) {
-    console.error(`Failed to export conversation as CSV ${req.params.id}:`, error.message);
-    
-    if (error.message.includes('not found')) {
-      return res.status(404).json({
-        success: false,
-        error: 'Conversation not found',
-        message: 'The requested conversation does not exist or you do not have access to it'
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      error: 'Failed to export conversation',
-      message: error.message
-    });
-  }
-});
 
 module.exports = router;

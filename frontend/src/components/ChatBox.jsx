@@ -9,7 +9,11 @@ const ChatBox = ({
   className = '', 
   conversationId = null,
   onConversationCreated,
-  onConversationUpdated 
+  onConversationUpdated,
+  selectedFileIds = [],
+  onStartConversation,
+  isNewConversationMode = false,
+  hasMissingFiles = false
 }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -19,6 +23,7 @@ const ChatBox = ({
   const [conversationLoading, setConversationLoading] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
+  const [startingConversation, setStartingConversation] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const { displayName } = useAuth();
@@ -39,7 +44,7 @@ const ChatBox = ({
 
   // Handle suggestion click
   const handleSuggestionClick = async (suggestion) => {
-    if (sending || !fileData) return;
+    if (sending || !fileData || hasMissingFiles) return;
 
     // Clear suggestions immediately since we're about to send the first message
     setSuggestions([]);
@@ -60,12 +65,35 @@ const ChatBox = ({
       // Get authentication headers (handles local development bypass)
       const authHeaders = await getAuthHeaders();
       
+      // Prepare request body for single or multiple files
+      let requestBody;
+      if (Array.isArray(fileData)) {
+        if (fileData.length === 1) {
+          // Single file in array - use fileName for backward compatibility
+          requestBody = {
+            fileName: fileData[0].name || fileData[0].filename,
+            message: suggestion,
+            conversationId: currentConversationId
+          };
+        } else {
+          // Multiple files - use fileNames array
+          requestBody = {
+            fileNames: fileData.map(file => file.name || file.filename),
+            message: suggestion,
+            conversationId: currentConversationId
+          };
+        }
+      } else {
+        // Single file object (backward compatibility)
+        requestBody = {
+          fileName: fileData.name || fileData.filename,
+          message: suggestion,
+          conversationId: currentConversationId
+        };
+      }
+      
       // Call backend with auth headers
-      const response = await axios.post('/api/chat', {
-        fileName: fileData.name || fileData.filename,
-        message: suggestion,
-        conversationId: currentConversationId
-      }, {
+      const response = await axios.post('/api/chat', requestBody, {
         headers: authHeaders,
         timeout: 30000
       });
@@ -92,12 +120,18 @@ const ChatBox = ({
               });
             }
           } else if (onConversationUpdated) {
-            // Existing conversation updated
-            onConversationUpdated(response.data.conversationId, {
-              title: response.data.title,
+            // Existing conversation updated - only update title if provided (shouldn't happen for existing conversations)
+            const updates = {
               updatedAt: new Date().toISOString(),
               messageCount: messageCount + 1
-            });
+            };
+            
+            // Only include title if it's actually provided (for new conversations)
+            if (response.data.title) {
+              updates.title = response.data.title;
+            }
+            
+            onConversationUpdated(response.data.conversationId, updates);
           }
         }
       } else {
@@ -212,27 +246,101 @@ const ChatBox = ({
   }, [sending]);
 
   useEffect(() => {
-    // Welcome message when file is uploaded (only if no conversation is loaded)
-    if (fileData && (fileData.filename || fileData.name) && fileData.headers && !currentConversationId) {
-      const fileName = fileData.filename || fileData.name;
-      const rowCount = fileData.rowCount || 'unknown';
-      const columnCount = Array.isArray(fileData.headers) ? fileData.headers.length : 'unknown';
-      const columns = Array.isArray(fileData.headers) ? fileData.headers.slice(0, 5).join(', ') + (fileData.headers.length > 5 ? '...' : '') : 'unknown';
+    // Welcome message when files are selected (only if no conversation is loaded and not in new conversation mode)
+    if (fileData && !currentConversationId && !isNewConversationMode) {
+      let welcomeMessage = '';
       
-      setMessages([{
-        type: 'system',
-        content: `🎉 Welcome! I've loaded your CSV file "${fileName}". Here's what I can see:\n\n📊 **Dataset Overview:**\n• ${rowCount} rows of data\n• ${columnCount} columns\n• Key columns: ${columns}\n\n💬 **What can I help you with?**\nAsk me to analyze trends, find patterns, calculate statistics, or answer any questions about your data!`,
-        timestamp: new Date().toISOString()
-      }]);
-      setMessageCount(1);
+      if (Array.isArray(fileData)) {
+        if (fileData.length === 0) {
+          setMessages([]);
+          setMessageCount(0);
+          return;
+        } else if (fileData.length === 1) {
+          // Single file in array
+          const file = fileData[0];
+          const fileName = file.filename || file.name;
+          if (file.headers) {
+            // CSV file
+            const rowCount = file.rowCount || 'unknown';
+            const columnCount = Array.isArray(file.headers) ? file.headers.length : 'unknown';
+            const columns = Array.isArray(file.headers) ? file.headers.slice(0, 5).join(', ') + (file.headers.length > 5 ? '...' : '') : 'unknown';
+            welcomeMessage = `🎉 Welcome! I've loaded your file "${fileName}". Here's what I can see:\n\n📊 **Dataset Overview:**\n• ${rowCount} rows of data\n• ${columnCount} columns\n• Key columns: ${columns}\n\n💬 **What can I help you with?**\nAsk me to analyze trends, find patterns, calculate statistics, or answer any questions about your data!`;
+          } else {
+            welcomeMessage = `🎉 Welcome! I've loaded your file "${fileName}".\n\n💬 **What can I help you with?**\nI can help you analyze the content, extract information, or answer questions about your file!`;
+          }
+        } else {
+          // Multiple files
+          const fileNames = fileData.map(file => file.filename || file.name);
+          const fileTypes = fileData.map(file => {
+            const name = file.filename || file.name;
+            const ext = name.toLowerCase().substring(name.lastIndexOf('.') + 1);
+            return ext.toUpperCase();
+          });
+          const uniqueTypes = [...new Set(fileTypes)];
+          
+          welcomeMessage = `🎉 Welcome! I've loaded ${fileData.length} files:\n\n📁 **Files:**\n${fileNames.map((name, i) => `• ${name} (${fileTypes[i]})`).join('\n')}\n\n🔍 **File Types:** ${uniqueTypes.join(', ')}\n\n💬 **What can I help you with?**\nI can analyze data across all files, compare information, find patterns, or answer questions that span multiple documents!`;
+        }
+      } else if (fileData && (fileData.filename || fileData.name)) {
+        // Single file object (backward compatibility)
+        const fileName = fileData.filename || fileData.name;
+        if (fileData.headers) {
+          // CSV file
+          const rowCount = fileData.rowCount || 'unknown';
+          const columnCount = Array.isArray(fileData.headers) ? fileData.headers.length : 'unknown';
+          const columns = Array.isArray(fileData.headers) ? fileData.headers.slice(0, 5).join(', ') + (fileData.headers.length > 5 ? '...' : '') : 'unknown';
+          welcomeMessage = `🎉 Welcome! I've loaded your file "${fileName}". Here's what I can see:\n\n📊 **Dataset Overview:**\n• ${rowCount} rows of data\n• ${columnCount} columns\n• Key columns: ${columns}\n\n💬 **What can I help you with?**\nAsk me to analyze trends, find patterns, calculate statistics, or answer any questions about your data!`;
+        } else {
+          welcomeMessage = `🎉 Welcome! I've loaded your file "${fileName}".\n\n💬 **What can I help you with?**\nI can help you analyze the content, extract information, or answer questions about your file!`;
+        }
+      }
+      
+      if (welcomeMessage) {
+        setMessages([{
+          type: 'system',
+          content: welcomeMessage,
+          timestamp: new Date().toISOString()
+        }]);
+        setMessageCount(1);
+      }
     } else if (!fileData && !currentConversationId) {
       setMessages([]);
       setMessageCount(0);
     }
-  }, [fileData, currentConversationId]);
+  }, [fileData, currentConversationId, isNewConversationMode]);
 
-  // Show placeholder only if no file is selected at all
-  if (!fileData) {
+  // Get display info for selected files
+  const getSelectedFilesDisplay = () => {
+    if (Array.isArray(fileData)) {
+      if (fileData.length === 1) {
+        return fileData[0].filename || fileData[0].name;
+      } else {
+        return `${fileData.length} files selected`;
+      }
+    } else if (fileData) {
+      return fileData.filename || fileData.name;
+    }
+    return '';
+  };
+
+  // Handle starting a new conversation
+  const handleStartConversation = async () => {
+    if (!selectedFileIds || selectedFileIds.length === 0) return;
+    
+    setStartingConversation(true);
+    try {
+      if (onStartConversation) {
+        await onStartConversation(selectedFileIds);
+      }
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+    } finally {
+      setStartingConversation(false);
+    }
+  };
+
+  // Show placeholder if no files selected OR in new conversation mode (before Start is clicked)
+  // BUT always show conversation messages if we have an active conversationId (even with missing files)
+  if ((!fileData || (Array.isArray(fileData) && fileData.length === 0) || isNewConversationMode) && !conversationId) {
     return (
       <Card variant="elevated" className={`flex flex-col h-full ${className}`}>
         <CardHeader
@@ -245,7 +353,29 @@ const ChatBox = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
             </div>
-            <p className="body-small text-text-secondary mb-4">upload and select your files to start an intelligent conversation with your data</p>
+            
+            {/* Different messages for initial state vs new conversation mode */}
+            {isNewConversationMode ? (
+              <>
+                <p className="body-small text-text-secondary mb-4">select 1-5 files to start a conversation with your data</p>
+                
+                {/* Start button - only show in new conversation mode */}
+                <button
+                  onClick={handleStartConversation}
+                  disabled={!selectedFileIds || selectedFileIds.length === 0 || startingConversation}
+                  className={`mb-6 px-6 py-2.5 rounded-button body-small font-medium transition-colors ${
+                    selectedFileIds && selectedFileIds.length > 0 && !startingConversation
+                      ? 'bg-primary-600 text-white hover:bg-primary-700'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  {startingConversation ? 'Starting...' : 'Start'}
+                </button>
+              </>
+            ) : (
+              <p className="body-small text-text-secondary mb-6">start a new conversation or select existing to get started</p>
+            )}
+
             <div className="flex items-center justify-center space-x-4 body-xs text-text-muted">
               <div className="flex items-center space-x-1">
                 <div className="w-2 h-2 bg-primary-400 rounded-full"></div>
@@ -267,7 +397,7 @@ const ChatBox = ({
   }
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || sending || !fileData) return;
+    if (!inputMessage.trim() || sending || !fileData || (Array.isArray(fileData) && fileData.length === 0) || hasMissingFiles) return;
 
     const userMessage = inputMessage.trim();
     setInputMessage('');
@@ -298,12 +428,35 @@ const ChatBox = ({
       // Get authentication headers (handles local development bypass)
       const authHeaders = await getAuthHeaders();
       
+      // Prepare request body for single or multiple files
+      let requestBody;
+      if (Array.isArray(fileData)) {
+        if (fileData.length === 1) {
+          // Single file in array - use fileName for backward compatibility
+          requestBody = {
+            fileName: fileData[0].name || fileData[0].filename,
+            message: userMessage,
+            conversationId: currentConversationId
+          };
+        } else {
+          // Multiple files - use fileNames array
+          requestBody = {
+            fileNames: fileData.map(file => file.name || file.filename),
+            message: userMessage,
+            conversationId: currentConversationId
+          };
+        }
+      } else {
+        // Single file object (backward compatibility)
+        requestBody = {
+          fileName: fileData.name || fileData.filename,
+          message: userMessage,
+          conversationId: currentConversationId
+        };
+      }
+      
       // Call backend with auth headers
-      const response = await axios.post('/api/chat', {
-        fileName: fileData.name || fileData.filename,
-        message: userMessage,
-        conversationId: currentConversationId // Include conversation context
-      }, {
+      const response = await axios.post('/api/chat', requestBody, {
         headers: authHeaders,
         timeout: 30000 // 30 second timeout for AI responses
       });
@@ -330,12 +483,18 @@ const ChatBox = ({
               });
             }
           } else if (onConversationUpdated) {
-            // Existing conversation updated
-            onConversationUpdated(response.data.conversationId, {
-              title: response.data.title,
+            // Existing conversation updated - only update title if provided (shouldn't happen for existing conversations)
+            const updates = {
               updatedAt: new Date().toISOString(),
               messageCount: messageCount + 1
-            });
+            };
+            
+            // Only include title if it's actually provided (for new conversations)
+            if (response.data.title) {
+              updates.title = response.data.title;
+            }
+            
+            onConversationUpdated(response.data.conversationId, updates);
           }
         }
       } else {
@@ -378,6 +537,11 @@ const ChatBox = ({
                 title={
           <div className="flex items-center space-x-2">
             <span className="text-secondary-600 font-semibold lowercase">taktmate</span>
+            {fileData && (
+              <span className="text-xs text-text-muted bg-gray-100 px-2 py-1 rounded-full">
+                {getSelectedFilesDisplay()}
+              </span>
+            )}
             {currentConversationId && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
                 conversation
@@ -512,23 +676,6 @@ const ChatBox = ({
                     </button>
                   ))}
                 </div>
-                
-                {/* Enhanced help text */}
-                <div className="mt-6 p-4 bg-secondary-25 border border-secondary-200 rounded-lg">
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <svg className="w-4 h-4 text-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div className="text-left">
-                      <p className="body-small text-secondary-700 leading-relaxed">
-                        <span className="font-medium">Tip:</span> These questions are tailored to your document's content. 
-                        Click one to get started, or type your own question in the input below.
-                      </p>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -632,9 +779,9 @@ const ChatBox = ({
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-                      placeholder={!fileData ? "Select a file to start chatting..." : "How can I help you today?"}
-              className="w-full border border-gray-300 rounded-input px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-small sm:body-normal resize-none transition-all duration-200"
-              disabled={sending || !fileData}
+                placeholder={!fileData ? "Select a file to start chatting..." : hasMissingFiles ? "Cannot send messages - files are missing" : "How can I help you today?"}
+                className="w-full border border-gray-300 rounded-input px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-small sm:body-normal resize-none transition-all duration-200"
+                disabled={sending || !fileData || hasMissingFiles}
               rows="1"
                     style={{ minHeight: '40px', maxHeight: '150px' }}
               onInput={(e) => {
@@ -653,9 +800,9 @@ const ChatBox = ({
           
                 <button
                   onClick={handleSendMessage}
-                  disabled={!inputMessage.trim() || sending || inputMessage.length > 500 || !fileData}
+                  disabled={!inputMessage.trim() || sending || inputMessage.length > 500 || !fileData || hasMissingFiles}
                   className="bg-primary-600 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0 min-w-[44px] h-10 sm:h-12"
-                  title={!fileData ? "Select a file first" : !inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
+                  title={!fileData ? "Select a file first" : hasMissingFiles ? "Cannot send - files are missing" : !inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
                 >
                   {sending ? (
                     <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">

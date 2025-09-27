@@ -3,6 +3,91 @@
  * Used when creating new conversations to help users discover relevant questions
  */
 
+/**
+ * Multi-file suggestion prompt for generating starter questions
+ * Used when creating conversations with multiple files
+ */
+function multiFileSuggestionPrompt(filesData) {
+  if (!Array.isArray(filesData) || filesData.length === 0) {
+    throw new Error('filesData must be a non-empty array');
+  }
+
+  // Create file summaries for the prompt
+  const fileSummaries = filesData.map((file, index) => {
+    let contentPreview = '';
+    let contextualHints = '';
+
+    switch (file.type.toLowerCase()) {
+      case 'csv':
+        const lines = file.content.split('\n');
+        const headers = lines[0] || '';
+        const sampleRows = lines.slice(1, 3).join('\n'); // First 2 data rows
+        contentPreview = `Headers: ${headers}\nSample data:\n${sampleRows}`;
+        contextualHints = 'data analysis, statistics, column values';
+        break;
+        
+      case 'pdf':
+      case 'docx':
+        contentPreview = file.content.substring(0, 300) + (file.content.length > 300 ? '...' : '');
+        contextualHints = 'document content, key findings, main topics';
+        break;
+        
+      case 'xlsx':
+        contentPreview = file.content.substring(0, 250) + (file.content.length > 250 ? '...' : '');
+        contextualHints = 'spreadsheet data, calculations, worksheet content';
+        break;
+        
+      case 'txt':
+        contentPreview = file.content.substring(0, 250) + (file.content.length > 250 ? '...' : '');
+        contextualHints = 'text content, themes, information extraction';
+        break;
+        
+      default:
+        contentPreview = file.content.substring(0, 250) + (file.content.length > 250 ? '...' : '');
+        contextualHints = 'general content analysis, information extraction';
+    }
+
+    return {
+      fileName: file.fileName,
+      type: file.type,
+      preview: contentPreview,
+      hints: contextualHints
+    };
+  });
+
+  const fileList = fileSummaries.map(f => `- ${f.fileName} (${f.type})`).join('\n');
+  const contentPreviews = fileSummaries.map(f => 
+    `=== ${f.fileName} ===\n${f.preview}`
+  ).join('\n\n');
+
+  return `You are a data analysis assistant. A user has uploaded ${filesData.length} files for analysis:
+
+${fileList}
+
+Here are previews of the content:
+
+${contentPreviews}
+
+Generate exactly 2 questions the user might want to ask about these files:
+1. A cross-file analysis question that demonstrates how you can work across multiple documents
+2. A specific question about insights that can be gained by combining or comparing the data
+
+Requirements:
+- Questions should leverage the multi-file context (comparing, combining, or cross-referencing data)
+- Make questions specific to the actual content shown in the previews
+- Focus on insights that are only possible with multiple files
+- Avoid questions that assume data not visible in the previews
+- Keep questions concise and actionable
+
+Return your response in this exact JSON format:
+{
+  "suggestions": [
+    "First cross-file analysis question here",
+    "Second specific multi-file insight question here"
+  ]
+}`;
+}
+
 module.exports.suggestionPrompt = (fileName, fileType, fileContent) => {
   // Extract relevant preview data based on file type
   let contentPreview = '';
@@ -67,3 +152,5 @@ Return your response in this exact JSON format:
   ]
 }`;
 };
+
+module.exports.multiFileSuggestionPrompt = multiFileSuggestionPrompt;

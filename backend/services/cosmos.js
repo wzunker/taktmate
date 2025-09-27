@@ -96,7 +96,7 @@ class CosmosService {
     }
   }
 
-  async createConversation(userId, fileName, title = null, suggestions = []) {
+  async createConversation(userId, fileName, title = null, suggestions = [], fileNames = null) {
     try {
       if (!this.isInitialized) {
         await this.initialize();
@@ -105,11 +105,18 @@ class CosmosService {
       const conversationId = `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date().toISOString();
       
+      // Support both single file (backward compatibility) and multiple files
+      const targetFileNames = fileNames || [fileName];
+      const displayTitle = title || (targetFileNames.length === 1 
+        ? `Conversation about ${targetFileNames[0]}`
+        : `Conversation about ${targetFileNames.length} files`);
+      
       const conversation = {
         id: conversationId,
         userId,
-        title: title || `Conversation about ${fileName}`,
-        fileName,
+        title: displayTitle,
+        fileName, // Keep for backward compatibility
+        fileNames: targetFileNames, // New field for multiple files
         createdAt: now,
         updatedAt: now,
         status: CONVERSATION_CONFIG.STATUS.ACTIVE,
@@ -167,13 +174,15 @@ class CosmosService {
         query: `
           SELECT * FROM c 
           WHERE c.userId = @userId 
+          AND (NOT IS_DEFINED(c.status) OR c.status != @deletedStatus)
           ORDER BY c.updatedAt DESC 
           OFFSET @offset LIMIT @limit
         `,
         parameters: [
           { name: '@userId', value: userId },
           { name: '@offset', value: offset },
-          { name: '@limit', value: limit }
+          { name: '@limit', value: limit },
+          { name: '@deletedStatus', value: CONVERSATION_CONFIG.STATUS.DELETED }
         ]
       };
 
@@ -256,71 +265,6 @@ class CosmosService {
       return { success: true, message: 'Conversation deleted successfully' };
     } catch (error) {
       console.error(`❌ Failed to delete conversation ${conversationId}:`, error.message);
-      throw error;
-    }
-  }
-
-  async searchConversations(userId, query, limit = 10) {
-    try {
-      if (!this.isInitialized) {
-        await this.initialize();
-      }
-
-      const querySpec = {
-        query: `
-          SELECT * FROM c 
-          WHERE c.userId = @userId 
-          AND (CONTAINS(UPPER(c.title), UPPER(@query)) OR CONTAINS(UPPER(c.summary), UPPER(@query)))
-          AND c.status != 'deleted'
-          ORDER BY c.updatedAt DESC 
-          OFFSET 0 LIMIT @limit
-        `,
-        parameters: [
-          { name: '@userId', value: userId },
-          { name: '@query', value: query },
-          { name: '@limit', value: limit }
-        ]
-      };
-
-      const { resources } = await this.container.items.query(querySpec).fetchAll();
-      
-      console.log(`✅ Found ${resources.length} conversations matching query: "${query}"`);
-      return resources;
-    } catch (error) {
-      console.error(`❌ Failed to search conversations:`, error.message);
-      throw error;
-    }
-  }
-
-  async getConversationsByFile(userId, fileName, limit = 10) {
-    try {
-      if (!this.isInitialized) {
-        await this.initialize();
-      }
-
-      const querySpec = {
-        query: `
-          SELECT * FROM c 
-          WHERE c.userId = @userId 
-          AND c.fileName = @fileName
-          AND c.status != @deletedStatus
-          ORDER BY c.updatedAt DESC 
-          OFFSET 0 LIMIT @limit
-        `,
-        parameters: [
-          { name: '@userId', value: userId },
-          { name: '@fileName', value: fileName },
-          { name: '@deletedStatus', value: CONVERSATION_CONFIG.STATUS.DELETED },
-          { name: '@limit', value: limit }
-        ]
-      };
-
-      const { resources } = await this.container.items.query(querySpec).fetchAll();
-      
-      console.log(`✅ Found ${resources.length} conversations for file: ${fileName}`);
-      return resources;
-    } catch (error) {
-      console.error(`❌ Failed to get conversations by file:`, error.message);
       throw error;
     }
   }
@@ -498,48 +442,6 @@ class CosmosService {
     }
   }
 
-  /**
-   * Get conversations by date range
-   * @param {string} userId - The user ID
-   * @param {string} startDate - Start date (ISO string)
-   * @param {string} endDate - End date (ISO string)
-   * @param {number} limit - Maximum number of conversations to return
-   * @returns {Array} - Array of conversations in date range
-   */
-  async getConversationsByDateRange(userId, startDate, endDate, limit = 50) {
-    try {
-      if (!this.isInitialized) {
-        await this.initialize();
-      }
-
-      const querySpec = {
-        query: `
-          SELECT * FROM c 
-          WHERE c.userId = @userId 
-          AND c.createdAt >= @startDate 
-          AND c.createdAt <= @endDate
-          AND c.status != @deletedStatus
-          ORDER BY c.createdAt DESC 
-          OFFSET 0 LIMIT @limit
-        `,
-        parameters: [
-          { name: '@userId', value: userId },
-          { name: '@startDate', value: startDate },
-          { name: '@endDate', value: endDate },
-          { name: '@deletedStatus', value: CONVERSATION_CONFIG.STATUS.DELETED },
-          { name: '@limit', value: limit }
-        ]
-      };
-
-      const { resources } = await this.container.items.query(querySpec).fetchAll();
-      
-      console.log(`✅ Found ${resources.length} conversations between ${startDate} and ${endDate}`);
-      return resources;
-    } catch (error) {
-      console.error(`❌ Failed to get conversations by date range:`, error.message);
-      throw error;
-    }
-  }
 }
 
 // Export singleton instance and configuration
