@@ -22,7 +22,7 @@ const SourcesPanel = ({
   const [error, setError] = useState(null);
   const [showPrivacyInfo] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
-  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const [menuPosition] = useState({ top: 0, left: 0 });
   const [showManagePopup, setShowManagePopup] = useState(false);
   const fileInputRef = useRef(null);
 
