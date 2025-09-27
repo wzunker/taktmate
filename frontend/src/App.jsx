@@ -5,7 +5,6 @@ import ConversationsPanel from './components/ConversationsPanel';
 import ChatBox from './components/ChatBox';
 import UserProfile from './components/UserProfile';
 import Logo from './components/Logo';
-import Card from './components/Card';
 import useAuth from './hooks/useAuth';
 import { getAuthHeaders } from './utils/auth';
 

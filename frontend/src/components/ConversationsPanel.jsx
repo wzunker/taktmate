@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Card, { CardHeader, CardContent } from './Card';
 import ConversationItem from './ConversationItem';
-import { getAuthHeaders } from '../utils/auth';
 
 const ConversationsPanel = ({ 
   uploadedFiles = [],

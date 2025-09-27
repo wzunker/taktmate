@@ -20,7 +20,7 @@ const SourcesPanel = ({
 }) => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
-  const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
+  const [showPrivacyInfo] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const [showManagePopup, setShowManagePopup] = useState(false);
@@ -250,22 +250,6 @@ const SourcesPanel = ({
   const displayFiles = getDisplayFiles();
   const isViewingActiveConversation = activeConversation && !isInNewConversationMode;
 
-  const handleMenuToggle = (fileId, event) => {
-    if (openMenuId === fileId) {
-      setOpenMenuId(null);
-      return;
-    }
-
-    const buttonElement = event.currentTarget;
-    const rect = buttonElement.getBoundingClientRect();
-    
-    setMenuPosition({
-      top: rect.bottom + window.scrollY + 4,
-      left: rect.right + window.scrollX - 160, // 160px is menu width
-    });
-    
-    setOpenMenuId(fileId);
-  };
 
   // Handle clicking outside to close menu
   useEffect(() => {
