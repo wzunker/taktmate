@@ -12,12 +12,10 @@ const ConversationsPanel = ({
   onConversationCreated,
   onConversationRename,
   onConversationDelete,
-  onConversationExport,
   conversationsLoading = false,
   isCollapsed,
   onToggleCollapse
 }) => {
-  const [creatingConversation, setCreatingConversation] = useState(false);
 
   // Check if all files for a conversation exist (for enabling/disabling)
   const hasAllRequiredFiles = (conversation) => {
@@ -33,58 +31,11 @@ const ConversationsPanel = ({
       .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
   };
 
-  const handleCreateNewConversation = async () => {
-    if (creatingConversation) return;
-    
-    setCreatingConversation(true);
-    try {
-      // Get the selected files
-      const selectedFiles = uploadedFiles.filter(file => selectedFileIds.includes(file.fileId));
-      if (selectedFiles.length === 0) {
-        console.error('No files selected');
-        return;
-      }
-
-      // Get authentication headers (handles local development bypass)
-      const authHeaders = await getAuthHeaders();
-
-      console.log('Creating new conversation with suggestions for:', selectedFiles.map(f => f.name));
-
-      // Create new conversation with suggestions
-      const requestBody = selectedFiles.length === 1 
-        ? { fileName: selectedFiles[0].name, title: `New conversation about ${selectedFiles[0].name}` }
-        : { fileNames: selectedFiles.map(f => f.name), title: `New conversation about ${selectedFiles.length} files` };
-
-      const response = await fetch('/api/conversations', {
-        method: 'POST',
-        headers: authHeaders,
-        body: JSON.stringify(requestBody)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.conversation) {
-          console.log('Created conversation with suggestions:', data.conversation);
-          
-          // Select the new conversation
-          if (onConversationSelected) {
-            onConversationSelected(data.conversation);
-          }
-          // Notify parent about new conversation
-          if (onConversationCreated) {
-            onConversationCreated(data.conversation);
-          }
-        } else {
-          console.error('Conversation creation failed:', data);
-        }
-      } else {
-        const errorData = await response.text();
-        console.error('Failed to create conversation:', response.statusText, errorData);
-      }
-    } catch (error) {
-      console.error('Error creating new conversation:', error);
-    } finally {
-      setCreatingConversation(false);
+  const handleCreateNewConversation = () => {
+    // Clear active conversation and start fresh - don't actually create a conversation yet
+    // This allows users to select files first, then click Start in the ChatBox
+    if (onConversationSelected) {
+      onConversationSelected(null); // This will clear the active conversation and file selection
     }
   };
 
@@ -115,16 +66,13 @@ const ConversationsPanel = ({
       {!isCollapsed && (
         <CardContent className="flex-1 flex flex-col min-h-0">
           {/* New Conversation Button - Full Width */}
-          {selectedFileIds.length > 0 && (
-            <button
-              onClick={handleCreateNewConversation}
-              disabled={creatingConversation}
-              className="w-full bg-primary-600 text-white px-4 py-2.5 rounded-button body-small font-medium hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors warm-shadow mb-4"
-              title="Start new conversation with this file"
-            >
-              {creatingConversation ? 'Creating...' : 'new conversation'}
-            </button>
-          )}
+          <button
+            onClick={handleCreateNewConversation}
+            className="w-full bg-primary-600 text-white px-4 py-2.5 rounded-button body-small font-medium hover:bg-primary-700 transition-colors warm-shadow mb-4"
+            title="Start a new conversation"
+          >
+            new conversation
+          </button>
 
           {/* Conversations List */}
           <div className="flex-1 min-h-0">
@@ -143,7 +91,6 @@ const ConversationsPanel = ({
                     onSelect={onConversationSelected}
                     onRename={onConversationRename}
                     onDelete={onConversationDelete}
-                    onExport={onConversationExport}
                     hasValidFile={hasAllRequiredFiles(conversation)}
                   />
                 )) 

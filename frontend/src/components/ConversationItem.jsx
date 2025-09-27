@@ -5,8 +5,7 @@ const ConversationItem = ({
   isActive, 
   onSelect, 
   onRename, 
-  onDelete, 
-  onExport,
+  onDelete,
   hasValidFile = true 
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -74,8 +73,8 @@ const ConversationItem = ({
             : hasValidFile 
               ? 'bg-background-warm-white border-gray-200 hover:bg-primary-25 hover:border-primary-200'
               : 'bg-gray-50 border-gray-200 opacity-75'
-        } ${!hasValidFile ? 'cursor-not-allowed' : ''}`}
-        onClick={() => hasValidFile && onSelect(conversation)}
+        }`}
+        onClick={() => onSelect(conversation)}
       >
         <div className="flex items-start space-x-2">
           {/* Status indicator */}
@@ -121,21 +120,19 @@ const ConversationItem = ({
               
               <div className="flex items-center space-x-1">
                 
-                {/* Context menu button */}
-                {hasValidFile && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsMenuOpen(!isMenuOpen);
-                    }}
-                    className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                    title="More options"
-                  >
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                    </svg>
-                  </button>
-                )}
+                {/* Context menu button - always show for access to delete */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMenuOpen(!isMenuOpen);
+                  }}
+                  className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                  title="More options"
+                >
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
@@ -143,57 +140,36 @@ const ConversationItem = ({
       </div>
 
       {/* Context menu */}
-      {isMenuOpen && hasValidFile && (
+      {isMenuOpen && (
         <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-card border border-gray-200 warm-shadow z-10">
           <div className="py-1">
+            {hasValidFile && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsRenaming(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-3 py-2 text-left body-small text-text-primary hover:bg-gray-50 flex items-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  <span>Rename</span>
+                </button>
+                
+              </>
+            )}
+            
+            {/* Delete option - always available */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setIsRenaming(true);
-                setIsMenuOpen(false);
-              }}
-              className="w-full px-3 py-2 text-left body-small text-text-primary hover:bg-gray-50 flex items-center space-x-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              <span>Rename</span>
-            </button>
-            
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onExport(conversation, 'json');
-                setIsMenuOpen(false);
-              }}
-              className="w-full px-3 py-2 text-left body-small text-text-primary hover:bg-gray-50 flex items-center space-x-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span>Export JSON</span>
-            </button>
-            
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onExport(conversation, 'csv');
-                setIsMenuOpen(false);
-              }}
-              className="w-full px-3 py-2 text-left body-small text-text-primary hover:bg-gray-50 flex items-center space-x-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span>Export CSV</span>
-            </button>
-            
-            <hr className="my-1 border-gray-200" />
-            
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (window.confirm('Are you sure you want to delete this conversation?')) {
+                const confirmMessage = hasValidFile 
+                  ? 'Are you sure you want to delete this conversation?'
+                  : 'Are you sure you want to delete this conversation? (The associated file is already missing)';
+                if (window.confirm(confirmMessage)) {
                   onDelete(conversation.id);
                 }
                 setIsMenuOpen(false);

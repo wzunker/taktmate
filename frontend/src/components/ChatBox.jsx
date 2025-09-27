@@ -9,7 +9,11 @@ const ChatBox = ({
   className = '', 
   conversationId = null,
   onConversationCreated,
-  onConversationUpdated 
+  onConversationUpdated,
+  selectedFileIds = [],
+  onStartConversation,
+  isNewConversationMode = false,
+  hasMissingFiles = false
 }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -19,6 +23,7 @@ const ChatBox = ({
   const [conversationLoading, setConversationLoading] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
+  const [startingConversation, setStartingConversation] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const { displayName } = useAuth();
@@ -39,7 +44,7 @@ const ChatBox = ({
 
   // Handle suggestion click
   const handleSuggestionClick = async (suggestion) => {
-    if (sending || !fileData) return;
+    if (sending || !fileData || hasMissingFiles) return;
 
     // Clear suggestions immediately since we're about to send the first message
     setSuggestions([]);
@@ -115,12 +120,18 @@ const ChatBox = ({
               });
             }
           } else if (onConversationUpdated) {
-            // Existing conversation updated
-            onConversationUpdated(response.data.conversationId, {
-              title: response.data.title,
+            // Existing conversation updated - only update title if provided (shouldn't happen for existing conversations)
+            const updates = {
               updatedAt: new Date().toISOString(),
               messageCount: messageCount + 1
-            });
+            };
+            
+            // Only include title if it's actually provided (for new conversations)
+            if (response.data.title) {
+              updates.title = response.data.title;
+            }
+            
+            onConversationUpdated(response.data.conversationId, updates);
           }
         }
       } else {
@@ -235,8 +246,8 @@ const ChatBox = ({
   }, [sending]);
 
   useEffect(() => {
-    // Welcome message when files are selected (only if no conversation is loaded)
-    if (fileData && !currentConversationId) {
+    // Welcome message when files are selected (only if no conversation is loaded and not in new conversation mode)
+    if (fileData && !currentConversationId && !isNewConversationMode) {
       let welcomeMessage = '';
       
       if (Array.isArray(fileData)) {
@@ -295,7 +306,7 @@ const ChatBox = ({
       setMessages([]);
       setMessageCount(0);
     }
-  }, [fileData, currentConversationId]);
+  }, [fileData, currentConversationId, isNewConversationMode]);
 
   // Get display info for selected files
   const getSelectedFilesDisplay = () => {
@@ -311,8 +322,25 @@ const ChatBox = ({
     return '';
   };
 
-  // Show placeholder only if no file is selected at all
-  if (!fileData || (Array.isArray(fileData) && fileData.length === 0)) {
+  // Handle starting a new conversation
+  const handleStartConversation = async () => {
+    if (!selectedFileIds || selectedFileIds.length === 0) return;
+    
+    setStartingConversation(true);
+    try {
+      if (onStartConversation) {
+        await onStartConversation(selectedFileIds);
+      }
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+    } finally {
+      setStartingConversation(false);
+    }
+  };
+
+  // Show placeholder if no files selected OR in new conversation mode (before Start is clicked)
+  // BUT always show conversation messages if we have an active conversationId (even with missing files)
+  if ((!fileData || (Array.isArray(fileData) && fileData.length === 0) || isNewConversationMode) && !conversationId) {
     return (
       <Card variant="elevated" className={`flex flex-col h-full ${className}`}>
         <CardHeader
@@ -325,7 +353,29 @@ const ChatBox = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
             </div>
-            <p className="body-small text-text-secondary mb-4">upload and select your files to start an intelligent conversation with your data</p>
+            
+            {/* Different messages for initial state vs new conversation mode */}
+            {isNewConversationMode ? (
+              <>
+                <p className="body-small text-text-secondary mb-4">select 1-5 files to start a conversation with your data</p>
+                
+                {/* Start button - only show in new conversation mode */}
+                <button
+                  onClick={handleStartConversation}
+                  disabled={!selectedFileIds || selectedFileIds.length === 0 || startingConversation}
+                  className={`mb-6 px-6 py-2.5 rounded-button body-small font-medium transition-colors ${
+                    selectedFileIds && selectedFileIds.length > 0 && !startingConversation
+                      ? 'bg-primary-600 text-white hover:bg-primary-700'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  {startingConversation ? 'Starting...' : 'Start'}
+                </button>
+              </>
+            ) : (
+              <p className="body-small text-text-secondary mb-6">start a new conversation or select existing to get started</p>
+            )}
+
             <div className="flex items-center justify-center space-x-4 body-xs text-text-muted">
               <div className="flex items-center space-x-1">
                 <div className="w-2 h-2 bg-primary-400 rounded-full"></div>
@@ -347,7 +397,7 @@ const ChatBox = ({
   }
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || sending || !fileData || (Array.isArray(fileData) && fileData.length === 0)) return;
+    if (!inputMessage.trim() || sending || !fileData || (Array.isArray(fileData) && fileData.length === 0) || hasMissingFiles) return;
 
     const userMessage = inputMessage.trim();
     setInputMessage('');
@@ -433,12 +483,18 @@ const ChatBox = ({
               });
             }
           } else if (onConversationUpdated) {
-            // Existing conversation updated
-            onConversationUpdated(response.data.conversationId, {
-              title: response.data.title,
+            // Existing conversation updated - only update title if provided (shouldn't happen for existing conversations)
+            const updates = {
               updatedAt: new Date().toISOString(),
               messageCount: messageCount + 1
-            });
+            };
+            
+            // Only include title if it's actually provided (for new conversations)
+            if (response.data.title) {
+              updates.title = response.data.title;
+            }
+            
+            onConversationUpdated(response.data.conversationId, updates);
           }
         }
       } else {
@@ -723,9 +779,9 @@ const ChatBox = ({
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-                      placeholder={!fileData ? "Select a file to start chatting..." : "How can I help you today?"}
-              className="w-full border border-gray-300 rounded-input px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-small sm:body-normal resize-none transition-all duration-200"
-              disabled={sending || !fileData}
+                placeholder={!fileData ? "Select a file to start chatting..." : hasMissingFiles ? "Cannot send messages - files are missing" : "How can I help you today?"}
+                className="w-full border border-gray-300 rounded-input px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-small sm:body-normal resize-none transition-all duration-200"
+                disabled={sending || !fileData || hasMissingFiles}
               rows="1"
                     style={{ minHeight: '40px', maxHeight: '150px' }}
               onInput={(e) => {
@@ -744,9 +800,9 @@ const ChatBox = ({
           
                 <button
                   onClick={handleSendMessage}
-                  disabled={!inputMessage.trim() || sending || inputMessage.length > 500 || !fileData}
+                  disabled={!inputMessage.trim() || sending || inputMessage.length > 500 || !fileData || hasMissingFiles}
                   className="bg-primary-600 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0 min-w-[44px] h-10 sm:h-12"
-                  title={!fileData ? "Select a file first" : !inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
+                  title={!fileData ? "Select a file first" : hasMissingFiles ? "Cannot send - files are missing" : !inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
                 >
                   {sending ? (
                     <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">

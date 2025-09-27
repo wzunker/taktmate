@@ -371,6 +371,23 @@ app.post('/api/chat', requireAuth, async (req, res) => {
           });
         }
         
+        // If files match by name but conversation might have outdated metadata,
+        // update the conversation's file associations to ensure compatibility
+        if (filesMatch && (conversation.fileNames || conversation.fileName)) {
+          try {
+            // Update conversation to use current file names (handles re-uploaded files)
+            const updateData = targetFileNames.length === 1 
+              ? { fileName: targetFileNames[0] }
+              : { fileNames: targetFileNames };
+            
+            await cosmosService.updateConversation(conversationId, user.id, updateData);
+            console.log(`Updated conversation ${conversationId} file associations to current files`);
+          } catch (updateError) {
+            console.warn(`Failed to update conversation file associations:`, updateError.message);
+            // Continue anyway - this is not critical
+          }
+        }
+        
         // Get recent messages for context (last 10 messages to avoid token limits)
         conversationMessages = await cosmosService.getRecentMessages(conversationId, user.id, 10);
         console.log(`Using conversation context: ${conversationId} with ${conversationMessages.length} recent messages`);
@@ -466,13 +483,22 @@ app.post('/api/chat', requireAuth, async (req, res) => {
       }
     }
 
-    res.json({
+    // Prepare response
+    const response = {
       success: true,
       reply,
       fileName: fileName,
-      conversationId: conversation?.id || null,
-      conversationTitle: conversation?.title || null
-    });
+      conversationId: conversation?.id || null
+    };
+
+    // Only include title for newly created conversations
+    // Existing conversations should not have their titles updated
+    if (conversation && !conversationId) {
+      // This is a newly created conversation, include the title
+      response.title = conversation.title;
+    }
+
+    res.json(response);
 
   } catch (error) {
     console.error(`Chat error for user ${req.user?.email || 'unknown'}:`, error.message);
