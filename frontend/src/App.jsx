@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import SourcesPanel from './components/SourcesPanel';
+import ConversationsPanel from './components/ConversationsPanel';
 import ChatBox from './components/ChatBox';
-import DataTable from './components/DataTable';
 import UserProfile from './components/UserProfile';
 import Logo from './components/Logo';
 import Card from './components/Card';
@@ -19,7 +19,7 @@ function App() {
     limitDisplay: '200 MB' 
   });
   const [sourcesCollapsed, setSourcesCollapsed] = useState(false);
-  const [previewCollapsed, setPreviewCollapsed] = useState(false);
+  const [conversationsCollapsed, setConversationsCollapsed] = useState(false);
   const [filesLoading, setFilesLoading] = useState(false);
   
   // Conversation state management
@@ -426,7 +426,14 @@ function App() {
               isCollapsed={sourcesCollapsed}
               onToggleCollapse={setSourcesCollapsed}
               filesLoading={filesLoading}
-              // Conversation props
+            />
+          </div>
+          
+          {/* Conversations Column - Dynamic width based on collapse */}
+          <div className={`h-full overflow-y-auto min-h-0 ${conversationsCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} transition-all duration-300`}>
+            <ConversationsPanel 
+              uploadedFiles={uploadedFiles}
+              activeFileId={activeFileId}
               conversations={conversations}
               activeConversationId={activeConversationId}
               onConversationSelected={handleConversationSelected}
@@ -435,14 +442,16 @@ function App() {
               onConversationDelete={handleConversationDelete}
               onConversationExport={handleConversationExport}
               conversationsLoading={conversationsLoading}
+              isCollapsed={conversationsCollapsed}
+              onToggleCollapse={setConversationsCollapsed}
             />
           </div>
           
           {/* Chat Column - Dynamic width based on both collapses */}
           <div className={`h-full overflow-y-auto min-h-0 ${
-            sourcesCollapsed && previewCollapsed ? 'lg:col-span-10' :
+            sourcesCollapsed && conversationsCollapsed ? 'lg:col-span-10' :
             sourcesCollapsed ? 'lg:col-span-8' :
-            previewCollapsed ? 'lg:col-span-8' :
+            conversationsCollapsed ? 'lg:col-span-8' :
             'lg:col-span-6'
           } transition-all duration-300`}>
             <ChatBox 
@@ -452,32 +461,6 @@ function App() {
               onConversationCreated={handleConversationCreated}
               onConversationUpdated={handleConversationUpdated}
             />
-          </div>
-          
-          {/* Data Table Column - Dynamic width based on collapse */}
-          <div className={`h-full overflow-y-auto min-h-0 ${previewCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} transition-all duration-300`}>
-            {activeFileData ? (
-              <DataTable 
-                fileData={activeFileData} 
-                className="h-full"
-                isCollapsed={previewCollapsed}
-                onToggleCollapse={setPreviewCollapsed}
-              />
-            ) : (
-              <Card variant="elevated" className="h-full flex items-center justify-center">
-                <div className="text-center p-8">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-secondary-100 rounded-full flex items-center justify-center">
-                    <svg className="w-8 h-8 text-secondary-600" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-                    </svg>
-                  </div>
-                  <h3 className="heading-4 text-text-secondary mb-2">No Data Selected</h3>
-                  <p className="body-small text-text-muted">
-                    Select a file from Sources to view its data
-                  </p>
-                </div>
-              </Card>
-            )}
           </div>
         </div>
 
