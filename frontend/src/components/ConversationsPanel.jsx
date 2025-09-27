@@ -5,7 +5,7 @@ import { getAuthHeaders } from '../utils/auth';
 
 const ConversationsPanel = ({ 
   uploadedFiles = [],
-  activeFileId,
+  selectedFileIds = [],
   conversations = [],
   activeConversationId,
   onConversationSelected,
@@ -19,25 +19,18 @@ const ConversationsPanel = ({
 }) => {
   const [creatingConversation, setCreatingConversation] = useState(false);
 
-  // Get conversations for the currently selected file
-  const getFileConversations = () => {
-    if (!activeFileId) return [];
-    const activeFile = uploadedFiles.find(f => f.fileId === activeFileId);
-    if (!activeFile) return [];
-    
-    return conversations.filter(conv => conv.fileName === activeFile.name);
+  // Check if all files for a conversation exist (for enabling/disabling)
+  const hasAllRequiredFiles = (conversation) => {
+    const convFileNames = conversation.fileNames || [conversation.fileName];
+    return convFileNames.every(fileName => 
+      uploadedFiles.some(file => file.name === fileName)
+    );
   };
 
-  // Get recent conversations (when no file is selected)
-  const getRecentConversations = () => {
+  // Get all conversations sorted by most recent
+  const getAllConversations = () => {
     return conversations
-      .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-      .slice(0, 10); // Show more conversations in dedicated panel
-  };
-
-  // Check if a conversation's file still exists
-  const hasValidFile = (conversation) => {
-    return uploadedFiles.some(file => file.name === conversation.fileName);
+      .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
   };
 
   const handleCreateNewConversation = async () => {
@@ -45,26 +38,27 @@ const ConversationsPanel = ({
     
     setCreatingConversation(true);
     try {
-      // Get the active file
-      const activeFile = uploadedFiles.find(file => file.name === activeFileId);
-      if (!activeFile) {
-        console.error('Active file not found');
+      // Get the selected files
+      const selectedFiles = uploadedFiles.filter(file => selectedFileIds.includes(file.fileId));
+      if (selectedFiles.length === 0) {
+        console.error('No files selected');
         return;
       }
 
       // Get authentication headers (handles local development bypass)
       const authHeaders = await getAuthHeaders();
 
-      console.log('Creating new conversation with suggestions for:', activeFile.name);
+      console.log('Creating new conversation with suggestions for:', selectedFiles.map(f => f.name));
 
       // Create new conversation with suggestions
+      const requestBody = selectedFiles.length === 1 
+        ? { fileName: selectedFiles[0].name, title: `New conversation about ${selectedFiles[0].name}` }
+        : { fileNames: selectedFiles.map(f => f.name), title: `New conversation about ${selectedFiles.length} files` };
+
       const response = await fetch('/api/conversations', {
         method: 'POST',
         headers: authHeaders,
-        body: JSON.stringify({
-          fileName: activeFile.name,
-          title: `New conversation about ${activeFile.name}`
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (response.ok) {
@@ -94,7 +88,7 @@ const ConversationsPanel = ({
     }
   };
 
-  const displayConversations = activeFileId ? getFileConversations() : getRecentConversations();
+  const displayConversations = getAllConversations();
 
   return (
     <Card className="h-full flex flex-col">
@@ -121,7 +115,7 @@ const ConversationsPanel = ({
       {!isCollapsed && (
         <CardContent className="flex-1 flex flex-col min-h-0">
           {/* New Conversation Button - Full Width */}
-          {activeFileId && (
+          {selectedFileIds.length > 0 && (
             <button
               onClick={handleCreateNewConversation}
               disabled={creatingConversation}
@@ -150,7 +144,7 @@ const ConversationsPanel = ({
                     onRename={onConversationRename}
                     onDelete={onConversationDelete}
                     onExport={onConversationExport}
-                    hasValidFile={hasValidFile(conversation)}
+                    hasValidFile={hasAllRequiredFiles(conversation)}
                   />
                 )) 
               ) : (

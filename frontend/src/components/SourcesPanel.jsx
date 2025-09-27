@@ -5,14 +5,15 @@ import { getAuthHeaders } from '../utils/auth';
 const SourcesPanel = ({ 
   onFileUploaded, 
   uploadedFiles, 
-  activeFileId, 
+  selectedFileIds = [], // Changed from activeFileId to selectedFileIds array
   storageQuota, 
   onFileSelected, 
   onFileDownload, 
   onFileDeleted,
   isCollapsed,
   onToggleCollapse,
-  filesLoading
+  filesLoading,
+  isFilesLocked = false
 }) => {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -346,46 +347,126 @@ const SourcesPanel = ({
             </div>
           ) : uploadedFiles.length > 0 ? (
             <div className="space-y-2">
-              <div className="space-y-1 max-h-full overflow-y-auto mobile-scrollbar">
-                {uploadedFiles.map((file) => (
-                  <div
-                    key={file.fileId}
-                    className={`p-3 rounded-card border transition-all duration-200 cursor-pointer ${
-                      activeFileId === file.fileId
-                        ? 'bg-primary-50 border-primary-200 ring-2 ring-primary-100'
-                        : 'bg-background-warm-white border-gray-200 hover:bg-primary-25 hover:border-primary-200'
+              {/* File Selection Header */}
+              <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => {
+                      if (isFilesLocked) return;
+                      if (selectedFileIds.length === uploadedFiles.length) {
+                        // Unselect all
+                        onFileSelected([]);
+                      } else {
+                        // Select all
+                        onFileSelected(uploadedFiles.map(file => file.fileId));
+                      }
+                    }}
+                    className={`body-small font-medium transition-colors ${
+                      isFilesLocked 
+                        ? 'text-gray-400 cursor-not-allowed' 
+                        : 'text-primary-600 hover:text-primary-700'
                     }`}
-                    onClick={() => onFileSelected(file.fileId)}
+                    disabled={isFilesLocked}
+                    title={isFilesLocked ? 'Cannot change files while conversation has messages' : ''}
                   >
-                    <div className="flex items-start space-x-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="body-small font-medium text-text-primary truncate">
-                            {file.name}
-                          </p>
+                    {selectedFileIds.length === uploadedFiles.length ? 'Unselect All' : 'Select All'}
+                  </button>
+                  {selectedFileIds.length > 0 && (
+                    <span className="body-xs text-text-muted">
+                      ({selectedFileIds.length} selected)
+                    </span>
+                  )}
+                </div>
+                {selectedFileIds.length > 0 && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                    {selectedFileIds.length} file{selectedFileIds.length !== 1 ? 's' : ''} selected
+                  </span>
+                )}
+                {isFilesLocked && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                    </svg>
+                    locked
+                  </span>
+                )}
+              </div>
+              <div className="space-y-1 max-h-full overflow-y-auto mobile-scrollbar">
+                {uploadedFiles.map((file) => {
+                  const isSelected = selectedFileIds.includes(file.fileId);
+                  return (
+                    <div
+                      key={file.fileId}
+                      className={`p-3 rounded-card border transition-all duration-200 ${
+                        isFilesLocked 
+                          ? 'cursor-not-allowed opacity-75'
+                          : 'cursor-pointer'
+                      } ${
+                        isSelected
+                          ? 'bg-primary-50 border-primary-200 ring-2 ring-primary-100'
+                          : isFilesLocked
+                            ? 'bg-gray-50 border-gray-200'
+                            : 'bg-background-warm-white border-gray-200 hover:bg-primary-25 hover:border-primary-200'
+                      }`}
+                      onClick={() => {
+                        if (isFilesLocked) return;
+                        if (isSelected) {
+                          // Remove from selection
+                          onFileSelected(selectedFileIds.filter(id => id !== file.fileId));
+                        } else {
+                          // Add to selection
+                          onFileSelected([...selectedFileIds, file.fileId]);
+                        }
+                      }}
+                    >
+                      <div className="flex items-start space-x-3">
+                        {/* Checkbox */}
+                        <div className="flex-shrink-0 pt-1">
+                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
+                            isSelected 
+                              ? isFilesLocked
+                                ? 'bg-gray-400 border-gray-400'
+                                : 'bg-primary-600 border-primary-600'
+                              : isFilesLocked
+                                ? 'border-gray-300'
+                                : 'border-gray-300 hover:border-primary-400'
+                          }`}>
+                            {isSelected && (
+                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2 mt-1">
-                          {(() => {
-                            const fileType = getFileType(file.name);
-                            const styles = getFileTypeStyles(fileType);
-                            return (
-                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${styles.labelBg} ${styles.labelText}`}>
-                                {styles.label}
-                              </span>
-                            );
-                          })()}
-                          <span className="body-xs text-text-muted">
-                            {(file.size / 1024).toFixed(1)} KB
-                          </span>
-                          {activeFileId === file.fileId && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-800">
-                              Active
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="body-small font-medium text-text-primary truncate">
+                              {file.name}
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            {(() => {
+                              const fileType = getFileType(file.name);
+                              const styles = getFileTypeStyles(fileType);
+                              return (
+                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${styles.labelBg} ${styles.labelText}`}>
+                                  {styles.label}
+                                </span>
+                              );
+                            })()}
+                            <span className="body-xs text-text-muted">
+                              {(file.size / 1024).toFixed(1)} KB
                             </span>
-                          )}
+                            {isSelected && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-800">
+                                Selected
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="relative">
+                        
+                        <div className="relative">
                         {/* Three dots menu button */}
                         <button
                           onClick={(e) => {
@@ -438,10 +519,11 @@ const SourcesPanel = ({
                             </div>
                           </div>
                         )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ) : !dragActive ? (

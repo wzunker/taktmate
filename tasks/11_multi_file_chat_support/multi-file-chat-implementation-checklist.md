@@ -22,38 +22,47 @@
 ## Phase 2: Frontend Multi-File Selection
 
 ### SourcesPanel Component Updates
-- [ ] Add checkbox selection UI to each file item in SourcesPanel
-- [ ] Add "Select All" and "Clear Selection" buttons
-- [ ] Update file selection visual indicators (selected state styling)
-- [ ] Add selected file count display in panel header
+- [x] Add checkbox selection UI to each file item in SourcesPanel
+- [x] Add "Select All" button (clicking again unselects all)
+- [x] Update file selection visual indicators (selected state styling)
+- [x] Add selected file count display in panel header
 
 ### App.jsx State Management
-- [ ] Change `activeFileId` state to `selectedFileIds` array
-- [ ] Update `handleFileSelected` to toggle selection instead of single select
-- [ ] Modify `activeFileData` to return array of selected files
-- [ ] Update ChatBox props to pass multiple files
+- [x] Change `activeFileId` state to `selectedFileIds` array
+- [x] Update `handleFileSelected` to toggle selection instead of single select
+- [x] Modify `activeFileData` to return array of selected files
+- [x] Update ChatBox props to pass multiple files
 
 ### ChatBox Component Updates  
-- [ ] Update `fileData` prop to accept array of files
-- [ ] Modify welcome message to show multiple file summary
-- [ ] Update file validation to handle multiple files
-- [ ] Add selected files display in chat header
+- [x] Update `fileData` prop to accept array of files
+- [x] Modify welcome message to show multiple file summary
+- [x] Update file validation to handle multiple files
+- [x] Add selected files display in chat header
 
 ## Phase 3: Integration & Polish
 
-### Error Handling & Validation
-- [ ] Add client-side validation for file selection limits
-- [ ] Implement server-side file access validation for arrays
-- [ ] Add loading states for multi-file processing
-- [ ] Handle mixed file type error scenarios
-
 ### Suggestions Enhancement
-- [ ] Update `generateSuggestions()` to work with multiple files
-- [ ] Modify `suggestionPrompt.js` for multi-file contexts
-- [ ] Add fallback suggestions for multi-file scenarios
+- [x] Update `generateSuggestions()` to work with multiple files
+- [x] Modify `suggestionPrompt.js` for multi-file contexts
+- [x] Add fallback suggestions for multi-file scenarios
+
+### Error Handling & Validation
+- [x] Add client-side validation for file selection limits
+- [x] Implement server-side file access validation for arrays
+- [x] Add loading states for multi-file processing
+- [x] Handle mixed file type error scenarios
 
 ### Testing & Compatibility
-- [ ] Test multi-file selection UI functionality
-- [ ] Verify backend processes multiple file types correctly
-- [ ] Ensure existing single-file conversations still work
-- [ ] Test conversation creation with multiple files
+- [x] Test multi-file selection UI functionality
+- [x] Verify backend processes multiple file types correctly
+- [x] Ensure existing single-file conversations still work
+- [x] Test conversation creation with multiple files
+
+## Additional Simplifications Implemented
+
+### Conversation Management
+- [x] Always show all conversations in the conversation list panel
+- [x] When selecting a conversation, highlight and select associated files
+- [x] Implement file locking - prevent file changes once conversation has messages
+- [x] Disable conversations with missing files until re-uploaded
+- [x] Remove unnecessary conversation filtering code

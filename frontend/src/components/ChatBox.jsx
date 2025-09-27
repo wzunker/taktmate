@@ -60,12 +60,35 @@ const ChatBox = ({
       // Get authentication headers (handles local development bypass)
       const authHeaders = await getAuthHeaders();
       
+      // Prepare request body for single or multiple files
+      let requestBody;
+      if (Array.isArray(fileData)) {
+        if (fileData.length === 1) {
+          // Single file in array - use fileName for backward compatibility
+          requestBody = {
+            fileName: fileData[0].name || fileData[0].filename,
+            message: suggestion,
+            conversationId: currentConversationId
+          };
+        } else {
+          // Multiple files - use fileNames array
+          requestBody = {
+            fileNames: fileData.map(file => file.name || file.filename),
+            message: suggestion,
+            conversationId: currentConversationId
+          };
+        }
+      } else {
+        // Single file object (backward compatibility)
+        requestBody = {
+          fileName: fileData.name || fileData.filename,
+          message: suggestion,
+          conversationId: currentConversationId
+        };
+      }
+      
       // Call backend with auth headers
-      const response = await axios.post('/api/chat', {
-        fileName: fileData.name || fileData.filename,
-        message: suggestion,
-        conversationId: currentConversationId
-      }, {
+      const response = await axios.post('/api/chat', requestBody, {
         headers: authHeaders,
         timeout: 30000
       });
@@ -212,27 +235,84 @@ const ChatBox = ({
   }, [sending]);
 
   useEffect(() => {
-    // Welcome message when file is uploaded (only if no conversation is loaded)
-    if (fileData && (fileData.filename || fileData.name) && fileData.headers && !currentConversationId) {
-      const fileName = fileData.filename || fileData.name;
-      const rowCount = fileData.rowCount || 'unknown';
-      const columnCount = Array.isArray(fileData.headers) ? fileData.headers.length : 'unknown';
-      const columns = Array.isArray(fileData.headers) ? fileData.headers.slice(0, 5).join(', ') + (fileData.headers.length > 5 ? '...' : '') : 'unknown';
+    // Welcome message when files are selected (only if no conversation is loaded)
+    if (fileData && !currentConversationId) {
+      let welcomeMessage = '';
       
-      setMessages([{
-        type: 'system',
-        content: `🎉 Welcome! I've loaded your CSV file "${fileName}". Here's what I can see:\n\n📊 **Dataset Overview:**\n• ${rowCount} rows of data\n• ${columnCount} columns\n• Key columns: ${columns}\n\n💬 **What can I help you with?**\nAsk me to analyze trends, find patterns, calculate statistics, or answer any questions about your data!`,
-        timestamp: new Date().toISOString()
-      }]);
-      setMessageCount(1);
+      if (Array.isArray(fileData)) {
+        if (fileData.length === 0) {
+          setMessages([]);
+          setMessageCount(0);
+          return;
+        } else if (fileData.length === 1) {
+          // Single file in array
+          const file = fileData[0];
+          const fileName = file.filename || file.name;
+          if (file.headers) {
+            // CSV file
+            const rowCount = file.rowCount || 'unknown';
+            const columnCount = Array.isArray(file.headers) ? file.headers.length : 'unknown';
+            const columns = Array.isArray(file.headers) ? file.headers.slice(0, 5).join(', ') + (file.headers.length > 5 ? '...' : '') : 'unknown';
+            welcomeMessage = `🎉 Welcome! I've loaded your file "${fileName}". Here's what I can see:\n\n📊 **Dataset Overview:**\n• ${rowCount} rows of data\n• ${columnCount} columns\n• Key columns: ${columns}\n\n💬 **What can I help you with?**\nAsk me to analyze trends, find patterns, calculate statistics, or answer any questions about your data!`;
+          } else {
+            welcomeMessage = `🎉 Welcome! I've loaded your file "${fileName}".\n\n💬 **What can I help you with?**\nI can help you analyze the content, extract information, or answer questions about your file!`;
+          }
+        } else {
+          // Multiple files
+          const fileNames = fileData.map(file => file.filename || file.name);
+          const fileTypes = fileData.map(file => {
+            const name = file.filename || file.name;
+            const ext = name.toLowerCase().substring(name.lastIndexOf('.') + 1);
+            return ext.toUpperCase();
+          });
+          const uniqueTypes = [...new Set(fileTypes)];
+          
+          welcomeMessage = `🎉 Welcome! I've loaded ${fileData.length} files:\n\n📁 **Files:**\n${fileNames.map((name, i) => `• ${name} (${fileTypes[i]})`).join('\n')}\n\n🔍 **File Types:** ${uniqueTypes.join(', ')}\n\n💬 **What can I help you with?**\nI can analyze data across all files, compare information, find patterns, or answer questions that span multiple documents!`;
+        }
+      } else if (fileData && (fileData.filename || fileData.name)) {
+        // Single file object (backward compatibility)
+        const fileName = fileData.filename || fileData.name;
+        if (fileData.headers) {
+          // CSV file
+          const rowCount = fileData.rowCount || 'unknown';
+          const columnCount = Array.isArray(fileData.headers) ? fileData.headers.length : 'unknown';
+          const columns = Array.isArray(fileData.headers) ? fileData.headers.slice(0, 5).join(', ') + (fileData.headers.length > 5 ? '...' : '') : 'unknown';
+          welcomeMessage = `🎉 Welcome! I've loaded your file "${fileName}". Here's what I can see:\n\n📊 **Dataset Overview:**\n• ${rowCount} rows of data\n• ${columnCount} columns\n• Key columns: ${columns}\n\n💬 **What can I help you with?**\nAsk me to analyze trends, find patterns, calculate statistics, or answer any questions about your data!`;
+        } else {
+          welcomeMessage = `🎉 Welcome! I've loaded your file "${fileName}".\n\n💬 **What can I help you with?**\nI can help you analyze the content, extract information, or answer questions about your file!`;
+        }
+      }
+      
+      if (welcomeMessage) {
+        setMessages([{
+          type: 'system',
+          content: welcomeMessage,
+          timestamp: new Date().toISOString()
+        }]);
+        setMessageCount(1);
+      }
     } else if (!fileData && !currentConversationId) {
       setMessages([]);
       setMessageCount(0);
     }
   }, [fileData, currentConversationId]);
 
+  // Get display info for selected files
+  const getSelectedFilesDisplay = () => {
+    if (Array.isArray(fileData)) {
+      if (fileData.length === 1) {
+        return fileData[0].filename || fileData[0].name;
+      } else {
+        return `${fileData.length} files selected`;
+      }
+    } else if (fileData) {
+      return fileData.filename || fileData.name;
+    }
+    return '';
+  };
+
   // Show placeholder only if no file is selected at all
-  if (!fileData) {
+  if (!fileData || (Array.isArray(fileData) && fileData.length === 0)) {
     return (
       <Card variant="elevated" className={`flex flex-col h-full ${className}`}>
         <CardHeader
@@ -267,7 +347,7 @@ const ChatBox = ({
   }
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || sending || !fileData) return;
+    if (!inputMessage.trim() || sending || !fileData || (Array.isArray(fileData) && fileData.length === 0)) return;
 
     const userMessage = inputMessage.trim();
     setInputMessage('');
@@ -298,12 +378,35 @@ const ChatBox = ({
       // Get authentication headers (handles local development bypass)
       const authHeaders = await getAuthHeaders();
       
+      // Prepare request body for single or multiple files
+      let requestBody;
+      if (Array.isArray(fileData)) {
+        if (fileData.length === 1) {
+          // Single file in array - use fileName for backward compatibility
+          requestBody = {
+            fileName: fileData[0].name || fileData[0].filename,
+            message: userMessage,
+            conversationId: currentConversationId
+          };
+        } else {
+          // Multiple files - use fileNames array
+          requestBody = {
+            fileNames: fileData.map(file => file.name || file.filename),
+            message: userMessage,
+            conversationId: currentConversationId
+          };
+        }
+      } else {
+        // Single file object (backward compatibility)
+        requestBody = {
+          fileName: fileData.name || fileData.filename,
+          message: userMessage,
+          conversationId: currentConversationId
+        };
+      }
+      
       // Call backend with auth headers
-      const response = await axios.post('/api/chat', {
-        fileName: fileData.name || fileData.filename,
-        message: userMessage,
-        conversationId: currentConversationId // Include conversation context
-      }, {
+      const response = await axios.post('/api/chat', requestBody, {
         headers: authHeaders,
         timeout: 30000 // 30 second timeout for AI responses
       });
@@ -378,6 +481,11 @@ const ChatBox = ({
                 title={
           <div className="flex items-center space-x-2">
             <span className="text-secondary-600 font-semibold lowercase">taktmate</span>
+            {fileData && (
+              <span className="text-xs text-text-muted bg-gray-100 px-2 py-1 rounded-full">
+                {getSelectedFilesDisplay()}
+              </span>
+            )}
             {currentConversationId && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
                 conversation
@@ -512,7 +620,6 @@ const ChatBox = ({
                     </button>
                   ))}
                 </div>
-                
               </div>
             </div>
           </div>

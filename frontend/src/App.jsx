@@ -11,7 +11,7 @@ import { getAuthHeaders } from './utils/auth';
 
 function App() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
-  const [activeFileId, setActiveFileId] = useState(null);
+  const [selectedFileIds, setSelectedFileIds] = useState([]); // Changed from activeFileId to selectedFileIds array
   const [storageQuota, setStorageQuota] = useState({ 
     used: 0, 
     total: 200 * 1024 * 1024, 
@@ -144,9 +144,9 @@ function App() {
       // Update local state immediately for better UX
       setUploadedFiles(prevFiles => prevFiles.filter(file => file.name !== fileId));
       
-      // If the deleted file was active, clear the selection
-      if (activeFileId === fileId) {
-        setActiveFileId(null);
+      // If the deleted file was selected, remove it from selection
+      if (selectedFileIds.includes(fileId)) {
+        setSelectedFileIds(prev => prev.filter(id => id !== fileId));
         setActiveConversationId(null);
       }
 
@@ -159,55 +159,78 @@ function App() {
     }
   };
 
-  const handleFileSelected = async (fileId) => {
-    setActiveFileId(fileId);
-    // Clear active conversation when switching files
+  const handleFileSelected = async (fileIdsOrId) => {
+    // Check if we have an active conversation with messages (file locking)
+    const activeConversation = conversations.find(conv => conv.id === activeConversationId);
+    if (activeConversation && activeConversation.messageCount > 0) {
+      console.log('Cannot change file selection: conversation has messages');
+      return; // Prevent file selection changes when conversation has messages
+    }
+
+    // Handle both array (new multi-select) and single fileId (backward compatibility)
+    let newSelectedIds = [];
+    if (Array.isArray(fileIdsOrId)) {
+      newSelectedIds = fileIdsOrId;
+    } else {
+      // Single file selection - toggle behavior
+      if (selectedFileIds.includes(fileIdsOrId)) {
+        newSelectedIds = selectedFileIds.filter(id => id !== fileIdsOrId);
+      } else {
+        newSelectedIds = [...selectedFileIds, fileIdsOrId];
+      }
+    }
+    
+    setSelectedFileIds(newSelectedIds);
+    // Clear active conversation when changing file selection
     setActiveConversationId(null);
     
-    // Auto-create a new conversation with suggestions for the selected file
-    try {
-      const activeFile = uploadedFiles.find(file => file.name === fileId);
-      if (!activeFile) {
-        console.error('Active file not found');
-        return;
-      }
-
-      // Get authentication headers (handles local development bypass)
-      const authHeaders = await getAuthHeaders();
-
-      console.log('Auto-creating conversation with suggestions for selected file:', activeFile.name);
-
-      // Create new conversation with suggestions
-      const response = await fetch('/api/conversations', {
-        method: 'POST',
-        headers: authHeaders,
-        body: JSON.stringify({
-          fileName: activeFile.name,
-          title: `Conversation about ${activeFile.name}`
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.conversation) {
-          console.log('Auto-created conversation with suggestions:', data.conversation);
-          console.log('🔍 Backend Response Analysis:');
-          console.log('  - Suggestions received:', data.conversation.suggestions);
-          console.log('  - Suggestions count:', data.conversation.suggestions?.length);
-          console.log('  - Are these GPT-generated or fallbacks?', 
-            data.conversation.suggestions?.[0]?.includes('main themes') ? 'FALLBACKS (generic)' : 'LIKELY GPT-GENERATED (specific)');
-          
-          // Select the new conversation
-          setActiveConversationId(data.conversation.id);
-          // Add to conversations list
-          setConversations(prev => [data.conversation, ...prev]);
+    // Auto-create a new conversation with suggestions for the selected files
+    if (newSelectedIds.length > 0) {
+      try {
+        const selectedFiles = uploadedFiles.filter(file => newSelectedIds.includes(file.name));
+        if (selectedFiles.length === 0) {
+          console.error('Selected files not found');
+          return;
         }
-      } else {
-        const errorData = await response.text();
-        console.error('Failed to auto-create conversation:', response.statusText, errorData);
+
+        // Get authentication headers (handles local development bypass)
+        const authHeaders = await getAuthHeaders();
+
+        console.log('Auto-creating conversation with suggestions for selected files:', selectedFiles.map(f => f.name));
+
+        // Create new conversation with suggestions
+        const requestBody = selectedFiles.length === 1 
+          ? { fileName: selectedFiles[0].name, title: `Conversation about ${selectedFiles[0].name}` }
+          : { fileNames: selectedFiles.map(f => f.name), title: `Conversation about ${selectedFiles.length} files` };
+
+        const response = await fetch('/api/conversations', {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify(requestBody)
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.conversation) {
+            console.log('Auto-created conversation with suggestions:', data.conversation);
+            console.log('🔍 Backend Response Analysis:');
+            console.log('  - Suggestions received:', data.conversation.suggestions);
+            console.log('  - Suggestions count:', data.conversation.suggestions?.length);
+            console.log('  - Are these GPT-generated or fallbacks?', 
+              data.conversation.suggestions?.[0]?.includes('main themes') ? 'FALLBACKS (generic)' : 'LIKELY GPT-GENERATED (specific)');
+            
+            // Select the new conversation
+            setActiveConversationId(data.conversation.id);
+            // Add to conversations list
+            setConversations(prev => [data.conversation, ...prev]);
+          }
+        } else {
+          const errorData = await response.text();
+          console.error('Failed to auto-create conversation:', response.statusText, errorData);
+        }
+      } catch (error) {
+        console.error('Error auto-creating conversation:', error);
       }
-    } catch (error) {
-      console.error('Error auto-creating conversation:', error);
     }
   };
 
@@ -221,12 +244,14 @@ function App() {
     
     setActiveConversationId(conversation.id);
     
-    // Auto-load the associated file if it exists
-    const associatedFile = uploadedFiles.find(file => file.name === conversation.fileName);
-    if (associatedFile) {
-      setActiveFileId(associatedFile.name);
+    // Auto-load the associated file(s) if they exist
+    const conversationFileNames = conversation.fileNames || [conversation.fileName];
+    const associatedFiles = uploadedFiles.filter(file => conversationFileNames.includes(file.name));
+    
+    if (associatedFiles.length > 0) {
+      setSelectedFileIds(associatedFiles.map(file => file.name));
     } else {
-      console.warn(`File ${conversation.fileName} not found for conversation ${conversation.id}`);
+      console.warn(`Files ${conversationFileNames.join(', ')} not found for conversation ${conversation.id}`);
     }
   };
 
@@ -346,8 +371,8 @@ function App() {
     }
   };
 
-  // Get the currently active file data
-  const activeFileData = uploadedFiles.find(file => file.name === activeFileId) || null;
+  // Get the currently selected files data
+  const selectedFilesData = uploadedFiles.filter(file => selectedFileIds.includes(file.name));
 
   // Show loading spinner while checking authentication
   if (isLoading) {
@@ -418,7 +443,7 @@ function App() {
             <SourcesPanel 
               onFileUploaded={handleFileUploaded}
               uploadedFiles={uploadedFiles}
-              activeFileId={activeFileId}
+              selectedFileIds={selectedFileIds}
               storageQuota={storageQuota}
               onFileSelected={handleFileSelected}
               onFileDownload={handleFileDownload}
@@ -426,6 +451,7 @@ function App() {
               isCollapsed={sourcesCollapsed}
               onToggleCollapse={setSourcesCollapsed}
               filesLoading={filesLoading}
+              isFilesLocked={activeConversationId && conversations.find(conv => conv.id === activeConversationId)?.messageCount > 0}
             />
           </div>
           
@@ -433,7 +459,7 @@ function App() {
           <div className={`h-full overflow-y-auto min-h-0 ${conversationsCollapsed ? 'lg:col-span-1' : 'lg:col-span-2'} transition-all duration-300`}>
             <ConversationsPanel 
               uploadedFiles={uploadedFiles}
-              activeFileId={activeFileId}
+              selectedFileIds={selectedFileIds}
               conversations={conversations}
               activeConversationId={activeConversationId}
               onConversationSelected={handleConversationSelected}
@@ -455,7 +481,7 @@ function App() {
             'lg:col-span-8'
           } transition-all duration-300`}>
             <ChatBox 
-              fileData={activeFileData} 
+              fileData={selectedFilesData} 
               className="h-full"
               conversationId={activeConversationId}
               onConversationCreated={handleConversationCreated}
