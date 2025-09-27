@@ -18,6 +18,7 @@ const SourcesPanel = ({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
   const fileInputRef = useRef(null);
 
 
@@ -88,52 +89,6 @@ const SourcesPanel = ({
     }
   };
 
-  // Get file type icon SVG
-  const getFileTypeIcon = (fileType) => {
-    switch (fileType) {
-      case 'csv':
-        return (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-            <path d="M9,13H11V15H9V13M9,16H11V18H9V16M12,13H14V15H12V13M12,16H14V18H12V16M15,13H17V15H15V13M15,16H17V18H15V16Z" />
-          </svg>
-        );
-      case 'pdf':
-        return (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-            <path d="M9,13H11V15H9V13M9,16H11V18H9V16M12,13H14V15H12V13M15,13H17V15H15V13Z" />
-          </svg>
-        );
-      case 'docx':
-        return (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-            <path d="M8,12H16V13.5H8V12M8,14.5H16V16H8V14.5M8,17H13V18.5H8V17Z" />
-          </svg>
-        );
-      case 'xlsx':
-        return (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-            <path d="M8,12H10V14H8V12M10,12H12V14H10V12M12,12H14V14H12V12M14,12H16V14H14V12M8,14H10V16H8V14M10,14H12V16H10V14M12,14H14V16H12V14M14,14H16V16H14V14M8,16H10V18H8V16M10,16H12V18H10V16M12,16H14V18H12V16M14,16H16V18H14V16Z" />
-          </svg>
-        );
-      case 'txt':
-        return (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-            <path d="M8,12H16V13H8V12M8,14H16V15H8V14M8,16H13V17H8V16Z" />
-          </svg>
-        );
-      default:
-        return (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-          </svg>
-        );
-    }
-  };
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -391,7 +346,6 @@ const SourcesPanel = ({
             </div>
           ) : uploadedFiles.length > 0 ? (
             <div className="space-y-2">
-              <h4 className="body-small font-medium text-text-secondary">Files ({uploadedFiles.length}/5)</h4>
               <div className="space-y-1 max-h-full overflow-y-auto mobile-scrollbar">
                 {uploadedFiles.map((file) => (
                   <div
@@ -404,22 +358,6 @@ const SourcesPanel = ({
                     onClick={() => onFileSelected(file.fileId)}
                   >
                     <div className="flex items-start space-x-2">
-                      {(() => {
-                        const fileType = getFileType(file.name);
-                        const styles = getFileTypeStyles(fileType);
-                        return (
-                          <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${
-                            activeFileId === file.fileId ? 'bg-primary-100' : styles.bgColor
-                          }`}>
-                            <div className={`${
-                              activeFileId === file.fileId ? 'text-primary-600' : styles.textColor
-                            }`}>
-                              {getFileTypeIcon(fileType)}
-                            </div>
-                          </div>
-                        );
-                      })()}
-                      
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <p className="body-small font-medium text-text-primary truncate">
@@ -447,31 +385,59 @@ const SourcesPanel = ({
                         </div>
                       </div>
                       
-                      <div className="flex space-x-1">
+                      <div className="relative">
+                        {/* Three dots menu button */}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onFileDownload(file);
+                            setOpenMenuId(openMenuId === file.fileId ? null : file.fileId);
                           }}
-                          className="p-1 rounded text-gray-400 hover:text-secondary-600 hover:bg-secondary-50 transition-colors"
-                          title="Download"
+                          className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                          title="More options"
                         >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                           </svg>
                         </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onFileDeleted(file.fileId);
-                          }}
-                          className="p-1 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                          title="Delete"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
+
+                        {/* Dropdown menu */}
+                        {openMenuId === file.fileId && (
+                          <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-card border border-gray-200 warm-shadow z-10">
+                            <div className="py-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onFileDownload(file);
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full px-3 py-2 text-left body-small text-text-primary hover:bg-gray-50 flex items-center space-x-2"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span>Download</span>
+                              </button>
+                              
+                              <hr className="my-1 border-gray-200" />
+                              
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (window.confirm(`Are you sure you want to delete ${file.name}?`)) {
+                                    onFileDeleted(file.fileId);
+                                  }
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full px-3 py-2 text-left body-small text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                <span>Delete</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -491,6 +457,13 @@ const SourcesPanel = ({
           ) : null}
         </div>
 
+        {/* Click outside to close menu */}
+        {openMenuId && (
+          <div
+            className="fixed inset-0 z-0"
+            onClick={() => setOpenMenuId(null)}
+          />
+        )}
 
         {/* Storage Quota */}
         <div className="pt-3 border-t border-gray-200">

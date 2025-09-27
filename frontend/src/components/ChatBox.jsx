@@ -513,22 +513,6 @@ const ChatBox = ({
                   ))}
                 </div>
                 
-                {/* Enhanced help text */}
-                <div className="mt-6 p-4 bg-secondary-25 border border-secondary-200 rounded-lg">
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 mt-0.5">
-                      <svg className="w-4 h-4 text-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div className="text-left">
-                      <p className="body-small text-secondary-700 leading-relaxed">
-                        <span className="font-medium">Tip:</span> These questions are tailored to your document's content. 
-                        Click one to get started, or type your own question in the input below.
-                      </p>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

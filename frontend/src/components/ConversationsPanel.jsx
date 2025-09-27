@@ -120,7 +120,7 @@ const ConversationsPanel = ({
 
       {!isCollapsed && (
         <CardContent className="flex-1 flex flex-col min-h-0">
-          {/* New Chat Button - Full Width */}
+          {/* New Conversation Button - Full Width */}
           {activeFileId && (
             <button
               onClick={handleCreateNewConversation}
@@ -128,7 +128,7 @@ const ConversationsPanel = ({
               className="w-full bg-primary-600 text-white px-4 py-2.5 rounded-button body-small font-medium hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors warm-shadow mb-4"
               title="Start new conversation with this file"
             >
-              {creatingConversation ? 'Creating...' : 'new chat'}
+              {creatingConversation ? 'Creating...' : 'new conversation'}
             </button>
           )}
 
@@ -160,19 +160,7 @@ const ConversationsPanel = ({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                   </div>
-                  <h3 className="heading-5 text-text-secondary mb-2">No Conversations</h3>
-                  <p className="body-small text-text-muted">
-                    {activeFileId ? 'No conversations for this file yet.' : 'No conversations found.'}
-                  </p>
-                  {activeFileId && (
-                    <button
-                      onClick={handleCreateNewConversation}
-                      disabled={creatingConversation}
-                      className="mt-3 px-3 py-2 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors disabled:opacity-50"
-                    >
-                      Start First Conversation
-                    </button>
-                  )}
+                  <h3 className="heading-5 text-text-secondary mb-2">no conversations</h3>
                 </div>
               )}
             </div>

@@ -47,19 +47,6 @@ const ConversationItem = ({
     }
   };
 
-  const getLastMessagePreview = () => {
-    if (!conversation.messages || conversation.messages.length === 0) {
-      return 'No messages yet';
-    }
-    
-    const lastMessage = conversation.messages[conversation.messages.length - 1];
-    const preview = lastMessage.content.length > 60 
-      ? `${lastMessage.content.substring(0, 60)}...` 
-      : lastMessage.content;
-    
-    return `${lastMessage.role === 'user' ? 'You: ' : 'AI: '}${preview}`;
-  };
-
   const getStatusIcon = () => {
     if (!hasValidFile) {
       return (
@@ -117,13 +104,6 @@ const ConversationItem = ({
               </p>
             )}
             
-            {/* Last message preview */}
-            <p className={`body-xs mt-1 line-clamp-2 ${
-              hasValidFile ? 'text-text-muted' : 'text-gray-400'
-            }`}>
-              {getLastMessagePreview()}
-            </p>
-            
             {/* Metadata */}
             <div className="flex items-center justify-between mt-2">
               <div className="flex items-center space-x-2">
@@ -140,12 +120,6 @@ const ConversationItem = ({
               </div>
               
               <div className="flex items-center space-x-1">
-                {/* Message count */}
-                <span className={`body-xs ${
-                  hasValidFile ? 'text-text-muted' : 'text-gray-400'
-                }`}>
-                  {conversation.messageCount || 0} msgs
-                </span>
                 
                 {/* Context menu button */}
                 {hasValidFile && (
