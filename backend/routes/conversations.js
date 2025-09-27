@@ -27,6 +27,80 @@ const openai = new OpenAI({
 router.use(requireAuth);
 
 /**
+ * Parse multiple files and combine their content
+ * @param {Array<string>} fileNames - Array of file names
+ * @param {string} userId - User ID for file access
+ * @returns {Promise<string>} - Combined formatted content for GPT prompt
+ */
+async function parseMultipleFiles(fileNames, userId) {
+  if (!Array.isArray(fileNames) || fileNames.length === 0) {
+    throw new Error('fileNames must be a non-empty array');
+  }
+
+  // Validate file count limit
+  if (fileNames.length > 5) {
+    throw new Error('Maximum of 5 files can be processed at once');
+  }
+
+  const fileContents = [];
+  
+  for (const fileName of fileNames) {
+    try {
+      // Get blob content and parse file
+      const blobBuffer = await getBlobContent(userId, fileName);
+      const content = await parseFileContent(blobBuffer, fileName);
+      
+      // Get file type for formatting
+      const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.') + 1);
+      
+      fileContents.push({
+        fileName,
+        content,
+        type: fileExtension.toUpperCase()
+      });
+    } catch (error) {
+      console.error(`Error processing file "${fileName}":`, error.message);
+      throw new Error(`Failed to process file "${fileName}": ${error.message}`);
+    }
+  }
+  
+  return formatMultiFilePrompt(fileContents);
+}
+
+/**
+ * Format multiple file contents into a single prompt
+ * @param {Array<Object>} filesData - Array of {fileName, content, type}
+ * @returns {string} - Formatted multi-file prompt
+ */
+function formatMultiFilePrompt(filesData) {
+  if (!Array.isArray(filesData) || filesData.length === 0) {
+    throw new Error('filesData must be a non-empty array');
+  }
+
+  // If only one file, return single file format for consistency
+  if (filesData.length === 1) {
+    return filesData[0].content;
+  }
+
+  let prompt = `You are analyzing ${filesData.length} documents. Here are the files:\n\n`;
+  
+  filesData.forEach((file, index) => {
+    prompt += `=== FILE ${index + 1}: ${file.fileName} ===\n`;
+    prompt += `File Type: ${file.type}\n\n`;
+    prompt += file.content;
+    prompt += `\n\n`;
+  });
+  
+  prompt += `When answering questions:
+- Specify which file(s) contain the relevant information
+- Cross-reference data between files when applicable
+- If data spans multiple files, provide a comprehensive answer
+- Use the format "From [filename]:" when citing specific file sources\n\n`;
+  
+  return prompt;
+}
+
+/**
  * Parse file content based on file extension
  * @param {Buffer} buffer - File buffer
  * @param {string} fileName - File name with extension
@@ -232,34 +306,62 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const user = req.user;
-    const { fileName, title } = req.body;
+    const { fileName, fileNames, title } = req.body;
 
-    if (!fileName) {
+    // Support both single file (backward compatibility) and multiple files
+    let targetFileNames = [];
+    if (fileNames && Array.isArray(fileNames)) {
+      targetFileNames = fileNames;
+    } else if (fileName) {
+      targetFileNames = [fileName];
+    }
+
+    if (targetFileNames.length === 0) {
       return res.status(400).json({
         success: false,
-        error: 'fileName is required',
-        message: 'Please specify the file name for this conversation'
+        error: 'fileName or fileNames is required',
+        message: 'Please specify the file name(s) for this conversation'
       });
     }
 
-    // Generate suggestions by analyzing the file content
+    // Validate file count limit
+    if (targetFileNames.length > 5) {
+      return res.status(400).json({
+        success: false,
+        error: 'Too many files',
+        message: 'Maximum of 5 files can be processed at once'
+      });
+    }
+
+    // Generate suggestions by analyzing the file content(s)
     let suggestions = [];
     try {
-      // Get file content from blob storage
-      const fileBuffer = await getBlobContent(user.id, fileName);
-      const fileContent = await parseFileContent(fileBuffer, fileName);
-      
-      // Generate suggestions using GPT
-      suggestions = await generateSuggestions(fileName, fileContent);
+      if (targetFileNames.length === 1) {
+        // Single file suggestions (existing logic)
+        const fileBuffer = await getBlobContent(user.id, targetFileNames[0]);
+        const fileContent = await parseFileContent(fileBuffer, targetFileNames[0]);
+        suggestions = await generateSuggestions(targetFileNames[0], fileContent);
+      } else {
+        // Multi-file suggestions - use combined content
+        const combinedContent = await parseMultipleFiles(targetFileNames, user.id);
+        const primaryFileName = targetFileNames[0]; // Use first file as primary for suggestion context
+        suggestions = await generateSuggestions(primaryFileName, combinedContent);
+      }
     } catch (suggestionError) {
-      console.warn(`Failed to generate suggestions for ${fileName}:`, suggestionError.message);
+      console.warn(`Failed to generate suggestions for files [${targetFileNames.join(', ')}]:`, suggestionError.message);
       // Continue with conversation creation without suggestions
-      const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.') + 1);
-      suggestions = getFallbackSuggestions(fileExtension, fileName);
+      const fileExtension = targetFileNames[0].toLowerCase().substring(targetFileNames[0].lastIndexOf('.') + 1);
+      suggestions = getFallbackSuggestions(fileExtension, targetFileNames[0]);
     }
 
     // Create conversation with suggestions
-    const conversation = await cosmosService.createConversation(user.id, fileName, title, suggestions);
+    const conversation = await cosmosService.createConversation(
+      user.id, 
+      targetFileNames[0], // Primary file for backward compatibility
+      title, 
+      suggestions, 
+      targetFileNames // All files
+    );
 
     res.status(201).json({
       success: true,

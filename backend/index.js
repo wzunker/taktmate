@@ -212,36 +212,140 @@ async function parseFileContent(buffer, fileName) {
   }
 }
 
+/**
+ * Parse multiple files and combine their content
+ * @param {Array<string>} fileNames - Array of file names
+ * @param {string} userId - User ID for file access
+ * @returns {Promise<string>} - Combined formatted content for GPT prompt
+ */
+async function parseMultipleFiles(fileNames, userId) {
+  if (!Array.isArray(fileNames) || fileNames.length === 0) {
+    throw new Error('fileNames must be a non-empty array');
+  }
+
+  // Validate file count limit
+  if (fileNames.length > 5) {
+    throw new Error('Maximum of 5 files can be processed at once');
+  }
+
+  const fileContents = [];
+  
+  for (const fileName of fileNames) {
+    try {
+      // Get blob content and parse file
+      const blobBuffer = await getBlobContent(userId, fileName);
+      const content = await parseFileContent(blobBuffer, fileName);
+      
+      // Get file type for formatting
+      const fileExtension = fileName.toLowerCase().substring(fileName.lastIndexOf('.') + 1);
+      
+      fileContents.push({
+        fileName,
+        content,
+        type: fileExtension.toUpperCase()
+      });
+    } catch (error) {
+      console.error(`Error processing file "${fileName}":`, error.message);
+      throw new Error(`Failed to process file "${fileName}": ${error.message}`);
+    }
+  }
+  
+  return formatMultiFilePrompt(fileContents);
+}
+
+/**
+ * Format multiple file contents into a single prompt
+ * @param {Array<Object>} filesData - Array of {fileName, content, type}
+ * @returns {string} - Formatted multi-file prompt
+ */
+function formatMultiFilePrompt(filesData) {
+  if (!Array.isArray(filesData) || filesData.length === 0) {
+    throw new Error('filesData must be a non-empty array');
+  }
+
+  // If only one file, return single file format for consistency
+  if (filesData.length === 1) {
+    return filesData[0].content;
+  }
+
+  let prompt = `You are analyzing ${filesData.length} documents. Here are the files:\n\n`;
+  
+  filesData.forEach((file, index) => {
+    prompt += `=== FILE ${index + 1}: ${file.fileName} ===\n`;
+    prompt += `File Type: ${file.type}\n\n`;
+    prompt += file.content;
+    prompt += `\n\n`;
+  });
+  
+  prompt += `When answering questions:
+- Specify which file(s) contain the relevant information
+- Cross-reference data between files when applicable
+- If data spans multiple files, provide a comprehensive answer
+- Use the format "From [filename]:" when citing specific file sources\n\n`;
+  
+  return prompt;
+}
+
 // Enhanced chat endpoint with conversation support
 app.post('/api/chat', requireAuth, async (req, res) => {
   try {
     const user = req.user; // From SWA authentication middleware
     
-    const { fileName, message, conversationId } = req.body;
+    const { fileName, fileNames, message, conversationId } = req.body;
 
-    if (!fileName || !message) {
+    // Support both single file (backward compatibility) and multiple files
+    let targetFileNames = [];
+    if (fileNames && Array.isArray(fileNames)) {
+      targetFileNames = fileNames;
+    } else if (fileName) {
+      targetFileNames = [fileName];
+    }
+
+    if (targetFileNames.length === 0 || !message) {
       return res.status(400).json({ 
-        error: 'fileName and message are required',
-        message: 'Please provide the name of the file you want to chat with'
+        error: 'fileNames (or fileName) and message are required',
+        message: 'Please provide the name(s) of the file(s) you want to chat with'
       });
     }
 
-    console.log(`Chat request from user ${user.id} for file: ${fileName}`);
+    // Validate file count limit
+    if (targetFileNames.length > 5) {
+      return res.status(400).json({
+        error: 'Too many files',
+        message: 'Maximum of 5 files can be processed at once'
+      });
+    }
+
+    console.log(`Chat request from user ${user.id} for ${targetFileNames.length} file(s): ${targetFileNames.join(', ')}`);
     
-    // Verify user has access to this file
+    // Verify user has access to all files
     const userFiles = await listUserFiles(user.id);
-    const fileExists = userFiles.find(file => file.name === fileName);
+    const missingFiles = [];
     
-    if (!fileExists) {
+    for (const targetFileName of targetFileNames) {
+      const fileExists = userFiles.find(file => file.name === targetFileName);
+      if (!fileExists) {
+        missingFiles.push(targetFileName);
+      }
+    }
+    
+    if (missingFiles.length > 0) {
       return res.status(404).json({ 
-        error: 'File not found', 
-        message: `File '${fileName}' does not exist in your storage. Please upload the file first using the file upload feature.` 
+        error: 'File(s) not found', 
+        message: `The following file(s) do not exist in your storage: ${missingFiles.join(', ')}. Please upload them first using the file upload feature.` 
       });
     }
 
-    // Get blob content and parse file based on type
-    const blobBuffer = await getBlobContent(user.id, fileName);
-    const fileContent = await parseFileContent(blobBuffer, fileName);
+    // Parse files (single or multiple)
+    let fileContent;
+    if (targetFileNames.length === 1) {
+      // Single file processing (backward compatibility)
+      const blobBuffer = await getBlobContent(user.id, targetFileNames[0]);
+      fileContent = await parseFileContent(blobBuffer, targetFileNames[0]);
+    } else {
+      // Multiple file processing
+      fileContent = await parseMultipleFiles(targetFileNames, user.id);
+    }
 
     // Handle conversation context
     let conversation = null;
@@ -252,12 +356,18 @@ app.post('/api/chat', requireAuth, async (req, res) => {
         // Get existing conversation
         conversation = await cosmosService.getConversation(conversationId, user.id);
         
-        // Verify the conversation is for the same file
-        if (conversation.fileName !== fileName) {
+        // Verify the conversation is for the same file(s)
+        const conversationFileNames = conversation.fileNames || [conversation.fileName];
+        const filesMatch = conversationFileNames.length === targetFileNames.length &&
+                          conversationFileNames.every(name => targetFileNames.includes(name));
+        
+        if (!filesMatch) {
+          const conversationFiles = conversationFileNames.join(', ');
+          const requestFiles = targetFileNames.join(', ');
           return res.status(400).json({
             success: false,
             error: 'File mismatch',
-            message: `Conversation is associated with ${conversation.fileName}, not ${fileName}`
+            message: `Conversation is associated with [${conversationFiles}], not [${requestFiles}]`
           });
         }
         
@@ -271,8 +381,14 @@ app.post('/api/chat', requireAuth, async (req, res) => {
     } else {
       // Auto-create a new conversation if none provided
       try {
-        const title = cosmosService.generateTitle([{ role: 'user', content: message }], fileName);
-        conversation = await cosmosService.createConversation(user.id, fileName, title);
+        const title = cosmosService.generateTitle([{ role: 'user', content: message }], targetFileNames[0]);
+        // For backward compatibility, use fileName for single files, fileNames for multiple
+        if (targetFileNames.length === 1) {
+          conversation = await cosmosService.createConversation(user.id, targetFileNames[0], title);
+        } else {
+          // This will need cosmos service update, but for now use first file as primary
+          conversation = await cosmosService.createConversation(user.id, targetFileNames[0], title, [], targetFileNames);
+        }
         console.log(`Auto-created conversation: ${conversation.id}`);
       } catch (error) {
         console.warn('Failed to auto-create conversation:', error.message);

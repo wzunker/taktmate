@@ -96,7 +96,7 @@ class CosmosService {
     }
   }
 
-  async createConversation(userId, fileName, title = null, suggestions = []) {
+  async createConversation(userId, fileName, title = null, suggestions = [], fileNames = null) {
     try {
       if (!this.isInitialized) {
         await this.initialize();
@@ -105,11 +105,18 @@ class CosmosService {
       const conversationId = `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date().toISOString();
       
+      // Support both single file (backward compatibility) and multiple files
+      const targetFileNames = fileNames || [fileName];
+      const displayTitle = title || (targetFileNames.length === 1 
+        ? `Conversation about ${targetFileNames[0]}`
+        : `Conversation about ${targetFileNames.length} files`);
+      
       const conversation = {
         id: conversationId,
         userId,
-        title: title || `Conversation about ${fileName}`,
-        fileName,
+        title: displayTitle,
+        fileName, // Keep for backward compatibility
+        fileNames: targetFileNames, // New field for multiple files
         createdAt: now,
         updatedAt: now,
         status: CONVERSATION_CONFIG.STATUS.ACTIVE,
