@@ -402,14 +402,14 @@ function App() {
     <div className="full-height-layout bg-background-cream">
       {/* Header */}
       <header className="bg-gradient-to-r from-background-warm-white to-background-cream shadow-sm border-b border-gray-200 z-50 backdrop-blur-sm bg-opacity-95 sticky-header">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-0 sm:py-1">
           <div className="flex items-center justify-between">
                 <div className="flex items-center min-w-0 flex-1">
                   {/* Main Takt Logo */}
                   <img 
                     src="/logo-takt.png" 
                     alt="Takt" 
-                    className="h-18 sm:h-20 w-auto"
+                    className="h-14 sm:h-16 w-auto"
                   />
                 </div>
             

@@ -159,6 +159,29 @@ code {
   .scrollbar-hidden::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
   }
+  
+  /* Custom scrollbar for sources panel - minimal grey bar only */
+  .scrollbar-minimal {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent; /* grey thumb, transparent track */
+  }
+  
+  .scrollbar-minimal::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .scrollbar-minimal::-webkit-scrollbar-track {
+    background: transparent; /* No white background */
+  }
+  
+  .scrollbar-minimal::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5); /* Grey scrollbar */
+    border-radius: 4px;
+  }
+  
+  .scrollbar-minimal::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.7); /* Darker grey on hover */
+  }
 }
 
 /* Prevent zoom on input focus on iOS */

@@ -551,7 +551,7 @@ const SourcesPanel = ({
           </div>
         </CardContent>
       ) : (
-        <CardContent className="flex-1 overflow-y-auto space-y-4 min-h-0">
+        <CardContent className="flex-1 overflow-y-auto scrollbar-minimal space-y-4 min-h-0 -mr-6 pr-6">
         {/* Upload Files Button - Full Width */}
         <button
           type="button"
