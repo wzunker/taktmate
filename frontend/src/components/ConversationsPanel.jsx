@@ -43,25 +43,33 @@ const ConversationsPanel = ({
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader
-        title={!isCollapsed ? <span className="text-secondary-600 font-semibold lowercase">conversations</span> : null}
-        action={
+      {/* Custom compact header with divider */}
+      <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-200 -mx-6 px-6">
+        <div className="flex-1 min-w-0">
+          {!isCollapsed && (
+            <h3 className="heading-4"><span className="text-secondary-600 font-semibold lowercase">conversations</span></h3>
+          )}
+        </div>
+        <div className={`flex-shrink-0 ${isCollapsed ? 'w-full flex justify-center' : 'ml-4'}`}>
           <button
             onClick={() => onToggleCollapse(!isCollapsed)}
-            className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+            className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors flex items-center justify-center"
             title={isCollapsed ? "Expand conversations" : "Collapse conversations"}
           >
             <svg 
-              className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`}
+              className="w-4 h-4"
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              {/* Rounded square box */}
+              <rect x="1" y="1" width="22" height="22" rx="2" strokeWidth="2" />
+              {/* Vertical divider line at 1/3 from left */}
+              <line x1="9.33" y1="1" x2="9.33" y2="23" strokeWidth="2" />
             </svg>
           </button>
-        }
-      />
+        </div>
+      </div>
 
       {!isCollapsed && (
         <CardContent className="flex-1 flex flex-col min-h-0">

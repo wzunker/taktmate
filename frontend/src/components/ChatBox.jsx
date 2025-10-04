@@ -343,9 +343,13 @@ const ChatBox = ({
   if ((!fileData || (Array.isArray(fileData) && fileData.length === 0) || isNewConversationMode) && !conversationId) {
     return (
       <Card variant="elevated" className={`flex flex-col h-full ${className}`}>
-        <CardHeader
-          title={<span className="text-secondary-600 font-semibold lowercase">taktmate</span>}
-        />
+        {/* Custom compact header with divider */}
+        <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-200 -mx-6 px-6">
+          <div className="flex-1 min-w-0">
+            <h3 className="heading-4"><span className="text-secondary-600 font-semibold lowercase">taktmate</span></h3>
+          </div>
+        </div>
+        
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center max-w-sm">
             <div className="w-16 h-16 mx-auto mb-4 bg-primary-100 rounded-full flex items-center justify-center">
@@ -533,10 +537,11 @@ const ChatBox = ({
 
   return (
     <Card variant="elevated" padding="sm" className={`flex flex-col h-full ${className}`}>
-            <CardHeader
-                title={
+      {/* Custom compact header with divider */}
+      <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-200 -mx-4 px-4">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-2">
-            <span className="text-secondary-600 font-semibold lowercase">taktmate</span>
+            <h3 className="heading-4"><span className="text-secondary-600 font-semibold lowercase">taktmate</span></h3>
             {fileData && (
               <span className="text-xs text-text-muted bg-gray-100 px-2 py-1 rounded-full">
                 {getSelectedFilesDisplay()}
@@ -548,19 +553,18 @@ const ChatBox = ({
               </span>
             )}
           </div>
-        }
-        action={
-          messageCount > 0 && (
+        </div>
+        <div className="flex-shrink-0 ml-4">
+          {messageCount > 0 && (
             <span className="body-xs text-text-muted">
               {currentConversationId ? 
                 `${messageCount} message${messageCount !== 1 ? 's' : ''}` :
                 `${messageCount - 1} message${messageCount - 1 !== 1 ? 's' : ''}`
               }
             </span>
-          )
-        }
-        className="mb-4"
-      />
+          )}
+        </div>
+      </div>
 
       {/* Messages */}
       <CardContent className="flex-1 overflow-y-auto space-y-4 sm:space-y-6 px-2 sm:px-4 min-h-0">

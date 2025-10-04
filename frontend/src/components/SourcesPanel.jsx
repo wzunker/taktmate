@@ -43,6 +43,75 @@ const SourcesPanel = ({
     }
   };
 
+  // Get file type icon
+  const getFileTypeIcon = (fileType) => {
+    switch (fileType) {
+      case 'csv':
+        return (
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="3" width="18" height="18" rx="2" fill="#FFA51F"/>
+            {/* 2x2 white cells */}
+            <rect x="5" y="5" width="6" height="2.5" rx="0.5" className="fill-white"/>
+            <rect x="13" y="5" width="6" height="2.5" rx="0.5" className="fill-white"/>
+            <rect x="5" y="9" width="6" height="2.5" rx="0.5" className="fill-white"/>
+            <rect x="13" y="9" width="6" height="2.5" rx="0.5" className="fill-white"/>
+            <text x="12" y="18.5" fontSize="7" fontWeight="bold" textAnchor="middle" className="fill-white">CSV</text>
+          </svg>
+        );
+      case 'pdf':
+        return (
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" className="fill-red-100 stroke-red-600" strokeWidth="1.5"/>
+            <path d="M14 2v6h6" className="stroke-red-600" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <text x="12" y="16" fontSize="7" fontWeight="bold" textAnchor="middle" className="fill-red-600">PDF</text>
+          </svg>
+        );
+      case 'docx':
+        return (
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" className="fill-indigo-100 stroke-indigo-600" strokeWidth="1.5"/>
+            <path d="M14 2v6h6" className="stroke-indigo-600" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <text x="12" y="17" fontSize="9" fontWeight="bold" textAnchor="middle" className="fill-indigo-600">W</text>
+          </svg>
+        );
+      case 'xlsx':
+        return (
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="3" width="18" height="18" rx="2" className="fill-green-600"/>
+            {/* 2x2 white cells */}
+            <rect x="5" y="5" width="6" height="2.5" rx="0.5" className="fill-white"/>
+            <rect x="13" y="5" width="6" height="2.5" rx="0.5" className="fill-white"/>
+            <rect x="5" y="9" width="6" height="2.5" rx="0.5" className="fill-white"/>
+            <rect x="13" y="9" width="6" height="2.5" rx="0.5" className="fill-white"/>
+            <text x="12" y="18.5" fontSize="7" fontWeight="bold" textAnchor="middle" className="fill-white">XLS</text>
+          </svg>
+        );
+      case 'txt':
+        return (
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" className="fill-gray-100 stroke-gray-600" strokeWidth="1.5"/>
+            <path d="M14 2v6h6" className="stroke-gray-600" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <text x="12" y="16" fontSize="8" fontWeight="bold" textAnchor="middle" className="fill-gray-600">txt</text>
+          </svg>
+        );
+      case 'missing':
+        return (
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" className="fill-red-100 stroke-red-600" strokeWidth="1.5"/>
+            <path d="M14 2v6h6" className="stroke-red-600" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M9 12l6 6M15 12l-6 6" className="stroke-red-600" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        );
+      default:
+        return (
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" className="fill-gray-100 stroke-gray-600" strokeWidth="1.5"/>
+            <path d="M14 2v6h6" className="stroke-gray-600" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        );
+    }
+  };
+
   // Get file type colors and styles
   const getFileTypeStyles = (fileType) => {
     switch (fileType) {
@@ -402,27 +471,86 @@ const SourcesPanel = ({
       variant="elevated" 
       className="h-full flex flex-col transition-all duration-200 hover:bg-primary-25"
     >
-      <CardHeader
-        title={!isCollapsed ? <span className="text-secondary-600 font-semibold lowercase">sources</span> : null}
-        action={
+      {/* Custom compact header with divider */}
+      <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-200 -mx-6 px-6">
+        <div className="flex-1 min-w-0">
+          {!isCollapsed && (
+            <h3 className="heading-4"><span className="text-secondary-600 font-semibold lowercase">sources</span></h3>
+          )}
+        </div>
+        <div className={`flex-shrink-0 ${isCollapsed ? 'w-full flex justify-center' : 'ml-4'}`}>
           <button
             onClick={() => onToggleCollapse(!isCollapsed)}
-            className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+            className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors flex items-center justify-center"
             title={isCollapsed ? "Expand sources" : "Collapse sources"}
           >
             <svg 
-              className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`}
+              className="w-4 h-4"
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              {/* Rounded square box */}
+              <rect x="1" y="1" width="22" height="22" rx="2" strokeWidth="2" />
+              {/* Vertical divider line at 1/3 from left */}
+              <line x1="9.33" y1="1" x2="9.33" y2="23" strokeWidth="2" />
             </svg>
           </button>
-        }
-      />
+        </div>
+      </div>
       
-      {!isCollapsed && (
+      {isCollapsed ? (
+        <CardContent className="flex-1 flex flex-col items-center space-y-3 overflow-y-auto scrollbar-hidden min-h-0 py-4">
+          {/* Compact Upload Button - Circle */}
+          <button
+            type="button"
+            onClick={() => setShowUploadFilesPopup(true)}
+            className="w-10 h-10 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors warm-shadow flex items-center justify-center flex-shrink-0"
+            style={{ borderRadius: '50%' }}
+            title="Upload files"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+
+          {/* File Type Icons */}
+          <div className="flex flex-col items-center space-y-2 w-full px-2">
+            {displayFiles.map((file) => {
+              const fileType = getFileType(file.name, file.isMissing);
+              const isSelected = selectedFileIds.includes(file.fileId);
+              
+              return (
+                <div
+                  key={file.fileId}
+                  onClick={() => {
+                    if (file.isMissing || isViewingActiveConversation || isFilesLocked) return;
+                    if (isSelected) {
+                      onFileSelected(selectedFileIds.filter(id => id !== file.fileId));
+                    } else if (selectedFileIds.length < 50) {
+                      onFileSelected([...selectedFileIds, file.fileId]);
+                    }
+                  }}
+                  className={`relative group p-2 rounded-lg transition-all ${
+                    file.isMissing || isViewingActiveConversation || isFilesLocked
+                      ? 'cursor-default opacity-75'
+                      : 'cursor-pointer hover:bg-primary-50'
+                  } ${
+                    isSelected ? 'bg-primary-100 ring-2 ring-primary-600' : ''
+                  }`}
+                  title={file.name}
+                >
+                  {getFileTypeIcon(fileType)}
+                </div>
+              );
+            })}
+            
+            {displayFiles.length === 0 && !filesLoading && (
+              <p className="body-xs text-text-muted text-center mt-4">No files</p>
+            )}
+          </div>
+        </CardContent>
+      ) : (
         <CardContent className="flex-1 overflow-y-auto space-y-4 min-h-0">
         {/* Upload Files Button - Full Width */}
         <button
@@ -502,10 +630,37 @@ const SourcesPanel = ({
           ) : displayFiles.length > 0 ? (
             <div className="space-y-2">
               {/* File Selection Header */}
-              <div className="flex items-center justify-between py-2 border-b border-gray-200">
-                <div className="flex items-center space-x-2">
-                  <span className="body-small text-text-muted">
-                    ({selectedFileIds.length}/50)
+              <div className="flex items-center justify-between py-2 border-transparent border-gray-200">
+                <div 
+                  className={`flex items-center space-x-2 ${
+                    isFilesLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                  }`}
+                  onClick={() => {
+                    if (isFilesLocked) return;
+                    const visibleFiles = displayFiles.filter(f => !f.isMissing);
+                    if (selectedFileIds.length === visibleFiles.length && visibleFiles.length > 0) {
+                      onFileSelected([]);
+                    } else {
+                      onFileSelected(visibleFiles.map(f => f.fileId));
+                    }
+                  }}
+                >
+                  {/* Select All Checkbox */}
+                  <div className={`ml-2 w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
+                    isFilesLocked
+                      ? 'border-gray-300 bg-gray-100'
+                      : displayFiles.filter(f => !f.isMissing).length > 0 && selectedFileIds.length === displayFiles.filter(f => !f.isMissing).length
+                        ? 'bg-primary-600 border-primary-600'
+                        : 'border-gray-300 hover:border-primary-400'
+                  }`}>
+                    {displayFiles.filter(f => !f.isMissing).length > 0 && selectedFileIds.length === displayFiles.filter(f => !f.isMissing).length && (
+                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="body-small text-text-primary font-medium">
+                    Select All
                   </span>
                 </div>
                 {isFilesLocked && (
@@ -525,7 +680,7 @@ const SourcesPanel = ({
                   return (
                     <div
                       key={file.fileId}
-                      className={`p-3 rounded-card border transition-all duration-200 ${
+                      className={`p-2 rounded-card border border-transparent bg-transparent hover:bg-background-warm-white transition-colors ${
                         isMissing
                           ? 'cursor-default opacity-75'
                           : isViewingActiveConversation
@@ -534,82 +689,76 @@ const SourcesPanel = ({
                               ? 'cursor-not-allowed opacity-75'
                               : !canSelect
                                 ? 'cursor-not-allowed opacity-50'
-                                : 'cursor-pointer'
-                      } ${
-                        isMissing
-                          ? 'bg-red-50 border-red-200'
-                          : isSelected
-                            ? 'bg-primary-50 border-primary-200 ring-2 ring-primary-100'
-                            : isViewingActiveConversation || isFilesLocked
-                              ? 'bg-gray-50 border-gray-200'
-                              : !canSelect
-                                ? 'bg-gray-50 border-gray-200'
-                                : 'bg-background-warm-white border-gray-200 hover:bg-primary-25 hover:border-primary-200'
+                                : ''
                       }`}
-                      onClick={() => {
-                        if (isMissing || isViewingActiveConversation || isFilesLocked) return;
-                        if (isSelected) {
-                          // Remove from selection
-                          onFileSelected(selectedFileIds.filter(id => id !== file.fileId));
-                        } else if (selectedFileIds.length < 50) {
-                          // Add to selection (max 50 files)
-                          onFileSelected([...selectedFileIds, file.fileId]);
-                        }
-                      }}
                     >
-                      <div className="flex items-start space-x-3">
-                        {/* Checkbox */}
-                        <div className="flex-shrink-0 pt-1">
-                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
-                            isMissing
-                              ? 'border-red-300 bg-red-100'
-                              : isSelected 
-                                ? isFilesLocked
-                                  ? 'bg-gray-400 border-gray-400'
-                                  : 'bg-primary-600 border-primary-600'
-                                : isFilesLocked
-                                  ? 'border-gray-300'
-                                  : !canSelect
-                                    ? 'border-gray-200 bg-gray-100'
-                                    : 'border-gray-300 hover:border-primary-400'
-                          }`}>
-                            {isSelected && (
-                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
+                      <div className="flex items-center justify-between">
+                        <div 
+                          className="flex items-center space-x-3 flex-1 min-w-0 cursor-pointer"
+                          onClick={() => {
+                            if (isMissing || isViewingActiveConversation || isFilesLocked) return;
+                            if (isSelected) {
+                              onFileSelected(selectedFileIds.filter(id => id !== file.fileId));
+                            } else if (selectedFileIds.length < 50) {
+                              onFileSelected([...selectedFileIds, file.fileId]);
+                            }
+                          }}
+                        >
+                          {/* Checkbox */}
+                          <div className="flex-shrink-0">
+                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
+                              isMissing
+                                ? 'border-red-300 bg-red-100'
+                                : isSelected 
+                                  ? isFilesLocked
+                                    ? 'bg-gray-400 border-gray-400'
+                                    : 'bg-primary-600 border-primary-600'
+                                  : isFilesLocked
+                                    ? 'border-gray-300'
+                                    : !canSelect
+                                      ? 'border-gray-200 bg-gray-100'
+                                      : 'border-gray-300 hover:border-primary-400'
+                            }`}>
+                              {isSelected && (
+                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
+                          
+                          {/* File Type Icon */}
+                          <div className="flex-shrink-0">
+                            {getFileTypeIcon(getFileType(file.name, isMissing))}
+                          </div>
+                          
+                          {/* File Name */}
+                          <div className="flex-1 min-w-0">
                             <p className={`body-small font-medium truncate ${
                               isMissing ? 'text-red-600' : 'text-text-primary'
                             }`}>
                               {file.name}
                             </p>
                           </div>
-                          <div className="flex items-center space-x-2 mt-1">
-                            {(() => {
-                              const fileType = getFileType(file.name, isMissing);
-                              const styles = getFileTypeStyles(fileType);
-                              return (
-                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${styles.labelBg} ${styles.labelText}`}>
-                                  {styles.label}
-                                </span>
-                              );
-                            })()}
-                            <span className="body-xs text-text-muted">
-                              {isMissing ? 'File Missing' : `${(file.size / 1024).toFixed(1)} KB`}
-                            </span>
-                            {isSelected && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-800">
-                                Selected
-                              </span>
-                            )}
-                          </div>
                         </div>
                         
+                        {/* Actions Menu */}
+                        {!isMissing && (
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMenuToggle(file.fileId, e);
+                              }}
+                              className="p-2 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+                              title="More options"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                              </svg>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -755,11 +904,11 @@ const SourcesPanel = ({
                   
                   {/* Upload Text */}
                   <h3 className="heading-small text-text-primary mb-2">
-                    {isDragging ? 'Drop files here' : 'Upload sources'}
+                    {isDragging ? 'drop files here' : 'upload sources'}
                   </h3>
                   
                   <p className="body-normal text-text-secondary mb-4">
-                    Drag & drop or <span className="text-primary-600 font-medium">choose file</span> to upload
+                    drag & drop or <span className="text-primary-600 font-medium">choose file</span>
                   </p>
                   
                   {/* Supported File Types */}
@@ -783,7 +932,7 @@ const SourcesPanel = ({
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
-                      <span>delete selected ({selectedForDeletion.length})</span>
+                      <span>Delete Selected ({selectedForDeletion.length})</span>
                     </button>
                   )}
                 </div>
@@ -821,31 +970,36 @@ const SourcesPanel = ({
                     .filter(file => !filesBeingDeleted.includes(file.name))
                     .map((file) => {
                       const fileType = getFileType(file.name);
-                      const styles = getFileTypeStyles(fileType);
                       const isSelectedForDeletion = selectedForDeletion.includes(file.name);
                       return (
                       <div
                         key={file.name}
-                        className="p-4 rounded-card border border-gray-200 bg-background-warm-white hover:bg-gray-50 transition-colors"
+                        className="p-2 rounded-card border border-transparent bg-transparent hover:bg-background-warm-white transition-colors"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
                             {/* Checkbox for bulk selection */}
-                            <label className="flex items-center cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={isSelectedForDeletion}
-                                onChange={() => toggleFileForDeletion(file.name)}
-                                className="w-4 h-4 border-gray-300 rounded focus:ring-primary-500 cursor-pointer accent-primary-600"
-                                style={{ accentColor: '#3E553C' }}
-                              />
-                            </label>
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${styles.labelBg} ${styles.labelText}`}>
-                              {styles.label}
-                            </span>
+                            <div className="flex-shrink-0">
+                              <div 
+                                onClick={() => toggleFileForDeletion(file.name)}
+                                className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors cursor-pointer ${
+                                  isSelectedForDeletion 
+                                    ? 'bg-primary-600 border-primary-600' 
+                                    : 'border-gray-300 hover:border-primary-400'
+                                }`}
+                              >
+                                {isSelectedForDeletion && (
+                                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex-shrink-0">
+                              {getFileTypeIcon(fileType)}
+                            </div>
                             <div className="flex-1 min-w-0">
                               <p className="body-small font-medium text-text-primary truncate">{file.name}</p>
-                              <p className="body-xs text-text-muted">{(file.size / 1024).toFixed(1)} KB</p>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
