@@ -12,7 +12,7 @@ module.exports = {
   PORT: process.env.PORT || 5000,
   
   // Application Settings
-  MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
+  MAX_FILE_SIZE: 100 * 1024 * 1024, // 100MB
   MAX_TOKENS: 500,
   TEMPERATURE: 0.1
 };

@@ -263,11 +263,11 @@ router.post('/sas', async (req, res) => {
       });
     }
 
-    if (sizeBytes > 10 * 1024 * 1024) { // 10MB individual file limit
+    if (sizeBytes > 100 * 1024 * 1024) { // 100MB individual file limit
       return res.status(413).json({
         success: false,
         error: 'File too large',
-        message: 'Individual files cannot exceed 10MB'
+        message: 'Individual files cannot exceed 100MB'
       });
     }
 

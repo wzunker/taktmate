@@ -136,9 +136,9 @@ const SourcesPanel = ({
         continue;
       }
       
-      // Validate file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        errors.push(`${file.name}: File size must be less than 5MB`);
+      // Validate file size (100MB limit)
+      if (file.size > 100 * 1024 * 1024) {
+        errors.push(`${file.name}: File size must be less than 100MB`);
         continue;
       }
       
