@@ -25,6 +25,7 @@ const SourcesPanel = ({
   const [showUploadFilesPopup, setShowUploadFilesPopup] = useState(false);
   const [selectedForDeletion, setSelectedForDeletion] = useState([]);
   const [filesBeingDeleted, setFilesBeingDeleted] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
 
@@ -237,6 +238,37 @@ const SourcesPanel = ({
     fileInputRef.current?.click();
   };
 
+  // Drag and drop handlers
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set dragging to false if we're leaving the drop zone entirely
+    if (e.currentTarget === e.target) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files);
+    }
+  };
+
   // Bulk deletion handlers
   const toggleFileForDeletion = (fileName) => {
     setSelectedForDeletion(prev => 
@@ -244,15 +276,6 @@ const SourcesPanel = ({
         ? prev.filter(f => f !== fileName)
         : [...prev, fileName]
     );
-  };
-
-  const toggleSelectAll = () => {
-    const visibleFiles = uploadedFiles.filter(file => !filesBeingDeleted.includes(file.name));
-    if (selectedForDeletion.length === visibleFiles.length) {
-      setSelectedForDeletion([]);
-    } else {
-      setSelectedForDeletion(visibleFiles.map(f => f.name));
-    }
   };
 
   const handleBulkDelete = async () => {
@@ -683,30 +706,7 @@ const SourcesPanel = ({
           <div className="bg-white rounded-card border border-gray-200 warm-shadow w-full max-w-2xl max-h-[90vh] flex flex-col">
             {/* Popup Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
-              <div className="flex items-center space-x-4">
-                <h2 className="heading-4 text-text-primary">upload files</h2>
-                {uploadedFiles.filter(file => !filesBeingDeleted.includes(file.name)).length > 0 && (
-                  <>
-                    <button
-                      onClick={toggleSelectAll}
-                      className="body-xs text-primary-600 hover:text-primary-700 font-medium transition-colors"
-                    >
-                      {selectedForDeletion.length === uploadedFiles.filter(file => !filesBeingDeleted.includes(file.name)).length ? 'Deselect All' : 'Select All'}
-                    </button>
-                    {selectedForDeletion.length > 0 && (
-                      <button
-                        onClick={handleBulkDelete}
-                        className="body-xs text-red-600 hover:text-red-700 font-medium transition-colors flex items-center space-x-1"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        <span>delete selected ({selectedForDeletion.length})</span>
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
+              <h2 className="heading-4 text-text-primary">upload files</h2>
               <button
                 onClick={() => setShowUploadFilesPopup(false)}
                 className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
@@ -717,7 +717,80 @@ const SourcesPanel = ({
               </button>
             </div>
 
-            {/* Popup Content */}
+            {/* Drag and Drop Zone - Pinned */}
+            <div className="flex-shrink-0 p-6 pb-4 border-b border-gray-200">
+              <div
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={openFileDialog}
+                className={`border-2 border-dashed rounded-lg p-8 transition-all cursor-pointer ${
+                  isDragging 
+                    ? 'border-primary-500 bg-primary-50' 
+                    : 'border-gray-300 bg-gray-50 hover:border-primary-400 hover:bg-primary-25'
+                }`}
+              >
+                <div className="flex flex-col items-center justify-center text-center">
+                  {/* Upload Icon */}
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${
+                    isDragging ? 'bg-primary-200' : 'bg-primary-100'
+                  }`}>
+                    <svg 
+                      className={`w-8 h-8 transition-colors ${
+                        isDragging ? 'text-primary-700' : 'text-primary-600'
+                      }`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={2} 
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" 
+                      />
+                    </svg>
+                  </div>
+                  
+                  {/* Upload Text */}
+                  <h3 className="heading-small text-text-primary mb-2">
+                    {isDragging ? 'Drop files here' : 'Upload sources'}
+                  </h3>
+                  
+                  <p className="body-normal text-text-secondary mb-4">
+                    Drag & drop or <span className="text-primary-600 font-medium">choose file</span> to upload
+                  </p>
+                  
+                  {/* Supported File Types */}
+                  <p className="body-xs text-text-muted">
+                    Supported file types: CSV, PDF, DOCX, XLSX, TXT
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Files Section Header - Pinned */}
+            {uploadedFiles.filter(file => !filesBeingDeleted.includes(file.name)).length > 0 && (
+              <div className="flex-shrink-0 px-6 py-3 border-b border-gray-200 bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <h4 className="body-small font-medium text-text-primary">Your Files ({uploadedFiles.filter(file => !filesBeingDeleted.includes(file.name)).length}/50)</h4>
+                  {selectedForDeletion.length > 0 && (
+                    <button
+                      onClick={handleBulkDelete}
+                      className="body-xs text-red-600 hover:text-red-700 font-medium transition-colors flex items-center space-x-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      <span>delete selected ({selectedForDeletion.length})</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Files List - Scrollable */}
             <div className="flex-1 overflow-y-auto p-6 min-h-0 mobile-scrollbar">
               {uploading && (
                 <div className="mb-4 rounded-card p-3 flex items-center space-x-2" style={{ backgroundColor: '#EEF2ED', borderWidth: '1px', borderColor: '#C8D5C7' }}>
@@ -753,11 +826,7 @@ const SourcesPanel = ({
                       return (
                       <div
                         key={file.name}
-                        className={`p-4 rounded-card border transition-colors ${
-                          isSelectedForDeletion 
-                            ? 'border-red-300 bg-red-50' 
-                            : 'border-gray-200 bg-background-warm-white hover:bg-gray-50'
-                        }`}
+                        className="p-4 rounded-card border border-gray-200 bg-background-warm-white hover:bg-gray-50 transition-colors"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
@@ -767,7 +836,8 @@ const SourcesPanel = ({
                                 type="checkbox"
                                 checked={isSelectedForDeletion}
                                 onChange={() => toggleFileForDeletion(file.name)}
-                                className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500 cursor-pointer"
+                                className="w-4 h-4 border-gray-300 rounded focus:ring-primary-500 cursor-pointer accent-primary-600"
+                                style={{ accentColor: '#3E553C' }}
                               />
                             </label>
                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${styles.labelBg} ${styles.labelText}`}>
@@ -808,32 +878,16 @@ const SourcesPanel = ({
                   })}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <div className="w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center">
-                    <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-                    </svg>
-                  </div>
-                  <p className="body-small text-text-muted mb-2">No files uploaded yet</p>
-                  <p className="body-xs text-text-muted">Click "Add Files" below to get started</p>
+                <div className="text-center py-6">
+                  <p className="body-small text-text-muted">No files uploaded yet</p>
+                  <p className="body-xs text-text-muted mt-1">Use the upload area above to add files</p>
                 </div>
               )}
             </div>
 
             {/* Popup Footer */}
-            <div className="border-t border-gray-200 p-6 flex-shrink-0">
+            <div className="border-t border-gray-200 p-1 flex-shrink-0">
               <div className="flex items-center justify-between">
-                <span className="body-small text-text-secondary">
-                  ({uploadedFiles.filter(file => !filesBeingDeleted.includes(file.name)).length}/50) files
-                </span>
-                <button
-                  type="button"
-                  onClick={openFileDialog}
-                  disabled={uploading}
-                  className="bg-primary-600 text-white px-4 py-2 rounded-button body-small font-medium hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                >
-                  {uploading ? 'Uploading...' : 'Add Files'}
-                </button>
               </div>
             </div>
           </div>

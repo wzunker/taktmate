@@ -429,23 +429,6 @@ function App() {
       {/* Main Content - Dynamic Layout */}
       <main className="w-full px-4 sm:px-6 lg:px-8 py-4 flex-1 min-h-0">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full min-h-0">
-          {/* Conversations Column - Dynamic width based on collapse */}
-          <div className={`h-full overflow-y-auto min-h-0 ${conversationsCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} transition-all duration-300`}>
-            <ConversationsPanel 
-              uploadedFiles={uploadedFiles}
-              selectedFileIds={selectedFileIds}
-              conversations={conversations}
-              activeConversationId={activeConversationId}
-              onConversationSelected={handleConversationSelected}
-              onConversationCreated={handleConversationCreated}
-              onConversationRename={handleConversationRename}
-              onConversationDelete={handleConversationDelete}
-              conversationsLoading={conversationsLoading}
-              isCollapsed={conversationsCollapsed}
-              onToggleCollapse={setConversationsCollapsed}
-            />
-          </div>
-          
           {/* Sources Column - Dynamic width based on collapse */}
           <div className={`h-full overflow-y-auto min-h-0 ${sourcesCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} transition-all duration-300`}>
             <SourcesPanel 
@@ -481,6 +464,23 @@ function App() {
               onStartConversation={handleStartConversation}
               isNewConversationMode={isInNewConversationMode}
               hasMissingFiles={hasMissingFiles}
+            />
+          </div>
+          
+          {/* Conversations Column - Dynamic width based on collapse */}
+          <div className={`h-full overflow-y-auto min-h-0 ${conversationsCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} transition-all duration-300`}>
+            <ConversationsPanel 
+              uploadedFiles={uploadedFiles}
+              selectedFileIds={selectedFileIds}
+              conversations={conversations}
+              activeConversationId={activeConversationId}
+              onConversationSelected={handleConversationSelected}
+              onConversationCreated={handleConversationCreated}
+              onConversationRename={handleConversationRename}
+              onConversationDelete={handleConversationDelete}
+              conversationsLoading={conversationsLoading}
+              isCollapsed={conversationsCollapsed}
+              onToggleCollapse={setConversationsCollapsed}
             />
           </div>
         </div>
