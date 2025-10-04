@@ -12,12 +12,6 @@ import { getAuthHeaders } from './utils/auth';
 function App() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [selectedFileIds, setSelectedFileIds] = useState([]); // Changed from activeFileId to selectedFileIds array
-  const [storageQuota, setStorageQuota] = useState({ 
-    used: 0, 
-    total: 200 * 1024 * 1024, 
-    usedDisplay: '0 KB', 
-    limitDisplay: '200 MB' 
-  });
   const [sourcesCollapsed, setSourcesCollapsed] = useState(false);
   const [conversationsCollapsed, setConversationsCollapsed] = useState(false);
   const [filesLoading, setFilesLoading] = useState(false);
@@ -56,12 +50,6 @@ function App() {
         }));
         
         setUploadedFiles(filesData);
-        setStorageQuota({
-          used: response.data.quota.used || 0,
-          total: response.data.quota.limit || (200 * 1024 * 1024),
-          usedDisplay: response.data.quota.usedDisplay || '0 KB',
-          limitDisplay: response.data.quota.limitDisplay || '200 MB'
-        });
 
         // Don't auto-select files - let users explicitly choose to start a conversation
       }
@@ -464,7 +452,6 @@ function App() {
               onFileUploaded={handleFileUploaded}
               uploadedFiles={uploadedFiles}
               selectedFileIds={selectedFileIds}
-              storageQuota={storageQuota}
               onFileSelected={handleFileSelected}
               onFileDownload={handleFileDownload}
               onFileDeleted={handleFileDeleted}

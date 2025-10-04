@@ -7,7 +7,6 @@ const SourcesPanel = ({
   onFileUploaded, 
   uploadedFiles, 
   selectedFileIds = [], // Changed from activeFileId to selectedFileIds array
-  storageQuota, 
   onFileSelected, 
   onFileDownload, 
   onFileDeleted,
@@ -23,7 +22,9 @@ const SourcesPanel = ({
   const [showPrivacyInfo, setShowPrivacyInfo] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
-  const [showManagePopup, setShowManagePopup] = useState(false);
+  const [showUploadFilesPopup, setShowUploadFilesPopup] = useState(false);
+  const [selectedForDeletion, setSelectedForDeletion] = useState([]);
+  const [filesBeingDeleted, setFilesBeingDeleted] = useState([]);
   const fileInputRef = useRef(null);
 
 
@@ -111,13 +112,23 @@ const SourcesPanel = ({
     }
   };
 
+  const [uploadingCount, setUploadingCount] = useState(0);
+
   const handleFiles = async (fileList) => {
     const files = Array.from(fileList);
-    const maxFiles = 5;
+    const maxFilesPerUpload = 50; // controls how many files can be uploaded at once
+    const maxTotalFiles = 50; // max total files a user can have in storage
     
-    // Validate we don't exceed file limit
-    if (files.length > maxFiles) {
-      setError(`Please select no more than ${maxFiles} files at once`);
+    // Validate we don't exceed per-upload file limit
+    if (files.length > maxFilesPerUpload) {
+      setError(`Please select no more than ${maxFilesPerUpload} files at once`);
+      return;
+    }
+    
+    // Validate we don't exceed total file storage limit
+    if (uploadedFiles.length + files.length > maxTotalFiles) {
+      const availableSlots = maxTotalFiles - uploadedFiles.length;
+      setError(`Cannot upload ${files.length} files. You can only have ${maxTotalFiles} files total. Currently have ${uploadedFiles.length} files (${availableSlots} slots remaining).`);
       return;
     }
     
@@ -157,10 +168,14 @@ const SourcesPanel = ({
 
     setError(null);
     setUploading(true);
+    setUploadingCount(validFiles.length);
     
     try {
       // Get authentication headers (handles local development bypass)
       const authHeaders = await getAuthHeaders();
+
+      // Track successfully uploaded files
+      const uploadedFilesList = [];
 
       // Upload each file
       for (const file of validFiles) {
@@ -195,13 +210,18 @@ const SourcesPanel = ({
           throw new Error(`Upload failed for ${file.name}: ${uploadResponse.statusText}`);
         }
 
-        // Step 3: Notify parent component for each successful upload
-        await onFileUploaded({
+        // Add to successfully uploaded list
+        uploadedFilesList.push({
           name: file.name,
           size: file.size,
           type: file.type || 'text/csv',
           lastModified: new Date().toISOString()
         });
+      }
+
+      // Step 3: Notify parent component of all successful uploads at once
+      for (const fileData of uploadedFilesList) {
+        await onFileUploaded(fileData);
       }
       
     } catch (error) {
@@ -209,12 +229,71 @@ const SourcesPanel = ({
       setError(error.message || 'Upload failed. Please try again.');
     } finally {
       setUploading(false);
+      setUploadingCount(0);
     }
   };
 
   const openFileDialog = () => {
     fileInputRef.current?.click();
   };
+
+  // Bulk deletion handlers
+  const toggleFileForDeletion = (fileName) => {
+    setSelectedForDeletion(prev => 
+      prev.includes(fileName) 
+        ? prev.filter(f => f !== fileName)
+        : [...prev, fileName]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    const visibleFiles = uploadedFiles.filter(file => !filesBeingDeleted.includes(file.name));
+    if (selectedForDeletion.length === visibleFiles.length) {
+      setSelectedForDeletion([]);
+    } else {
+      setSelectedForDeletion(visibleFiles.map(f => f.name));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedForDeletion.length === 0) return;
+    
+    const count = selectedForDeletion.length;
+    const fileList = selectedForDeletion.length <= 3 
+      ? selectedForDeletion.join(', ')
+      : `${selectedForDeletion.length} files`;
+    
+    if (window.confirm(`Are you sure you want to delete ${fileList}?`)) {
+      // Store files being deleted and hide them immediately
+      const filesToDelete = [...selectedForDeletion];
+      setFilesBeingDeleted(filesToDelete);
+      setSelectedForDeletion([]);
+      
+      try {
+        // Delete all files in parallel
+        await Promise.all(
+          filesToDelete.map(fileName => onFileDeleted(fileName))
+        );
+      } catch (error) {
+        console.error('Error during bulk delete:', error);
+        setError('Some files failed to delete. Please try again.');
+      } finally {
+        // Clear the files being deleted state after a short delay
+        // This ensures the UI update happens smoothly
+        setTimeout(() => {
+          setFilesBeingDeleted([]);
+        }, 100);
+      }
+    }
+  };
+
+  // Clear selection when popup closes
+  useEffect(() => {
+    if (!showUploadFilesPopup) {
+      setSelectedForDeletion([]);
+      setFilesBeingDeleted([]);
+    }
+  }, [showUploadFilesPopup]);
 
   // Filter files based on conversation state
   const getDisplayFiles = () => {
@@ -281,19 +360,19 @@ const SourcesPanel = ({
     }
   }, [openMenuId]);
 
-  // Handle clicking outside to close manage popup
+  // Handle clicking outside to close upload files popup
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showManagePopup && event.target.classList.contains('fixed')) {
-        setShowManagePopup(false);
+      if (showUploadFilesPopup && event.target.classList.contains('fixed')) {
+        setShowUploadFilesPopup(false);
       }
     };
 
-    if (showManagePopup) {
+    if (showUploadFilesPopup) {
       document.addEventListener('click', handleClickOutside);
       return () => document.removeEventListener('click', handleClickOutside);
     }
-  }, [showManagePopup]);
+  }, [showUploadFilesPopup]);
 
   return (
     <Card 
@@ -322,13 +401,13 @@ const SourcesPanel = ({
       
       {!isCollapsed && (
         <CardContent className="flex-1 overflow-y-auto space-y-4 min-h-0">
-        {/* Manage Button - Full Width */}
+        {/* Upload Files Button - Full Width */}
         <button
           type="button"
-          onClick={() => setShowManagePopup(true)}
+          onClick={() => setShowUploadFilesPopup(true)}
           className="w-full bg-primary-600 text-white px-4 py-2.5 rounded-button body-small font-medium hover:bg-primary-700 transition-colors warm-shadow"
         >
-          manage
+          upload files
         </button>
 
         {/* Privacy Info Expandable */}
@@ -403,7 +482,7 @@ const SourcesPanel = ({
               <div className="flex items-center justify-between py-2 border-b border-gray-200">
                 <div className="flex items-center space-x-2">
                   <span className="body-small text-text-muted">
-                    ({selectedFileIds.length}/5)
+                    ({selectedFileIds.length}/50)
                   </span>
                 </div>
                 {isFilesLocked && (
@@ -418,7 +497,7 @@ const SourcesPanel = ({
               <div className="space-y-1">
                 {displayFiles.map((file) => {
                   const isSelected = selectedFileIds.includes(file.fileId);
-                  const canSelect = isSelected || selectedFileIds.length < 5;
+                  const canSelect = isSelected || selectedFileIds.length < 50;
                   const isMissing = file.isMissing;
                   return (
                     <div
@@ -449,8 +528,8 @@ const SourcesPanel = ({
                         if (isSelected) {
                           // Remove from selection
                           onFileSelected(selectedFileIds.filter(id => id !== file.fileId));
-                        } else if (selectedFileIds.length < 5) {
-                          // Add to selection (max 5 files)
+                        } else if (selectedFileIds.length < 50) {
+                          // Add to selection (max 50 files)
                           onFileSelected([...selectedFileIds, file.fileId]);
                         }
                       }}
@@ -528,7 +607,7 @@ const SourcesPanel = ({
               ) : isInNewConversationMode && uploadedFiles.length === 0 ? (
                 <>
                   <p className="body-small text-text-muted mb-2">No files uploaded yet</p>
-                  <p className="body-xs text-text-muted">Click "manage" to upload CSV, PDF, DOCX, XLSX, or TXT files</p>
+                  <p className="body-xs text-text-muted">Click "upload files" to upload CSV, PDF, DOCX, XLSX, or TXT files</p>
                 </>
               ) : activeConversation ? (
                 <>
@@ -538,7 +617,7 @@ const SourcesPanel = ({
               ) : (
                 <>
                   <p className="body-small text-text-muted mb-2">No files uploaded yet</p>
-                  <p className="body-xs text-text-muted">Click "manage" to upload CSV, PDF, DOCX, XLSX, or TXT files</p>
+                  <p className="body-xs text-text-muted">Click "upload files" to upload CSV, PDF, DOCX, XLSX, or TXT files</p>
                 </>
               )}
             </div>
@@ -598,15 +677,38 @@ const SourcesPanel = ({
         document.body
       )}
 
-      {/* Manage Files Popup */}
-      {showManagePopup && createPortal(
+      {/* Upload Files Popup */}
+      {showUploadFilesPopup && createPortal(
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-card border border-gray-200 warm-shadow w-full max-w-2xl max-h-[90vh] flex flex-col">
             {/* Popup Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
-              <h2 className="heading-4 text-text-primary">Manage Files</h2>
+              <div className="flex items-center space-x-4">
+                <h2 className="heading-4 text-text-primary">upload files</h2>
+                {uploadedFiles.filter(file => !filesBeingDeleted.includes(file.name)).length > 0 && (
+                  <>
+                    <button
+                      onClick={toggleSelectAll}
+                      className="body-xs text-primary-600 hover:text-primary-700 font-medium transition-colors"
+                    >
+                      {selectedForDeletion.length === uploadedFiles.filter(file => !filesBeingDeleted.includes(file.name)).length ? 'Deselect All' : 'Select All'}
+                    </button>
+                    {selectedForDeletion.length > 0 && (
+                      <button
+                        onClick={handleBulkDelete}
+                        className="body-xs text-red-600 hover:text-red-700 font-medium transition-colors flex items-center space-x-1"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        <span>delete selected ({selectedForDeletion.length})</span>
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
               <button
-                onClick={() => setShowManagePopup(false)}
+                onClick={() => setShowUploadFilesPopup(false)}
                 className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -618,9 +720,16 @@ const SourcesPanel = ({
             {/* Popup Content */}
             <div className="flex-1 overflow-y-auto p-6 min-h-0 mobile-scrollbar">
               {uploading && (
-                <div className="mb-4 bg-blue-50 border border-blue-200 rounded-card p-3 flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                  <span className="body-small text-blue-700">Uploading files...</span>
+                <div className="mb-4 rounded-card p-3 flex items-center space-x-2" style={{ backgroundColor: '#EEF2ED', borderWidth: '1px', borderColor: '#C8D5C7' }}>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2" style={{ borderBottomColor: '#3E553C' }}></div>
+                  <span className="body-small" style={{ color: '#3E553C' }}>Uploading {uploadingCount} file{uploadingCount > 1 ? 's' : ''}...</span>
+                </div>
+              )}
+
+              {filesBeingDeleted.length > 0 && (
+                <div className="mb-4 rounded-card p-3 flex items-center space-x-2" style={{ backgroundColor: '#FFF5E6', borderWidth: '1px', borderColor: '#FFD699' }}>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2" style={{ borderBottomColor: '#FFA51F' }}></div>
+                  <span className="body-small" style={{ color: '#CC7A00' }}>Deleting {filesBeingDeleted.length} file{filesBeingDeleted.length > 1 ? 's' : ''}...</span>
                 </div>
               )}
 
@@ -633,18 +742,34 @@ const SourcesPanel = ({
                 </div>
               )}
 
-              {uploadedFiles.length > 0 ? (
+              {uploadedFiles.filter(file => !filesBeingDeleted.includes(file.name)).length > 0 ? (
                 <div className="space-y-3">
-                  {uploadedFiles.map((file) => {
-                    const fileType = getFileType(file.name);
-                    const styles = getFileTypeStyles(fileType);
-                    return (
+                  {uploadedFiles
+                    .filter(file => !filesBeingDeleted.includes(file.name))
+                    .map((file) => {
+                      const fileType = getFileType(file.name);
+                      const styles = getFileTypeStyles(fileType);
+                      const isSelectedForDeletion = selectedForDeletion.includes(file.name);
+                      return (
                       <div
                         key={file.name}
-                        className="p-4 rounded-card border border-gray-200 bg-background-warm-white hover:bg-gray-50 transition-colors"
+                        className={`p-4 rounded-card border transition-colors ${
+                          isSelectedForDeletion 
+                            ? 'border-red-300 bg-red-50' 
+                            : 'border-gray-200 bg-background-warm-white hover:bg-gray-50'
+                        }`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
+                            {/* Checkbox for bulk selection */}
+                            <label className="flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={isSelectedForDeletion}
+                                onChange={() => toggleFileForDeletion(file.name)}
+                                className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500 cursor-pointer"
+                              />
+                            </label>
                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${styles.labelBg} ${styles.labelText}`}>
                               {styles.label}
                             </span>
@@ -698,15 +823,9 @@ const SourcesPanel = ({
             {/* Popup Footer */}
             <div className="border-t border-gray-200 p-6 flex-shrink-0">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <span className="body-xs text-text-secondary">Storage: {storageQuota.usedDisplay}/{storageQuota.limitDisplay}</span>
-                  <div className="w-32 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-primary-600 h-2 rounded-full transition-all duration-300" 
-                      style={{ width: `${Math.min(100, (storageQuota.used / storageQuota.total) * 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
+                <span className="body-small text-text-secondary">
+                  ({uploadedFiles.filter(file => !filesBeingDeleted.includes(file.name)).length}/50) files
+                </span>
                 <button
                   type="button"
                   onClick={openFileDialog}
