@@ -543,7 +543,7 @@ const SourcesPanel = ({
       </div>
       
       {isCollapsed ? (
-        <CardContent className="flex-1 flex flex-col items-center space-y-3 overflow-y-auto scrollbar-hidden min-h-0 py-4">
+        <CardContent className="flex-1 flex flex-col items-center space-y-3 overflow-y-auto mobile-scrollbar min-h-0 py-4">
           {/* Compact Upload Button - Circle */}
           <button
             type="button"
@@ -594,15 +594,19 @@ const SourcesPanel = ({
           </div>
         </CardContent>
       ) : (
-        <CardContent className="flex-1 overflow-y-auto scrollbar-minimal space-y-4 min-h-0 -mr-6 pr-6">
-        {/* Upload Files Button - Full Width */}
-        <button
-          type="button"
-          onClick={() => setShowUploadFilesPopup(true)}
-          className="w-full bg-primary-600 text-white px-4 py-2.5 rounded-button body-small font-medium hover:bg-primary-700 transition-colors warm-shadow"
-        >
-          upload files
-        </button>
+        <CardContent className="flex-1 flex flex-col min-h-0">
+          {/* Upload Files Button - Full Width - Pinned */}
+          <button
+            type="button"
+            onClick={() => setShowUploadFilesPopup(true)}
+            className="w-full bg-primary-600 text-white px-4 py-2.5 rounded-button body-small font-medium hover:bg-primary-700 transition-colors warm-shadow mb-4"
+          >
+            upload files
+          </button>
+
+          {/* Scrollable Content Area */}
+          <div className="flex-1 min-h-0">
+            <div className="space-y-4 h-full overflow-y-auto mobile-scrollbar">{/* Content wrapper for scrolling */}
 
         {/* Privacy Info Expandable */}
         {showPrivacyInfo && (
@@ -799,8 +803,8 @@ Select All
             </div>
           )}
         </div>
-
-
+            </div>{/* End scrollable wrapper */}
+          </div>{/* End flex-1 min-h-0 container */}
         </CardContent>
       )}
       

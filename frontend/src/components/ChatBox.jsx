@@ -303,59 +303,8 @@ const ChatBox = ({
     }
   };
 
-  // Show placeholder if no files selected (and not in new conversation mode with files)
-  // BUT always show conversation messages if we have an active conversationId
+  // Show centered input as default when no messages exist
   const hasSelectedFiles = selectedFileIds && selectedFileIds.length > 0;
-  
-  // In new conversation mode with no messages, show placeholder when no files selected
-  // regardless of whether a conversation was created for suggestions
-  const shouldShowPlaceholder = (isNewConversationMode && !hasSelectedFiles && messageCount === 0) ||
-                                 (!fileData || (Array.isArray(fileData) && fileData.length === 0)) && !conversationId;
-  
-  if (shouldShowPlaceholder) {
-    return (
-      <Card variant="elevated" className={`flex flex-col h-full ${className}`}>
-        {/* Custom compact header with divider */}
-        <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-200 -mx-6 px-6">
-          <div className="flex-1 min-w-0">
-            <h3 className="heading-4"><span className="text-secondary-600 font-semibold lowercase">taktmate</span></h3>
-          </div>
-        </div>
-        
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center max-w-sm">
-            <div className="w-16 h-16 mx-auto mb-4 bg-primary-100 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-            </div>
-            
-            {/* Different messages for initial state vs new conversation mode */}
-            {isNewConversationMode ? (
-              <p className="body-small text-text-secondary mb-6">select at least one file to get started</p>
-            ) : (
-              <p className="body-small text-text-secondary mb-6">start a new conversation or select existing to get started</p>
-            )}
-
-            <div className="flex items-center justify-center space-x-4 body-xs text-text-muted">
-              <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-primary-400 rounded-full"></div>
-                <span>ask questions</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-secondary-400 rounded-full"></div>
-                <span>get insights</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-primary-400 rounded-full"></div>
-                <span>analyze trends</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
-    );
-  }
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || sending || !fileData || (Array.isArray(fileData) && fileData.length === 0)) return;
@@ -510,17 +459,15 @@ const ChatBox = ({
     }
   };
 
+  // Check if we should show centered input (no messages yet - always show unless loading)
+  const showCenteredInput = messages.length === 0 && !conversationLoading;
+
   return (
     <Card variant="elevated" padding="sm" className={`flex flex-col h-full ${className}`}>
-      {/* Custom compact header with divider */}
-      <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-200 -mx-4 px-4">
-        <div className="flex-1 min-w-0">
-          <h3 className="heading-4"><span className="text-secondary-600 font-semibold lowercase">taktmate</span></h3>
-        </div>
-      </div>
+
 
       {/* Messages */}
-      <CardContent className="flex-1 overflow-y-auto space-y-4 sm:space-y-6 px-2 sm:px-4 min-h-0">
+      <CardContent className={`flex-1 overflow-y-auto mobile-scrollbar px-2 sm:px-4 min-h-0 ${showCenteredInput ? 'flex items-center justify-center' : 'space-y-4 sm:space-y-6'}`}>
         {conversationLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mr-3"></div>
@@ -528,75 +475,52 @@ const ChatBox = ({
           </div>
         ) : (
           <>
-        {/* No File Selected State */}
-        {!fileData && messages.length === 0 && suggestions.length === 0 && (
-          <div className="flex items-center justify-center py-16">
-            <div className="text-center max-w-md">
-              <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-              </div>
-              <h3 className="heading-small text-text-primary font-medium mb-2">
-                Select a file to start a conversation
+        {/* Centered Input State - Show when no messages yet */}
+        {showCenteredInput && (
+          <div className="w-full max-w-2xl space-y-6">
+            <div className="text-center">
+              <h3 className="heading-1 text-takt-green mb-3">
+                Ready to explore together?
               </h3>
-              <p className="body-normal text-text-secondary mb-6">
-                Choose a file from your sources to analyze and ask questions about your data.
-              </p>
-              <div className="text-center">
-                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-primary-50 text-primary-700 border border-primary-200">
-                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
-                  </svg>
-                  Click a file on the left
-                </span>
-              </div>
+              {!hasSelectedFiles && (
+                <p className="body-normal text-text-secondary">
+                  upload or select at least one file to get started
+                </p>
+              )}
             </div>
-          </div>
-        )}
 
-        {/* Loading state for suggestions */}
-        {startingConversation && messages.length === 0 && suggestions.length === 0 && (
-          <div className="flex justify-center py-12">
-            <div className="text-center max-w-md">
-              <div className="flex items-center justify-center space-x-3 mb-4">
-                <div className="flex flex-col items-start">
-                  <span className="body-normal text-text-primary font-medium">Preparing your conversation</span>
-                  <span className="body-xs text-text-muted">Generating suggested questions...</span>
+            {/* Loading state for suggestions */}
+            {startingConversation && suggestions.length === 0 && (
+              <div className="flex justify-center py-8">
+                <div className="text-center">
+                  <div className="flex items-center justify-center space-x-3 mb-4">
+                    <div className="flex flex-col items-center">
+                      <span className="body-normal text-text-primary font-medium">Preparing your conversation</span>
+                      <span className="body-xs text-text-muted">Generating suggested questions...</span>
+                    </div>
+                  </div>
+                  
+                  {/* Animated dots */}
+                  <div className="flex items-center justify-center space-x-2 mt-4">
+                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
                 </div>
               </div>
-              
-              {/* Animated dots */}
-              <div className="flex items-center justify-center space-x-2 mt-6">
-                <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-              </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        {/* Suggested Questions */}
-        {suggestions.length > 0 && messages.length === 0 && !startingConversation && (
-          <div 
-            className="space-y-4 animate-fade-in-up"
-            role="region"
-            aria-label="Suggested questions to get started"
-          >
-            <div className="flex justify-center">
-              <div className="text-center max-w-2xl w-full">
-                {/* Header with icon */}
-                <div className="flex items-center justify-center space-x-2 mb-4">
-                  <div className="flex-shrink-0">
-                    <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                    </svg>
-                  </div>
-                  <h3 className="heading-small text-text-primary font-medium">
+            {/* Suggested Questions - Show between heading and input */}
+            {suggestions.length > 0 && !startingConversation && (
+              <div 
+                className="space-y-3 animate-fade-in-up"
+                role="region"
+                aria-label="Suggested questions to get started"
+              >
+                <div className="text-center mb-4">
+                  <h4 className="body-normal text-text-secondary font-medium">
                     Get started with these questions:
-                  </h3>
+                  </h4>
                 </div>
                 
                 {/* Suggestion buttons with staggered animation */}
@@ -637,102 +561,139 @@ const ChatBox = ({
                           <span className="body-normal text-text-primary leading-relaxed group-hover:text-text-primary font-medium transition-all duration-200">
                             {suggestion}
                           </span>
-                          <div className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            <span className="body-xs text-primary-600 font-medium">
-                              Click to ask this question →
-                            </span>
-                          </div>
-                        </div>
-                        
-                        {/* Subtle arrow indicator */}
-                        <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transform translate-x-1 group-hover:translate-x-0 transition-all duration-200">
-                          <svg className="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                          </svg>
                         </div>
                       </div>
                     </button>
                   ))}
                 </div>
               </div>
+            )}
+            
+            {/* Centered Input */}
+            <div className="flex items-start space-x-3">
+              <div className="flex-1 relative">
+                <textarea
+                  ref={inputRef}
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  onFocus={handleInputFocus}
+                  placeholder={hasSelectedFiles ? "Looks delicious, let me know how I can help..." : "I'm hungry for data..."}
+                  className="w-full border border-gray-300 rounded-input px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-normal resize-none transition-all duration-200"
+                  disabled={sending || !hasSelectedFiles}
+                  rows="1"
+                  style={{ minHeight: '48px', maxHeight: '150px' }}
+                  onInput={(e) => {
+                    e.target.style.height = 'auto';
+                    e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
+                  }}
+                />
+                
+                {/* Character Count */}
+                {inputMessage.length > 100 && (
+                  <div className="absolute bottom-2 right-12 body-xs text-text-muted">
+                    {inputMessage.length}/500
+                  </div>
+                )}
+              </div>
+              
+              <button
+                onClick={handleSendMessage}
+                disabled={!inputMessage.trim() || sending || inputMessage.length > 500 || !hasSelectedFiles}
+                className="bg-primary-600 text-white px-4 py-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0 h-12"
+                title={!hasSelectedFiles ? "Select a file first" : !inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
+              >
+                {sending ? (
+                  <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                )}
+              </button>
             </div>
           </div>
         )}
 
         {messages.map((message, index) => (
-          <div key={index} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-            {/* Message Bubble with Avatar Inside */}
-              <div
-                className={`max-w-xs sm:max-w-lg px-3 sm:px-4 py-2 sm:py-3 rounded-card transition-all duration-200 flex items-start space-x-2 ${
-              message.type === 'user'
-                  ? 'bg-primary-600 text-background-cream warm-shadow flex-row-reverse space-x-reverse'
-                  : message.type === 'error'
-                  ? 'bg-red-50 text-red-800 border border-red-200 warm-shadow'
-                  : message.type === 'system'
-                  ? 'bg-secondary-50 text-secondary-800 border border-secondary-200 warm-shadow'
-                  : 'bg-background-warm-white text-text-primary border border-gray-200 warm-shadow'
-              } ${message.type === 'user' ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
-            >
-              {/* Avatar inside bubble */}
-              <div className="flex-shrink-0">
-                {message.type === 'user' ? (
-                  <div className="w-9 h-9 bg-white bg-opacity-20 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">
-                      {getUserInitials(displayName)}
-                    </span>
-                  </div>
-                ) : message.type === 'system' ? (
-                  <div className="w-9 h-9 bg-secondary-200 rounded-md flex items-center justify-center">
-                    <svg className="w-5 h-5 text-secondary-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                ) : message.type === 'error' ? (
-                  <div className="w-9 h-9 bg-red-200 rounded-md flex items-center justify-center">
-                    <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                ) : (
-                  <div className="w-9 h-9 bg-primary-100 rounded-md flex flex-col items-center justify-center px-1">
-                    {/* Simple text logo - centered */}
-                    <div className="text-primary-600 text-xs font-bold leading-tight text-center">
-                      <div>takt</div>
-                      <div>mate</div>
+          <div key={index} className="w-full flex justify-center">
+            <div className={`w-full max-w-3xl px-8 ${message.type === 'user' ? 'flex justify-end' : ''}`}>
+              {message.type === 'user' ? (
+                /* User Message - Bubble with Avatar */
+                <div className="max-w-xs sm:max-w-lg px-3 sm:px-4 py-2 sm:py-3 rounded-card transition-all duration-200 flex items-start space-x-2 bg-primary-50 text-text-primary border border-primary-200 warm-shadow flex-row-reverse space-x-reverse rounded-tr-sm">
+                  {/* Avatar inside bubble */}
+                  <div className="flex-shrink-0">
+                    <div className="w-9 h-9 bg-primary-200 rounded-md flex items-center justify-center">
+                      <span className="text-primary-700 text-sm font-medium">
+                        {getUserInitials(displayName)}
+                      </span>
                     </div>
                   </div>
-                )}
-              </div>
-              
-              {/* Message Content */}
-              <div className="flex-1 min-w-0">
-                <div className="body-small sm:body-normal whitespace-pre-wrap leading-relaxed">
-                  {message.content}
+                  
+                  {/* Message Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="body-small sm:body-normal whitespace-pre-wrap leading-relaxed">
+                      {message.content}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : message.type === 'error' ? (
+                /* Error Message - Bubble */
+                <div className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-card transition-all duration-200 bg-red-50 text-red-800 border border-red-200 warm-shadow">
+                  <div className="flex items-start space-x-2">
+                    <div className="flex-shrink-0">
+                      <div className="w-9 h-9 bg-red-200 rounded-md flex items-center justify-center">
+                        <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="body-small sm:body-normal whitespace-pre-wrap leading-relaxed">
+                        {message.content}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : message.type === 'system' ? (
+                /* System Message - Bubble */
+                <div className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-card transition-all duration-200 bg-secondary-50 text-secondary-800 border border-secondary-200 warm-shadow">
+                  <div className="flex items-start space-x-2">
+                    <div className="flex-shrink-0">
+                      <div className="w-9 h-9 bg-secondary-200 rounded-md flex items-center justify-center">
+                        <svg className="w-5 h-5 text-secondary-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="body-small sm:body-normal whitespace-pre-wrap leading-relaxed">
+                        {message.content}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Assistant Message - Full Width Document Style (No Bubble, No Icon) */
+                <div className="w-full py-2 text-text-primary">
+                  <div className="body-normal whitespace-pre-wrap leading-relaxed">
+                    {message.content}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ))}
         {sending && (
-          <div className="flex justify-start">
-            {/* Typing Indicator Bubble with Avatar Inside */}
-            <div className="bg-background-warm-white text-text-primary px-3 sm:px-4 py-2 sm:py-3 rounded-card rounded-tl-sm border border-gray-200 warm-shadow flex items-start space-x-2">
-              {/* Avatar inside bubble */}
-              <div className="flex-shrink-0">
-                <div className="w-9 h-9 bg-primary-100 rounded-md flex flex-col items-center justify-center px-1">
-                  {/* Simple text logo with pulse - centered */}
-                  <div className="text-primary-600 text-xs font-bold leading-tight text-center animate-pulse">
-                    <div>takt</div>
-                    <div>mate</div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Typing Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-1">
-                  <span className="body-small sm:body-normal text-text-secondary">Analyzing your data</span>
-                  <div className="flex space-x-1 ml-2">
+          <div className="w-full flex justify-center">
+            <div className="w-full max-w-3xl px-8">
+              <div className="py-2">
+                {/* Typing Indicator - Document Style (No Bubble, No Icon) */}
+                <div className="flex items-center space-x-2">
+                  <span className="body-normal text-text-secondary">Analyzing your data</span>
+                  <div className="flex space-x-1">
                     <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary-400 rounded-full transition-opacity duration-300 ${typingDots >= 1 ? 'opacity-100' : 'opacity-30'}`}></div>
                     <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary-400 rounded-full transition-opacity duration-300 ${typingDots >= 2 ? 'opacity-100' : 'opacity-30'}`}></div>
                     <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary-400 rounded-full transition-opacity duration-300 ${typingDots >= 3 ? 'opacity-100' : 'opacity-30'}`}></div>
@@ -771,54 +732,61 @@ const ChatBox = ({
         )}
       </CardContent>
 
-              {/* Enhanced Input Area */}
-              <div className="pt-3 sm:pt-4 border-t border-gray-200 mt-4 px-2 sm:px-0">
-                {/* Input Row */}
-        <div className="flex items-start space-x-2 sm:space-x-3">
-          <div className="flex-1 relative">
-            <textarea
-              ref={inputRef}
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              onFocus={handleInputFocus}
-                placeholder={!fileData ? "Select a file to start chatting..." : "How can I help you today?"}
-                className="w-full border border-gray-300 rounded-input px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-small sm:body-normal resize-none transition-all duration-200"
-                disabled={sending || !fileData}
-              rows="1"
-                    style={{ minHeight: '40px', maxHeight: '150px' }}
-              onInput={(e) => {
-                e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
-              }}
-            />
-            
-            {/* Character Count */}
-            {inputMessage.length > 100 && (
-              <div className="absolute bottom-1 right-10 sm:right-12 body-xs text-text-muted">
-                {inputMessage.length}/500
+              {/* Enhanced Input Area - Hide when showing centered input */}
+              {!showCenteredInput && (
+              <div className="pt-3 sm:pt-4 border-t border-transparent mt-4">
+                {/* Centered Input Container */}
+                <div className="w-full flex justify-center">
+                  <div className="w-full max-w-3xl px-8">
+                    {/* Input Row */}
+                    <div className="flex items-start space-x-2 sm:space-x-3">
+                      <div className="flex-1 relative">
+                        <textarea
+                          ref={inputRef}
+                          value={inputMessage}
+                          onChange={(e) => setInputMessage(e.target.value)}
+                          onKeyPress={handleKeyPress}
+                          onFocus={handleInputFocus}
+                          placeholder={!fileData ? "Select a file to start chatting..." : "What would you like to discover?"}
+                          className="w-full border border-gray-300 rounded-input px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-small sm:body-normal resize-none transition-all duration-200"
+                          disabled={sending || !fileData}
+                          rows="1"
+                          style={{ minHeight: '40px', maxHeight: '150px' }}
+                          onInput={(e) => {
+                            e.target.style.height = 'auto';
+                            e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
+                          }}
+                        />
+                        
+                        {/* Character Count */}
+                        {inputMessage.length > 100 && (
+                          <div className="absolute bottom-1 right-10 sm:right-12 body-xs text-text-muted">
+                            {inputMessage.length}/500
+                          </div>
+                        )}
+                      </div>
+                      
+                      <button
+                        onClick={handleSendMessage}
+                        disabled={!inputMessage.trim() || sending || inputMessage.length > 500 || !fileData}
+                        className="bg-primary-600 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0 min-w-[44px] h-10 sm:h-12"
+                        title={!fileData ? "Select a file first" : !inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
+                      >
+                        {sending ? (
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-          
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!inputMessage.trim() || sending || inputMessage.length > 500 || !fileData}
-                  className="bg-primary-600 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0 min-w-[44px] h-10 sm:h-12"
-                  title={!fileData ? "Select a file first" : !inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
-                >
-                  {sending ? (
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                  ) : (
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                    </svg>
-                  )}
-                </button>
-        </div>
-      </div>
+              )}
     </Card>
   );
 };

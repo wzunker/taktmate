@@ -5,7 +5,8 @@ const ConversationItem = ({
   isActive, 
   onSelect, 
   onRename, 
-  onDelete
+  onDelete,
+  isCollapsed = false
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -57,6 +58,60 @@ const ConversationItem = ({
     );
   };
 
+  // Collapsed view - show chat box icon with first letter
+  if (isCollapsed && !isRenaming) {
+    const firstLetter = (conversation.title || 'U').charAt(0).toUpperCase();
+    return (
+      <div 
+        className="relative group flex items-center justify-center p-2"
+        title={conversation.title || 'Untitled Conversation'}
+      >
+        <div
+          className={`relative cursor-pointer transition-all ${
+            isActive
+              ? 'scale-110'
+              : 'hover:scale-105'
+          }`}
+          onClick={() => onSelect(conversation)}
+        >
+          {/* Chat bubble shape */}
+          <div
+            className={`relative w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+              isActive
+                ? 'text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-primary-100 hover:text-primary-700'
+            }`}
+            style={isActive ? { backgroundColor: '#FFA51F' } : {}}
+          >
+            <span className="body-normal font-semibold">{firstLetter}</span>
+
+            {/* Chat tail - skewed slightly right */}
+            <div
+              className={`absolute -bottom-1.5 left-1.5 w-0 h-0 
+                border-l-[3px] border-l-transparent 
+                border-r-[9px] border-r-transparent 
+                border-t-[6px] transition-colors ${
+                  isActive
+                    ? ''
+                    : 'border-t-gray-200 group-hover:border-t-primary-100'
+                }`}
+              style={isActive ? { borderTopColor: '#FFA51F' } : {}}
+            />
+          </div>
+        </div>
+        
+        {/* Tooltip on hover - positioned to the right */}
+        <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[9999] pointer-events-none">
+          <div className="bg-gray-900 text-white px-3 py-2 rounded-lg text-sm shadow-lg whitespace-nowrap">
+            {conversation.title || 'Untitled Conversation'}
+            {/* Tooltip arrow */}
+            <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-4 border-t-transparent border-b-4 border-b-transparent border-r-4 border-r-gray-900"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative">
       {isRenaming ? (
@@ -83,11 +138,6 @@ const ConversationItem = ({
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3 flex-1 min-w-0">
-              {/* Status indicator */}
-              <div className="flex-shrink-0">
-                {getStatusIcon()}
-              </div>
-              
               {/* Title */}
               <div className="flex-1 min-w-0">
                 <p className="body-small font-medium truncate text-text-primary">

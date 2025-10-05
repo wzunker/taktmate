@@ -63,7 +63,42 @@ const ConversationsPanel = ({
         </div>
       </div>
 
-      {!isCollapsed && (
+      {isCollapsed ? (
+        <CardContent className="flex-1 flex flex-col items-center space-y-3 overflow-y-auto mobile-scrollbar min-h-0 py-4">
+          {/* Compact New Conversation Button - Circle with + */}
+          <button
+            type="button"
+            onClick={handleCreateNewConversation}
+            className="w-10 h-10 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors warm-shadow flex items-center justify-center flex-shrink-0"
+            title="Start a new conversation"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+
+          {/* Collapsed Conversations List */}
+          <div className="w-full space-y-2">
+            {conversationsLoading ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600"></div>
+              </div>
+            ) : displayConversations.length > 0 ? (
+              displayConversations.map((conversation) => (
+                <ConversationItem
+                  key={conversation.id}
+                  conversation={conversation}
+                  isActive={conversation.id === activeConversationId}
+                  onSelect={onConversationSelected}
+                  onRename={onConversationRename}
+                  onDelete={onConversationDelete}
+                  isCollapsed={true}
+                />
+              ))
+            ) : null}
+          </div>
+        </CardContent>
+      ) : (
         <CardContent className="flex-1 flex flex-col min-h-0">
           {/* New Conversation Button - Full Width */}
           <button
@@ -91,6 +126,7 @@ const ConversationsPanel = ({
                     onSelect={onConversationSelected}
                     onRename={onConversationRename}
                     onDelete={onConversationDelete}
+                    isCollapsed={false}
                   />
                 )) 
               ) : (
