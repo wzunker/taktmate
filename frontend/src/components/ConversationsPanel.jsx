@@ -17,14 +17,6 @@ const ConversationsPanel = ({
   onToggleCollapse
 }) => {
 
-  // Check if all files for a conversation exist (for enabling/disabling)
-  const hasAllRequiredFiles = (conversation) => {
-    const convFileNames = conversation.fileNames || [conversation.fileName];
-    return convFileNames.every(fileName => 
-      uploadedFiles.some(file => file.name === fileName)
-    );
-  };
-
   // Get all conversations sorted by most recent
   const getAllConversations = () => {
     return conversations
@@ -99,7 +91,6 @@ const ConversationsPanel = ({
                     onSelect={onConversationSelected}
                     onRename={onConversationRename}
                     onDelete={onConversationDelete}
-                    hasValidFile={hasAllRequiredFiles(conversation)}
                   />
                 )) 
               ) : (

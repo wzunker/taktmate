@@ -12,8 +12,7 @@ const ChatBox = ({
   onConversationUpdated,
   selectedFileIds = [],
   onStartConversation,
-  isNewConversationMode = false,
-  hasMissingFiles = false
+  isNewConversationMode = false
 }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -24,6 +23,7 @@ const ChatBox = ({
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [startingConversation, setStartingConversation] = useState(false);
+  const [hasActivatedInput, setHasActivatedInput] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const { displayName } = useAuth();
@@ -44,7 +44,7 @@ const ChatBox = ({
 
   // Handle suggestion click
   const handleSuggestionClick = async (suggestion) => {
-    if (sending || !fileData || hasMissingFiles) return;
+    if (sending || !fileData) return;
 
     // Clear suggestions immediately since we're about to send the first message
     setSuggestions([]);
@@ -106,33 +106,20 @@ const ChatBox = ({
         }]);
         setMessageCount(prev => prev + 1);
 
-        // Handle conversation creation/updates
-        if (response.data.conversationId) {
-          if (!currentConversationId) {
-            // New conversation created
-            setCurrentConversationId(response.data.conversationId);
-            if (onConversationCreated) {
-              onConversationCreated(response.data.conversation || {
-                id: response.data.conversationId,
-                fileName: fileData.name || fileData.filename,
-                title: response.data.title || 'New Conversation',
-                updatedAt: new Date().toISOString()
-              });
-            }
-          } else if (onConversationUpdated) {
-            // Existing conversation updated - only update title if provided (shouldn't happen for existing conversations)
-            const updates = {
-              updatedAt: new Date().toISOString(),
-              messageCount: messageCount + 1
-            };
-            
-            // Only include title if it's actually provided (for new conversations)
-            if (response.data.title) {
-              updates.title = response.data.title;
-            }
-            
-            onConversationUpdated(response.data.conversationId, updates);
-          }
+        // Handle conversation updates - notify parent to add/update conversation
+        if (response.data.conversationId && onConversationUpdated) {
+          const updates = {
+            updatedAt: new Date().toISOString(),
+            messageCount: messageCount + 1,
+            title: response.data.title || (Array.isArray(fileData) 
+              ? `Conversation about ${fileData.length} files`
+              : `Conversation about ${fileData.name || fileData.filename}`),
+            fileNames: Array.isArray(fileData) 
+              ? fileData.map(f => f.name || f.filename)
+              : [fileData.name || fileData.filename]
+          };
+          
+          onConversationUpdated(response.data.conversationId, updates);
         }
       } else {
         throw new Error(response.data.error || 'Invalid response from server');
@@ -216,16 +203,70 @@ const ChatBox = ({
     scrollToBottom();
   }, [messages]);
 
-  // Load conversation when conversationId changes
+  // Reset activation state when entering new conversation mode
   useEffect(() => {
+    if (isNewConversationMode) {
+      setHasActivatedInput(false);
+    }
+  }, [isNewConversationMode]);
+
+  // Track previous file selection to detect actual changes
+  const prevSelectedFileIdsRef = useRef(selectedFileIds);
+  
+  // Handle file selection changes in new conversation mode
+  useEffect(() => {
+    // Only act if we're in new conversation mode, no actual messages, AND files actually changed
+    const filesChanged = JSON.stringify(prevSelectedFileIdsRef.current) !== JSON.stringify(selectedFileIds);
+    
+    if (isNewConversationMode && messageCount === 0 && filesChanged) {
+      // Update ref for next comparison
+      prevSelectedFileIdsRef.current = selectedFileIds;
+      
+      // If there's a backend conversation, delete it since we're discarding it
+      if (currentConversationId) {
+        const deleteConversation = async () => {
+          try {
+            const authHeaders = await getAuthHeaders();
+            await axios.delete(`/api/conversations/${currentConversationId}`, {
+              headers: authHeaders,
+              timeout: 10000
+            });
+            console.log('Deleted temporary conversation:', currentConversationId);
+          } catch (error) {
+            console.error('Failed to delete temporary conversation:', error);
+          }
+        };
+        
+        deleteConversation();
+      }
+      
+      // Always clear local state when files change
+      setSuggestions([]);
+      setHasActivatedInput(false);
+      setStartingConversation(false);
+      setCurrentConversationId(null);
+    }
+  }, [selectedFileIds, isNewConversationMode, messageCount, currentConversationId]);
+
+  // Track previous conversationId to detect actual changes from parent
+  const prevConversationIdRef = useRef(conversationId);
+  
+  // Load conversation when conversationId changes (from parent selecting a conversation)
+  useEffect(() => {
+    const prevConversationId = prevConversationIdRef.current;
+    prevConversationIdRef.current = conversationId;
+    
     if (conversationId && conversationId !== currentConversationId) {
+      // Parent selected a conversation - load it
       loadConversation(conversationId);
-    } else if (!conversationId && currentConversationId) {
-      // Clear conversation when no conversation is selected
+      setHasActivatedInput(false);
+    } else if (prevConversationId && !conversationId) {
+      // Parent cleared conversation (was something, now null) - clear local state
       setCurrentConversationId(null);
       setMessages([]);
       setMessageCount(0);
       setSuggestions([]);
+      setHasActivatedInput(false);
     }
   }, [conversationId, currentConversationId]);
 
@@ -245,82 +286,6 @@ const ChatBox = ({
     };
   }, [sending]);
 
-  useEffect(() => {
-    // Welcome message when files are selected (only if no conversation is loaded and not in new conversation mode)
-    if (fileData && !currentConversationId && !isNewConversationMode) {
-      let welcomeMessage = '';
-      
-      if (Array.isArray(fileData)) {
-        if (fileData.length === 0) {
-          setMessages([]);
-          setMessageCount(0);
-          return;
-        } else if (fileData.length === 1) {
-          // Single file in array
-          const file = fileData[0];
-          const fileName = file.filename || file.name;
-          if (file.headers) {
-            // CSV file
-            const rowCount = file.rowCount || 'unknown';
-            const columnCount = Array.isArray(file.headers) ? file.headers.length : 'unknown';
-            const columns = Array.isArray(file.headers) ? file.headers.slice(0, 5).join(', ') + (file.headers.length > 5 ? '...' : '') : 'unknown';
-            welcomeMessage = `🎉 Welcome! I've loaded your file "${fileName}". Here's what I can see:\n\n📊 **Dataset Overview:**\n• ${rowCount} rows of data\n• ${columnCount} columns\n• Key columns: ${columns}\n\n💬 **What can I help you with?**\nAsk me to analyze trends, find patterns, calculate statistics, or answer any questions about your data!`;
-          } else {
-            welcomeMessage = `🎉 Welcome! I've loaded your file "${fileName}".\n\n💬 **What can I help you with?**\nI can help you analyze the content, extract information, or answer questions about your file!`;
-          }
-        } else {
-          // Multiple files
-          const fileNames = fileData.map(file => file.filename || file.name);
-          const fileTypes = fileData.map(file => {
-            const name = file.filename || file.name;
-            const ext = name.toLowerCase().substring(name.lastIndexOf('.') + 1);
-            return ext.toUpperCase();
-          });
-          const uniqueTypes = [...new Set(fileTypes)];
-          
-          welcomeMessage = `🎉 Welcome! I've loaded ${fileData.length} files:\n\n📁 **Files:**\n${fileNames.map((name, i) => `• ${name} (${fileTypes[i]})`).join('\n')}\n\n🔍 **File Types:** ${uniqueTypes.join(', ')}\n\n💬 **What can I help you with?**\nI can analyze data across all files, compare information, find patterns, or answer questions that span multiple documents!`;
-        }
-      } else if (fileData && (fileData.filename || fileData.name)) {
-        // Single file object (backward compatibility)
-        const fileName = fileData.filename || fileData.name;
-        if (fileData.headers) {
-          // CSV file
-          const rowCount = fileData.rowCount || 'unknown';
-          const columnCount = Array.isArray(fileData.headers) ? fileData.headers.length : 'unknown';
-          const columns = Array.isArray(fileData.headers) ? fileData.headers.slice(0, 5).join(', ') + (fileData.headers.length > 5 ? '...' : '') : 'unknown';
-          welcomeMessage = `🎉 Welcome! I've loaded your file "${fileName}". Here's what I can see:\n\n📊 **Dataset Overview:**\n• ${rowCount} rows of data\n• ${columnCount} columns\n• Key columns: ${columns}\n\n💬 **What can I help you with?**\nAsk me to analyze trends, find patterns, calculate statistics, or answer any questions about your data!`;
-        } else {
-          welcomeMessage = `🎉 Welcome! I've loaded your file "${fileName}".\n\n💬 **What can I help you with?**\nI can help you analyze the content, extract information, or answer questions about your file!`;
-        }
-      }
-      
-      if (welcomeMessage) {
-        setMessages([{
-          type: 'system',
-          content: welcomeMessage,
-          timestamp: new Date().toISOString()
-        }]);
-        setMessageCount(1);
-      }
-    } else if (!fileData && !currentConversationId) {
-      setMessages([]);
-      setMessageCount(0);
-    }
-  }, [fileData, currentConversationId, isNewConversationMode]);
-
-  // Get display info for selected files
-  const getSelectedFilesDisplay = () => {
-    if (Array.isArray(fileData)) {
-      if (fileData.length === 1) {
-        return fileData[0].filename || fileData[0].name;
-      } else {
-        return `${fileData.length} files selected`;
-      }
-    } else if (fileData) {
-      return fileData.filename || fileData.name;
-    }
-    return '';
-  };
 
   // Handle starting a new conversation
   const handleStartConversation = async () => {
@@ -338,9 +303,16 @@ const ChatBox = ({
     }
   };
 
-  // Show placeholder if no files selected OR in new conversation mode (before Start is clicked)
-  // BUT always show conversation messages if we have an active conversationId (even with missing files)
-  if ((!fileData || (Array.isArray(fileData) && fileData.length === 0) || isNewConversationMode) && !conversationId) {
+  // Show placeholder if no files selected (and not in new conversation mode with files)
+  // BUT always show conversation messages if we have an active conversationId
+  const hasSelectedFiles = selectedFileIds && selectedFileIds.length > 0;
+  
+  // In new conversation mode with no messages, show placeholder when no files selected
+  // regardless of whether a conversation was created for suggestions
+  const shouldShowPlaceholder = (isNewConversationMode && !hasSelectedFiles && messageCount === 0) ||
+                                 (!fileData || (Array.isArray(fileData) && fileData.length === 0)) && !conversationId;
+  
+  if (shouldShowPlaceholder) {
     return (
       <Card variant="elevated" className={`flex flex-col h-full ${className}`}>
         {/* Custom compact header with divider */}
@@ -360,22 +332,7 @@ const ChatBox = ({
             
             {/* Different messages for initial state vs new conversation mode */}
             {isNewConversationMode ? (
-              <>
-                <p className="body-small text-text-secondary mb-4">select 1-5 files to start a conversation with your data</p>
-                
-                {/* Start button - only show in new conversation mode */}
-                <button
-                  onClick={handleStartConversation}
-                  disabled={!selectedFileIds || selectedFileIds.length === 0 || startingConversation}
-                  className={`mb-6 px-6 py-2.5 rounded-button body-small font-medium transition-colors ${
-                    selectedFileIds && selectedFileIds.length > 0 && !startingConversation
-                      ? 'bg-primary-600 text-white hover:bg-primary-700'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  {startingConversation ? 'Starting...' : 'Start'}
-                </button>
-              </>
+              <p className="body-small text-text-secondary mb-6">select at least one file to get started</p>
             ) : (
               <p className="body-small text-text-secondary mb-6">start a new conversation or select existing to get started</p>
             )}
@@ -401,7 +358,7 @@ const ChatBox = ({
   }
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || sending || !fileData || (Array.isArray(fileData) && fileData.length === 0) || hasMissingFiles) return;
+    if (!inputMessage.trim() || sending || !fileData || (Array.isArray(fileData) && fileData.length === 0)) return;
 
     const userMessage = inputMessage.trim();
     setInputMessage('');
@@ -473,33 +430,20 @@ const ChatBox = ({
         }]);
         setMessageCount(prev => prev + 1);
 
-        // Handle conversation creation/updates
-        if (response.data.conversationId) {
-          if (!currentConversationId) {
-            // New conversation created
-            setCurrentConversationId(response.data.conversationId);
-            if (onConversationCreated) {
-              onConversationCreated(response.data.conversation || {
-                id: response.data.conversationId,
-                fileName: fileData.name || fileData.filename,
-                title: response.data.title || 'New Conversation',
-                updatedAt: new Date().toISOString()
-              });
-            }
-          } else if (onConversationUpdated) {
-            // Existing conversation updated - only update title if provided (shouldn't happen for existing conversations)
-            const updates = {
-              updatedAt: new Date().toISOString(),
-              messageCount: messageCount + 1
-            };
-            
-            // Only include title if it's actually provided (for new conversations)
-            if (response.data.title) {
-              updates.title = response.data.title;
-            }
-            
-            onConversationUpdated(response.data.conversationId, updates);
-          }
+        // Handle conversation updates - notify parent to add/update conversation
+        if (response.data.conversationId && onConversationUpdated) {
+          const updates = {
+            updatedAt: new Date().toISOString(),
+            messageCount: messageCount + 1,
+            title: response.data.title || (Array.isArray(fileData) 
+              ? `Conversation about ${fileData.length} files`
+              : `Conversation about ${fileData.name || fileData.filename}`),
+            fileNames: Array.isArray(fileData) 
+              ? fileData.map(f => f.name || f.filename)
+              : [fileData.name || fileData.filename]
+          };
+          
+          onConversationUpdated(response.data.conversationId, updates);
         }
       } else {
         throw new Error(response.data.error || 'Invalid response from server');
@@ -535,34 +479,43 @@ const ChatBox = ({
     }
   };
 
+  // Handle input focus - triggers conversation creation with suggestions
+  const handleInputFocus = async () => {
+    // Only trigger if in new conversation mode, has selected files, hasn't been activated yet, and no current conversation
+    if (isNewConversationMode && hasSelectedFiles && !hasActivatedInput && !currentConversationId && !startingConversation) {
+      setHasActivatedInput(true);
+      setStartingConversation(true);
+      
+      try {
+        if (onStartConversation) {
+          const conversation = await onStartConversation(selectedFileIds);
+          
+          if (conversation) {
+            // Set the conversation ID locally (parent doesn't know about it yet)
+            setCurrentConversationId(conversation.id);
+            
+            // Load suggestions directly from the returned conversation
+            if (conversation.suggestions && conversation.suggestions.length > 0) {
+              setSuggestions(conversation.suggestions);
+              console.log('Loaded suggestions:', conversation.suggestions);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error starting conversation:', error);
+        setHasActivatedInput(false); // Reset on error so they can try again
+      } finally {
+        setStartingConversation(false);
+      }
+    }
+  };
+
   return (
     <Card variant="elevated" padding="sm" className={`flex flex-col h-full ${className}`}>
       {/* Custom compact header with divider */}
       <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-200 -mx-4 px-4">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center space-x-2">
-            <h3 className="heading-4"><span className="text-secondary-600 font-semibold lowercase">taktmate</span></h3>
-            {fileData && (
-              <span className="text-xs text-text-muted bg-gray-100 px-2 py-1 rounded-full">
-                {getSelectedFilesDisplay()}
-              </span>
-            )}
-            {currentConversationId && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
-                conversation
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex-shrink-0 ml-4">
-          {messageCount > 0 && (
-            <span className="body-xs text-text-muted">
-              {currentConversationId ? 
-                `${messageCount} message${messageCount !== 1 ? 's' : ''}` :
-                `${messageCount - 1} message${messageCount - 1 !== 1 ? 's' : ''}`
-              }
-            </span>
-          )}
+          <h3 className="heading-4"><span className="text-secondary-600 font-semibold lowercase">taktmate</span></h3>
         </div>
       </div>
 
@@ -604,8 +557,29 @@ const ChatBox = ({
           </div>
         )}
 
+        {/* Loading state for suggestions */}
+        {startingConversation && messages.length === 0 && suggestions.length === 0 && (
+          <div className="flex justify-center py-12">
+            <div className="text-center max-w-md">
+              <div className="flex items-center justify-center space-x-3 mb-4">
+                <div className="flex flex-col items-start">
+                  <span className="body-normal text-text-primary font-medium">Preparing your conversation</span>
+                  <span className="body-xs text-text-muted">Generating suggested questions...</span>
+                </div>
+              </div>
+              
+              {/* Animated dots */}
+              <div className="flex items-center justify-center space-x-2 mt-6">
+                <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Suggested Questions */}
-        {suggestions.length > 0 && messages.length === 0 && (
+        {suggestions.length > 0 && messages.length === 0 && !startingConversation && (
           <div 
             className="space-y-4 animate-fade-in-up"
             role="region"
@@ -641,7 +615,7 @@ const ChatBox = ({
                         transform transition-all duration-300 ease-out
                         hover:scale-[1.02] hover:-translate-y-0.5
                         disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none
-                        warm-shadow hover:warm-shadow-xl
+                        warm-shadow hover:warm-shadow-lg
                         animate-fade-in-up
                       `}
                       style={{ animationDelay: `${index * 150}ms` }}
@@ -768,6 +742,30 @@ const ChatBox = ({
             </div>
           </div>
         )}
+        
+        {/* No Files Selected in Active Conversation */}
+        {messages.length > 0 && (!fileData || (Array.isArray(fileData) && fileData.length === 0)) && (
+          <div className="flex justify-center py-8">
+            <div className="bg-primary-50 border-2 border-primary-200 rounded-card px-6 py-4 max-w-md warm-shadow">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h4 className="body-normal font-semibold text-text-primary mb-1">
+                    No files selected
+                  </h4>
+                  <p className="body-small text-text-secondary">
+                    Please select at least one file to continue chatting.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div ref={messagesEndRef} />
           </>
         )}
@@ -783,9 +781,10 @@ const ChatBox = ({
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-                placeholder={!fileData ? "Select a file to start chatting..." : hasMissingFiles ? "Cannot send messages - files are missing" : "How can I help you today?"}
+              onFocus={handleInputFocus}
+                placeholder={!fileData ? "Select a file to start chatting..." : "How can I help you today?"}
                 className="w-full border border-gray-300 rounded-input px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-small sm:body-normal resize-none transition-all duration-200"
-                disabled={sending || !fileData || hasMissingFiles}
+                disabled={sending || !fileData}
               rows="1"
                     style={{ minHeight: '40px', maxHeight: '150px' }}
               onInput={(e) => {
@@ -804,9 +803,9 @@ const ChatBox = ({
           
                 <button
                   onClick={handleSendMessage}
-                  disabled={!inputMessage.trim() || sending || inputMessage.length > 500 || !fileData || hasMissingFiles}
+                  disabled={!inputMessage.trim() || sending || inputMessage.length > 500 || !fileData}
                   className="bg-primary-600 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0 min-w-[44px] h-10 sm:h-12"
-                  title={!fileData ? "Select a file first" : hasMissingFiles ? "Cannot send - files are missing" : !inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
+                  title={!fileData ? "Select a file first" : !inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
                 >
                   {sending ? (
                     <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -819,13 +818,6 @@ const ChatBox = ({
                   )}
                 </button>
         </div>
-        
-        {/* Processing indicator */}
-        {sending && (
-          <div className="mt-2 body-xs text-primary-600 font-medium text-center">
-            Processing your request...
-          </div>
-        )}
       </div>
     </Card>
   );

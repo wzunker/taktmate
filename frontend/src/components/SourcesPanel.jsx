@@ -25,13 +25,14 @@ const SourcesPanel = ({
   const [showUploadFilesPopup, setShowUploadFilesPopup] = useState(false);
   const [selectedForDeletion, setSelectedForDeletion] = useState([]);
   const [filesBeingDeleted, setFilesBeingDeleted] = useState([]);
+  const [filesBeingUploaded, setFilesBeingUploaded] = useState([]); // Array of {name, size} for files currently uploading
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+  const uploadTimeoutRef = useRef(null);
 
 
   // Get file type from filename
-  const getFileType = (fileName, isMissing = false) => {
-    if (isMissing) return 'missing';
+  const getFileType = (fileName) => {
     const extension = fileName.toLowerCase().substring(fileName.lastIndexOf('.'));
     switch (extension) {
       case '.csv': return 'csv';
@@ -46,6 +47,12 @@ const SourcesPanel = ({
   // Get file type icon
   const getFileTypeIcon = (fileType) => {
     switch (fileType) {
+      case 'uploading':
+        return (
+          <div className="w-6 h-6 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600"></div>
+          </div>
+        );
       case 'csv':
         return (
           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
@@ -94,14 +101,6 @@ const SourcesPanel = ({
             <text x="12" y="16" fontSize="8" fontWeight="bold" textAnchor="middle" className="fill-gray-600">txt</text>
           </svg>
         );
-      case 'missing':
-        return (
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" className="fill-red-100 stroke-red-600" strokeWidth="1.5"/>
-            <path d="M14 2v6h6" className="stroke-red-600" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M9 12l6 6M15 12l-6 6" className="stroke-red-600" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-        );
       default:
         return (
           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
@@ -115,14 +114,6 @@ const SourcesPanel = ({
   // Get file type colors and styles
   const getFileTypeStyles = (fileType) => {
     switch (fileType) {
-      case 'missing':
-        return {
-          bgColor: 'bg-red-100',
-          textColor: 'text-red-600',
-          label: 'MISSING',
-          labelBg: 'bg-red-100',
-          labelText: 'text-red-700'
-        };
       case 'csv':
         return {
           bgColor: 'bg-blue-100',
@@ -179,12 +170,25 @@ const SourcesPanel = ({
   const handleFileInput = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       handleFiles(e.target.files);
+      // Reset the input value to allow selecting the same files again
+      e.target.value = '';
     }
   };
 
   const [uploadingCount, setUploadingCount] = useState(0);
 
   const handleFiles = async (fileList) => {
+    // Close the popup immediately when files are selected
+    setShowUploadFilesPopup(false);
+    
+    // Clear any pending upload timeout and reset uploading/deletion state
+    if (uploadTimeoutRef.current) {
+      clearTimeout(uploadTimeoutRef.current);
+      uploadTimeoutRef.current = null;
+    }
+    setFilesBeingUploaded([]);
+    setFilesBeingDeleted([]); // Clear deleted files state to allow re-uploading same file names
+    
     const files = Array.from(fileList);
     const maxFilesPerUpload = 50; // controls how many files can be uploaded at once
     const maxTotalFiles = 50; // max total files a user can have in storage
@@ -240,6 +244,14 @@ const SourcesPanel = ({
     setUploading(true);
     setUploadingCount(validFiles.length);
     
+    // Immediately show all files being uploaded with loading state
+    const uploadingFiles = validFiles.map(file => ({
+      name: file.name,
+      size: file.size,
+      isUploading: true
+    }));
+    setFilesBeingUploaded(uploadingFiles);
+    
     try {
       // Get authentication headers (handles local development bypass)
       const authHeaders = await getAuthHeaders();
@@ -294,9 +306,22 @@ const SourcesPanel = ({
         await onFileUploaded(fileData);
       }
       
+      // Clear the uploading state after parent has processed all files
+      // Add a small delay to ensure parent state has updated and re-rendered
+      uploadTimeoutRef.current = setTimeout(() => {
+        setFilesBeingUploaded([]);
+        uploadTimeoutRef.current = null;
+      }, 100);
+      
     } catch (error) {
       console.error('Upload error:', error);
       setError(error.message || 'Upload failed. Please try again.');
+      // Clear uploading state immediately on error
+      if (uploadTimeoutRef.current) {
+        clearTimeout(uploadTimeoutRef.current);
+        uploadTimeoutRef.current = null;
+      }
+      setFilesBeingUploaded([]);
     } finally {
       setUploading(false);
       setUploadingCount(0);
@@ -304,6 +329,8 @@ const SourcesPanel = ({
   };
 
   const openFileDialog = () => {
+    // Clear error state when opening file dialog
+    setError(null);
     fileInputRef.current?.click();
   };
 
@@ -379,43 +406,46 @@ const SourcesPanel = ({
     }
   };
 
-  // Clear selection when popup closes
+  // Clear selection and state when popup opens/closes
   useEffect(() => {
-    if (!showUploadFilesPopup) {
+    if (showUploadFilesPopup) {
+      // Clear states when popup opens
+      setError(null);
+      if (uploadTimeoutRef.current) {
+        clearTimeout(uploadTimeoutRef.current);
+        uploadTimeoutRef.current = null;
+      }
+    } else {
+      // Clear selection when popup closes
       setSelectedForDeletion([]);
-      setFilesBeingDeleted([]);
     }
   }, [showUploadFilesPopup]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (uploadTimeoutRef.current) {
+        clearTimeout(uploadTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Filter files based on conversation state
   const getDisplayFiles = () => {
-    if (isInNewConversationMode) {
-      // In new conversation mode - show all files for selection
-      return uploadedFiles;
-    }
-
-    if (!activeConversation) {
-      // Initial state - show no files
-      return [];
-    }
-
-    // Active conversation - show associated files and missing files
-    const conversationFileNames = activeConversation.fileNames || [activeConversation.fileName];
-    const existingFiles = uploadedFiles.filter(file => conversationFileNames.includes(file.name));
-    const existingFileNames = existingFiles.map(file => file.name);
+    // Always show all uploaded files, except those being deleted
+    let filesToDisplay = uploadedFiles.filter(file => !filesBeingDeleted.includes(file.name));
     
-    // Create entries for missing files
-    const missingFiles = conversationFileNames
-      .filter(fileName => !existingFileNames.includes(fileName))
-      .map(fileName => ({
-        name: fileName,
-        fileId: fileName,
-        size: 0,
-        type: 'missing',
-        isMissing: true
-      }));
-
-    return [...existingFiles, ...missingFiles];
+    // Add files that are currently uploading
+    const uploadingFilesDisplay = filesBeingUploaded.map(file => ({
+      name: file.name,
+      fileId: file.name + '_uploading',
+      size: file.size,
+      type: 'uploading',
+      isUploading: true
+    }));
+    filesToDisplay = [...filesToDisplay, ...uploadingFilesDisplay];
+    
+    return filesToDisplay;
   };
 
   const displayFiles = getDisplayFiles();
@@ -430,9 +460,22 @@ const SourcesPanel = ({
     const buttonElement = event.currentTarget;
     const rect = buttonElement.getBoundingClientRect();
     
+    // Menu dimensions
+    // Check if this file would show the "Delete Selected" option
+    const hasDeleteSelected = selectedFileIds.includes(fileId) && selectedFileIds.length >= 2;
+    const menuHeight = hasDeleteSelected ? 120 : 80; // 3 items vs 2 items
+    const menuWidth = 160;
+    const spacing = 4;
+    
+    // Check if there's enough space below
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const shouldOpenUpward = spaceBelow < menuHeight;
+    
     setMenuPosition({
-      top: rect.bottom + window.scrollY + 4,
-      left: rect.right + window.scrollX - 160, // 160px is menu width
+      top: shouldOpenUpward 
+        ? rect.top + window.scrollY - menuHeight - spacing
+        : rect.bottom + window.scrollY + spacing,
+      left: rect.right + window.scrollX - menuWidth,
     });
     
     setOpenMenuId(fileId);
@@ -517,14 +560,14 @@ const SourcesPanel = ({
           {/* File Type Icons */}
           <div className="flex flex-col items-center space-y-2 w-full px-2">
             {displayFiles.map((file) => {
-              const fileType = getFileType(file.name, file.isMissing);
+              const fileType = file.isUploading ? 'uploading' : getFileType(file.name);
               const isSelected = selectedFileIds.includes(file.fileId);
               
               return (
                 <div
                   key={file.fileId}
                   onClick={() => {
-                    if (file.isMissing || isViewingActiveConversation || isFilesLocked) return;
+                    if (file.isUploading) return;
                     if (isSelected) {
                       onFileSelected(selectedFileIds.filter(id => id !== file.fileId));
                     } else if (selectedFileIds.length < 50) {
@@ -532,7 +575,7 @@ const SourcesPanel = ({
                     }
                   }}
                   className={`relative group p-2 rounded-lg transition-all ${
-                    file.isMissing || isViewingActiveConversation || isFilesLocked
+                    file.isUploading
                       ? 'cursor-default opacity-75'
                       : 'cursor-pointer hover:bg-primary-50'
                   } ${
@@ -632,71 +675,54 @@ const SourcesPanel = ({
               {/* File Selection Header */}
               <div className="flex items-center justify-between py-2 border-transparent border-gray-200">
                 <div 
-                  className={`flex items-center space-x-2 ${
-                    isFilesLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                  }`}
+                  className="flex items-center space-x-2 cursor-pointer"
                   onClick={() => {
-                    if (isFilesLocked) return;
-                    const visibleFiles = displayFiles.filter(f => !f.isMissing);
-                    if (selectedFileIds.length === visibleFiles.length && visibleFiles.length > 0) {
+                    const selectableFiles = displayFiles.filter(f => !f.isUploading);
+                    if (selectedFileIds.length === selectableFiles.length && selectableFiles.length > 0) {
                       onFileSelected([]);
                     } else {
-                      onFileSelected(visibleFiles.map(f => f.fileId));
+                      onFileSelected(selectableFiles.map(f => f.fileId));
                     }
                   }}
                 >
                   {/* Select All Checkbox */}
                   <div className={`ml-2 w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
-                    isFilesLocked
-                      ? 'border-gray-300 bg-gray-100'
-                      : displayFiles.filter(f => !f.isMissing).length > 0 && selectedFileIds.length === displayFiles.filter(f => !f.isMissing).length
-                        ? 'bg-primary-600 border-primary-600'
-                        : 'border-gray-300 hover:border-primary-400'
+                    displayFiles.filter(f => !f.isUploading).length > 0 && selectedFileIds.length === displayFiles.filter(f => !f.isUploading).length
+                      ? 'bg-primary-600 border-primary-600'
+                      : 'border-gray-300 hover:border-primary-400'
                   }`}>
-                    {displayFiles.filter(f => !f.isMissing).length > 0 && selectedFileIds.length === displayFiles.filter(f => !f.isMissing).length && (
+                    {displayFiles.filter(f => !f.isUploading).length > 0 && selectedFileIds.length === displayFiles.filter(f => !f.isUploading).length && (
                       <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                     )}
                   </div>
                   <span className="body-small text-text-primary font-medium">
-                    Select All
+Select All
                   </span>
                 </div>
-                {isFilesLocked && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clipRule="evenodd" />
-                    </svg>
-                    locked
-                  </span>
-                )}
               </div>
               <div className="space-y-1">
                 {displayFiles.map((file) => {
                   const isSelected = selectedFileIds.includes(file.fileId);
                   const canSelect = isSelected || selectedFileIds.length < 50;
-                  const isMissing = file.isMissing;
+                  const isUploading = file.isUploading;
                   return (
                     <div
                       key={file.fileId}
-                      className={`p-2 rounded-card border border-transparent bg-transparent hover:bg-background-warm-white transition-colors ${
-                        isMissing
+                      className={`p-2 rounded-card border border-transparent bg-transparent transition-colors ${
+                        isUploading
                           ? 'cursor-default opacity-75'
-                          : isViewingActiveConversation
-                            ? 'cursor-default opacity-75'
-                            : isFilesLocked
-                              ? 'cursor-not-allowed opacity-75'
-                              : !canSelect
-                                ? 'cursor-not-allowed opacity-50'
-                                : ''
+                          : !canSelect
+                            ? 'cursor-not-allowed opacity-50'
+                            : 'hover:bg-background-warm-white'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <div 
-                          className="flex items-center space-x-3 flex-1 min-w-0 cursor-pointer"
+                          className={`flex items-center space-x-3 flex-1 min-w-0 ${!isUploading ? 'cursor-pointer' : 'cursor-default'}`}
                           onClick={() => {
-                            if (isMissing || isViewingActiveConversation || isFilesLocked) return;
+                            if (isUploading) return;
                             if (isSelected) {
                               onFileSelected(selectedFileIds.filter(id => id !== file.fileId));
                             } else if (selectedFileIds.length < 50) {
@@ -707,19 +733,15 @@ const SourcesPanel = ({
                           {/* Checkbox */}
                           <div className="flex-shrink-0">
                             <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
-                              isMissing
-                                ? 'border-red-300 bg-red-100'
+                              isUploading
+                                ? 'border-gray-200 bg-gray-100'
                                 : isSelected 
-                                  ? isFilesLocked
-                                    ? 'bg-gray-400 border-gray-400'
-                                    : 'bg-primary-600 border-primary-600'
-                                  : isFilesLocked
-                                    ? 'border-gray-300'
-                                    : !canSelect
-                                      ? 'border-gray-200 bg-gray-100'
-                                      : 'border-gray-300 hover:border-primary-400'
+                                  ? 'bg-primary-600 border-primary-600'
+                                  : !canSelect
+                                    ? 'border-gray-200 bg-gray-100'
+                                    : 'border-gray-300 hover:border-primary-400'
                             }`}>
-                              {isSelected && (
+                              {isSelected && !isUploading && (
                                 <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
@@ -729,13 +751,13 @@ const SourcesPanel = ({
                           
                           {/* File Type Icon */}
                           <div className="flex-shrink-0">
-                            {getFileTypeIcon(getFileType(file.name, isMissing))}
+                            {isUploading ? getFileTypeIcon('uploading') : getFileTypeIcon(getFileType(file.name))}
                           </div>
                           
                           {/* File Name */}
                           <div className="flex-1 min-w-0">
                             <p className={`body-small font-medium truncate ${
-                              isMissing ? 'text-red-600' : 'text-text-primary'
+                              isUploading ? 'text-text-muted' : 'text-text-primary'
                             }`}>
                               {file.name}
                             </p>
@@ -743,7 +765,7 @@ const SourcesPanel = ({
                         </div>
                         
                         {/* Actions Menu */}
-                        {!isMissing && (
+                        {!isUploading && (
                           <div className="flex items-center space-x-2">
                             <button
                               onClick={(e) => {
@@ -772,26 +794,8 @@ const SourcesPanel = ({
                   <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
                 </svg>
               </div>
-              {!activeConversation && !isInNewConversationMode ? (
-                <>
-                  <p className="body-small text-text-muted mb-2">click "new conversation" to select files</p>
-                </>
-              ) : isInNewConversationMode && uploadedFiles.length === 0 ? (
-                <>
-                  <p className="body-small text-text-muted mb-2">No files uploaded yet</p>
-                  <p className="body-xs text-text-muted">Click "upload files" to upload CSV, PDF, DOCX, XLSX, or TXT files</p>
-                </>
-              ) : activeConversation ? (
-                <>
-                  <p className="body-small text-text-muted mb-2">No files for this conversation</p>
-                  <p className="body-xs text-text-muted">The files associated with this conversation are not available</p>
-                </>
-              ) : (
-                <>
-                  <p className="body-small text-text-muted mb-2">No files uploaded yet</p>
-                  <p className="body-xs text-text-muted">Click "upload files" to upload CSV, PDF, DOCX, XLSX, or TXT files</p>
-                </>
-              )}
+              <p className="body-small text-text-muted mb-2">No files uploaded yet</p>
+              <p className="body-xs text-text-muted">Click "upload files" to upload CSV, PDF, DOCX, XLSX, or TXT files</p>
             </div>
           )}
         </div>
@@ -804,7 +808,7 @@ const SourcesPanel = ({
       {openMenuId && createPortal(
         <div 
           data-dropdown-menu
-          className="fixed w-40 bg-white rounded-card border border-gray-200 warm-shadow z-50"
+          className="fixed w-50 bg-white rounded-card border border-gray-200 warm-shadow z-50"
           style={{
             top: `${menuPosition.top}px`,
             left: `${menuPosition.left}px`,
@@ -844,17 +848,47 @@ const SourcesPanel = ({
               </svg>
               <span>Delete</span>
             </button>
+            
+            {/* Delete Selected - only show for selected files when at least one other file is selected */}
+            {selectedFileIds.includes(openMenuId) && selectedFileIds.length >= 2 && (
+              <>
+                <hr className="my-1 border-gray-200" />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const filesToDelete = displayFiles
+                      .filter(f => selectedFileIds.includes(f.fileId) && !f.isUploading)
+                      .map(f => f.name);
+                    
+                    if (filesToDelete.length > 0 && window.confirm(`Are you sure you want to delete ${filesToDelete.length} file${filesToDelete.length > 1 ? 's' : ''}?`)) {
+                      setFilesBeingDeleted(filesToDelete);
+                      Promise.all(filesToDelete.map(fileName => onFileDeleted(fileName)))
+                        .finally(() => {
+                          setTimeout(() => setFilesBeingDeleted([]), 100);
+                        });
+                    }
+                    setOpenMenuId(null);
+                  }}
+                  className="w-full px-3 py-2 text-left body-small text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  <span>Delete Selected ({selectedFileIds.length})</span>
+                </button>
+              </>
+            )}
           </div>
         </div>,
         document.body
       )}
 
-      {/* Upload Files Popup */}
+      {/* Portal-based upload popup */}
       {showUploadFilesPopup && createPortal(
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-card border border-gray-200 warm-shadow w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setShowUploadFilesPopup(false)}>
+          <div className="bg-white rounded-card border border-gray-200 warm-shadow w-full max-w-5xl" onClick={(e) => e.stopPropagation()}>
             {/* Popup Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="heading-4 text-text-primary">upload files</h2>
               <button
                 onClick={() => setShowUploadFilesPopup(false)}
@@ -866,21 +900,21 @@ const SourcesPanel = ({
               </button>
             </div>
 
-            {/* Drag and Drop Zone - Pinned */}
-            <div className="flex-shrink-0 p-6 pb-4 border-b border-gray-200">
-              <div
-                onDragEnter={handleDragEnter}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={openFileDialog}
-                className={`border-2 border-dashed rounded-lg p-8 transition-all cursor-pointer ${
-                  isDragging 
-                    ? 'border-primary-500 bg-primary-50' 
-                    : 'border-gray-300 bg-gray-50 hover:border-primary-400 hover:bg-primary-25'
-                }`}
-              >
-                <div className="flex flex-col items-center justify-center text-center">
+            {/* Drag and Drop Zone */}
+            <div className="p-6">
+                <div
+                  onDragEnter={handleDragEnter}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={openFileDialog}
+                  className={`border-2 border-dashed rounded-lg p-12 min-h-[400px] w-full transition-all cursor-pointer flex items-center justify-center ${
+                    isDragging 
+                      ? 'border-primary-500 bg-primary-50' 
+                      : 'border-gray-300 bg-gray-50 hover:border-primary-400 hover:bg-primary-25'
+                  }`}
+                >
+                  <div className="flex flex-col items-center justify-center text-center">
                   {/* Upload Icon */}
                   <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${
                     isDragging ? 'bg-primary-200' : 'bg-primary-100'
@@ -916,132 +950,6 @@ const SourcesPanel = ({
                     Supported file types: CSV, PDF, DOCX, XLSX, TXT
                   </p>
                 </div>
-              </div>
-            </div>
-
-            {/* Files Section Header - Pinned */}
-            {uploadedFiles.filter(file => !filesBeingDeleted.includes(file.name)).length > 0 && (
-              <div className="flex-shrink-0 px-6 py-3 border-b border-gray-200 bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <h4 className="body-small font-medium text-text-primary">Your Files ({uploadedFiles.filter(file => !filesBeingDeleted.includes(file.name)).length}/50)</h4>
-                  {selectedForDeletion.length > 0 && (
-                    <button
-                      onClick={handleBulkDelete}
-                      className="body-xs text-red-600 hover:text-red-700 font-medium transition-colors flex items-center space-x-1"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      <span>Delete Selected ({selectedForDeletion.length})</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Files List - Scrollable */}
-            <div className="flex-1 overflow-y-auto p-6 min-h-0 mobile-scrollbar">
-              {uploading && (
-                <div className="mb-4 rounded-card p-3 flex items-center space-x-2" style={{ backgroundColor: '#EEF2ED', borderWidth: '1px', borderColor: '#C8D5C7' }}>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2" style={{ borderBottomColor: '#3E553C' }}></div>
-                  <span className="body-small" style={{ color: '#3E553C' }}>Uploading {uploadingCount} file{uploadingCount > 1 ? 's' : ''}...</span>
-                </div>
-              )}
-
-              {filesBeingDeleted.length > 0 && (
-                <div className="mb-4 rounded-card p-3 flex items-center space-x-2" style={{ backgroundColor: '#FFF5E6', borderWidth: '1px', borderColor: '#FFD699' }}>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2" style={{ borderBottomColor: '#FFA51F' }}></div>
-                  <span className="body-small" style={{ color: '#CC7A00' }}>Deleting {filesBeingDeleted.length} file{filesBeingDeleted.length > 1 ? 's' : ''}...</span>
-                </div>
-              )}
-
-              {error && (
-                <div className="mb-4 bg-red-50 border border-red-200 rounded-card p-3 flex items-start space-x-2">
-                  <svg className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                  <p className="body-small text-red-700">{error}</p>
-                </div>
-              )}
-
-              {uploadedFiles.filter(file => !filesBeingDeleted.includes(file.name)).length > 0 ? (
-                <div className="space-y-3">
-                  {uploadedFiles
-                    .filter(file => !filesBeingDeleted.includes(file.name))
-                    .map((file) => {
-                      const fileType = getFileType(file.name);
-                      const isSelectedForDeletion = selectedForDeletion.includes(file.name);
-                      return (
-                      <div
-                        key={file.name}
-                        className="p-2 rounded-card border border-transparent bg-transparent hover:bg-background-warm-white transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3 flex-1 min-w-0">
-                            {/* Checkbox for bulk selection */}
-                            <div className="flex-shrink-0">
-                              <div 
-                                onClick={() => toggleFileForDeletion(file.name)}
-                                className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors cursor-pointer ${
-                                  isSelectedForDeletion 
-                                    ? 'bg-primary-600 border-primary-600' 
-                                    : 'border-gray-300 hover:border-primary-400'
-                                }`}
-                              >
-                                {isSelectedForDeletion && (
-                                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex-shrink-0">
-                              {getFileTypeIcon(fileType)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="body-small font-medium text-text-primary truncate">{file.name}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => onFileDownload(file)}
-                              className="p-2 rounded text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                              title="Download file"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (window.confirm(`Are you sure you want to delete ${file.name}?`)) {
-                                  onFileDeleted(file.name);
-                                }
-                              }}
-                              className="p-2 rounded text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors"
-                              title="Delete file"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                  <p className="body-small text-text-muted">No files uploaded yet</p>
-                  <p className="body-xs text-text-muted mt-1">Use the upload area above to add files</p>
-                </div>
-              )}
-            </div>
-
-            {/* Popup Footer */}
-            <div className="border-t border-gray-200 p-1 flex-shrink-0">
-              <div className="flex items-center justify-between">
               </div>
             </div>
           </div>

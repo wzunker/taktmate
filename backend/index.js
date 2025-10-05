@@ -356,32 +356,25 @@ app.post('/api/chat', requireAuth, async (req, res) => {
         // Get existing conversation
         conversation = await cosmosService.getConversation(conversationId, user.id);
         
-        // Verify the conversation is for the same file(s)
+        // Allow dynamic file changes - update conversation's file associations to current files
         const conversationFileNames = conversation.fileNames || [conversation.fileName];
         const filesMatch = conversationFileNames.length === targetFileNames.length &&
                           conversationFileNames.every(name => targetFileNames.includes(name));
         
+        // Always update file associations if they've changed
         if (!filesMatch) {
           const conversationFiles = conversationFileNames.join(', ');
           const requestFiles = targetFileNames.join(', ');
-          return res.status(400).json({
-            success: false,
-            error: 'File mismatch',
-            message: `Conversation is associated with [${conversationFiles}], not [${requestFiles}]`
-          });
-        }
-        
-        // If files match by name but conversation might have outdated metadata,
-        // update the conversation's file associations to ensure compatibility
-        if (filesMatch && (conversation.fileNames || conversation.fileName)) {
+          console.log(`Updating conversation ${conversationId} files from [${conversationFiles}] to [${requestFiles}]`);
+          
           try {
-            // Update conversation to use current file names (handles re-uploaded files)
+            // Update conversation to use current file names (allows dynamic file changes)
             const updateData = targetFileNames.length === 1 
               ? { fileName: targetFileNames[0] }
               : { fileNames: targetFileNames };
             
             await cosmosService.updateConversation(conversationId, user.id, updateData);
-            console.log(`Updated conversation ${conversationId} file associations to current files`);
+            console.log(`Successfully updated conversation ${conversationId} file associations`);
           } catch (updateError) {
             console.warn(`Failed to update conversation file associations:`, updateError.message);
             // Continue anyway - this is not critical
