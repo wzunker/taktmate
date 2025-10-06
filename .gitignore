@@ -77,3 +77,7 @@ tests/error_analysis.txt
 
 # Backup files
 *.backup
+
+# Local debug config (not for production)
+**/debug.config.js
+debug/

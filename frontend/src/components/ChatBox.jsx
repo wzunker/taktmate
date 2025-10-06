@@ -1,8 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { getAuthHeaders } from '../utils/auth';
 import Card, { CardHeader, CardContent } from './Card';
 import useAuth from '../hooks/useAuth';
+
+// Try to load debug config (local only, not in git)
+let SHOW_DEBUG_INFO = false;
+try {
+  const debugConfig = require('../debug.config.js');
+  SHOW_DEBUG_INFO = debugConfig.SHOW_DEBUG_INFO;
+  if (SHOW_DEBUG_INFO) console.log('🐛 Debug mode enabled');
+} catch (e) {
+  // debug.config.js doesn't exist, that's fine
+}
 
 const ChatBox = ({ 
   fileData, 
@@ -24,6 +36,7 @@ const ChatBox = ({
   const [suggestions, setSuggestions] = useState([]);
   const [startingConversation, setStartingConversation] = useState(false);
   const [hasActivatedInput, setHasActivatedInput] = useState(false);
+  const [debugDropdownOpen, setDebugDropdownOpen] = useState({});
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const { displayName } = useAuth();
@@ -99,11 +112,18 @@ const ChatBox = ({
       });
 
       if (response.data.success) {
-        setMessages(prev => [...prev, { 
+        const assistantMessage = { 
           type: 'assistant', 
           content: response.data.reply,
           timestamp: new Date().toISOString()
-        }]);
+        };
+        
+        // Add debug info if available
+        if (response.data.debug) {
+          assistantMessage.debug = response.data.debug;
+        }
+        
+        setMessages(prev => [...prev, assistantMessage]);
         setMessageCount(prev => prev + 1);
 
         // Handle conversation updates - notify parent to add/update conversation
@@ -372,11 +392,18 @@ const ChatBox = ({
       });
 
       if (response.data.success) {
-        setMessages(prev => [...prev, { 
+        const assistantMessage = { 
           type: 'assistant', 
           content: response.data.reply,
           timestamp: new Date().toISOString()
-        }]);
+        };
+        
+        // Add debug info if available
+        if (response.data.debug) {
+          assistantMessage.debug = response.data.debug;
+        }
+        
+        setMessages(prev => [...prev, assistantMessage]);
         setMessageCount(prev => prev + 1);
 
         // Handle conversation updates - notify parent to add/update conversation
@@ -676,11 +703,101 @@ const ChatBox = ({
                   </div>
                 </div>
               ) : (
-                /* Assistant Message - Full Width Document Style (No Bubble, No Icon) */
-                <div className="w-full py-2 text-text-primary">
-                  <div className="body-normal whitespace-pre-wrap leading-relaxed">
+                /* Assistant Message - Full Width Document Style with Markdown */
+                <div className="w-full py-2 text-text-primary prose prose-sm max-w-none">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      // Headings
+                      h1: ({node, ...props}) => <h1 className="text-2xl font-bold text-text-primary mt-6 mb-4" {...props} />,
+                      h2: ({node, ...props}) => <h2 className="text-xl font-semibold text-text-primary mt-5 mb-3" {...props} />,
+                      h3: ({node, ...props}) => <h3 className="text-lg font-semibold text-text-primary mt-4 mb-2" {...props} />,
+                      // Paragraphs
+                      p: ({node, ...props}) => <p className="body-normal text-text-primary leading-relaxed mb-3" {...props} />,
+                      // Strong/Bold
+                      strong: ({node, ...props}) => <strong className="font-semibold text-text-primary" {...props} />,
+                      // Lists
+                      ul: ({node, ...props}) => <ul className="list-disc list-inside mb-3 space-y-1" {...props} />,
+                      ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-3 space-y-1" {...props} />,
+                      li: ({node, ...props}) => <li className="body-normal text-text-primary leading-relaxed ml-4" {...props} />,
+                      // Tables
+                      table: ({node, ...props}) => (
+                        <div className="overflow-x-auto my-4">
+                          <table className="min-w-full border-collapse border border-gray-300" {...props} />
+                        </div>
+                      ),
+                      thead: ({node, ...props}) => <thead className="bg-gray-100" {...props} />,
+                      tbody: ({node, ...props}) => <tbody {...props} />,
+                      tr: ({node, ...props}) => <tr className="border-b border-gray-300" {...props} />,
+                      th: ({node, ...props}) => <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-text-primary bg-gray-50" {...props} />,
+                      td: ({node, ...props}) => <td className="border border-gray-300 px-4 py-2 body-normal text-text-primary" {...props} />,
+                      // Code
+                      code: ({node, inline, ...props}) => 
+                        inline ? (
+                          <code className="bg-gray-100 text-text-primary px-1.5 py-0.5 rounded text-sm font-mono" {...props} />
+                        ) : (
+                          <code className="block bg-gray-100 text-text-primary p-3 rounded text-sm font-mono overflow-x-auto mb-3" {...props} />
+                        ),
+                      // Links
+                      a: ({node, ...props}) => <a className="text-primary-600 hover:text-primary-700 underline" {...props} />,
+                      // Blockquotes
+                      blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-text-secondary my-3" {...props} />,
+                    }}
+                  >
                     {message.content}
-                  </div>
+                  </ReactMarkdown>
+                  
+                  {/* Debug Dropdown - Only visible if debug config enabled and debug info present */}
+                  {SHOW_DEBUG_INFO && message.debug && (
+                    <div className="mt-4 border-t border-gray-200 pt-4">
+                      <button
+                        onClick={() => setDebugDropdownOpen(prev => ({
+                          ...prev,
+                          [index]: !prev[index]
+                        }))}
+                        className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 font-mono mb-2"
+                      >
+                        <span>{debugDropdownOpen[index] ? '▼' : '▶'}</span>
+                        <span>🐛 Debug Info</span>
+                      </button>
+                      
+                      {debugDropdownOpen[index] && (
+                        <div className="bg-gray-50 rounded p-4 text-xs font-mono space-y-4 overflow-x-auto">
+                          {/* User Message */}
+                          <div>
+                            <div className="font-bold text-gray-700 mb-2">User Message:</div>
+                            <div className="bg-white p-2 rounded border border-gray-200">
+                              {message.debug.userMessage}
+                            </div>
+                          </div>
+                          
+                          {/* System Prompt */}
+                          <div>
+                            <div className="font-bold text-gray-700 mb-2">System Prompt Sent to OpenAI:</div>
+                            <div className="bg-white p-2 rounded border border-gray-200 max-h-96 overflow-y-auto whitespace-pre-wrap">
+                              {message.debug.promptSent}
+                            </div>
+                          </div>
+                          
+                          {/* OpenAI Response */}
+                          <div>
+                            <div className="font-bold text-gray-700 mb-2">Full OpenAI Response:</div>
+                            <div className="bg-white p-2 rounded border border-gray-200 max-h-96 overflow-y-auto">
+                              <pre>{JSON.stringify(message.debug.openaiResponse, null, 2)}</pre>
+                            </div>
+                          </div>
+                          
+                          {/* Parsed Reply */}
+                          <div>
+                            <div className="font-bold text-gray-700 mb-2">Parsed Reply:</div>
+                            <div className="bg-white p-2 rounded border border-gray-200 whitespace-pre-wrap">
+                              {message.debug.parsedReply}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -747,7 +864,7 @@ const ChatBox = ({
                           onChange={(e) => setInputMessage(e.target.value)}
                           onKeyPress={handleKeyPress}
                           onFocus={handleInputFocus}
-                          placeholder={!fileData ? "Select a file to start chatting..." : "What would you like to discover?"}
+                          placeholder={!fileData ? "Select a file to start chatting..." : "What would you like to investigate next?"}
                           className="w-full border border-gray-300 rounded-input px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-small sm:body-normal resize-none transition-all duration-200"
                           disabled={sending || !fileData}
                           rows="1"

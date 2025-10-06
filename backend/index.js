@@ -16,6 +16,16 @@ const filesRouter = require('./routes/files');
 const conversationsRouter = require('./routes/conversations');
 const { normalPrompt } = require('./prompts/normalPrompt');
 
+// Try to load debug config (local only, not in git)
+let DEBUG_MODE = false;
+try {
+  const debugConfig = require('./debug.config.js');
+  DEBUG_MODE = debugConfig.DEBUG_MODE;
+  if (DEBUG_MODE) console.log('🐛 DEBUG MODE ENABLED - debug info will be included in responses');
+} catch (e) {
+  // debug.config.js doesn't exist, that's fine
+}
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -574,6 +584,17 @@ app.post('/api/chat', requireAuth, async (req, res) => {
     // This allows the frontend to update the title if it has changed (e.g., AI-generated title)
     if (conversation) {
       response.title = conversation.title;
+    }
+
+    // Add debug info if DEBUG_MODE is enabled (local development only)
+    if (DEBUG_MODE) {
+      response.debug = {
+        promptSent: systemPrompt,
+        userMessage: message,
+        fullMessages: messages,
+        openaiResponse: completion,
+        parsedReply: reply
+      };
     }
 
     res.json(response);

@@ -184,6 +184,13 @@ code {
   }
 }
 
+/* Markdown prose spacing improvements */
+.prose hr {
+  margin-top: 1.5rem;   /* add breathing room above */
+  margin-bottom: 1.5rem; /* and below */
+  border-color: #e5e7eb; /* gray-200 */
+}
+
 /* Prevent zoom on input focus on iOS */
 @media screen and (max-width: 640px) {
   input[type="text"],
