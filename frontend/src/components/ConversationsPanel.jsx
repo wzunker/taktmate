@@ -69,7 +69,7 @@ const ConversationsPanel = ({
           <button
             type="button"
             onClick={handleCreateNewConversation}
-            className="w-10 h-10 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors warm-shadow flex items-center justify-center flex-shrink-0"
+            className="w-10 h-10 bg-secondary-500 text-white rounded-full hover:bg-secondary-700 transition-colors warm-shadow flex items-center justify-center flex-shrink-0"
             title="Start a new conversation"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,7 +103,7 @@ const ConversationsPanel = ({
           {/* New Conversation Button - Full Width */}
           <button
             onClick={handleCreateNewConversation}
-            className="w-full bg-primary-600 text-white px-4 py-2.5 rounded-button body-small font-medium hover:bg-primary-700 transition-colors warm-shadow mb-4"
+            className="w-full bg-secondary-500 text-white px-4 py-2.5 rounded-button body-small font-medium hover:bg-secondary-700 transition-colors warm-shadow mb-4"
             title="Start a new conversation"
           >
             new conversation

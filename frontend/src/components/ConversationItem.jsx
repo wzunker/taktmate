@@ -79,9 +79,9 @@ const ConversationItem = ({
             className={`relative w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
               isActive
                 ? 'text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-primary-100 hover:text-primary-700'
+                : 'bg-secondary-100 text-gray-700 hover:bg-secondary-200 hover:text-primary-700'
             }`}
-            style={isActive ? { backgroundColor: '#FFA51F' } : {}}
+            style={isActive ? { backgroundColor: '#cc5d08' } : {}}
           >
             <span className="body-normal font-semibold">{firstLetter}</span>
 
@@ -93,9 +93,9 @@ const ConversationItem = ({
                 border-t-[6px] transition-colors ${
                   isActive
                     ? ''
-                    : 'border-t-gray-200 group-hover:border-t-primary-100'
+                    : 'border-t-secondary-100 group-hover:border-t-secondary-200'
                 }`}
-              style={isActive ? { borderTopColor: '#FFA51F' } : {}}
+              style={isActive ? { borderTopColor: '#cc5d08' } : {}}
             />
           </div>
         </div>

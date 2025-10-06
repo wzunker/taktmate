@@ -548,7 +548,7 @@ const SourcesPanel = ({
           <button
             type="button"
             onClick={() => setShowUploadFilesPopup(true)}
-            className="w-10 h-10 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors warm-shadow flex items-center justify-center flex-shrink-0"
+            className="w-10 h-10 bg-secondary-500 text-white rounded-full hover:bg-secondary-700 transition-colors warm-shadow flex items-center justify-center flex-shrink-0"
             style={{ borderRadius: '50%' }}
             title="Upload files"
           >
@@ -599,7 +599,7 @@ const SourcesPanel = ({
           <button
             type="button"
             onClick={() => setShowUploadFilesPopup(true)}
-            className="w-full bg-primary-600 text-white px-4 py-2.5 rounded-button body-small font-medium hover:bg-primary-700 transition-colors warm-shadow mb-4"
+            className="w-full bg-secondary-500 text-white px-4 py-2.5 rounded-button body-small font-medium hover:bg-secondary-700 transition-colors warm-shadow mb-4"
           >
             upload files
           </button>

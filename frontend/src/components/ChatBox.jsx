@@ -506,7 +506,7 @@ const ChatBox = ({
         {showCenteredInput && (
           <div className="w-full max-w-2xl space-y-6">
             <div className="text-center">
-              <h3 className="heading-1 text-takt-green mb-3">
+              <h3 className="heading-1 text-primary-600 mb-3">
                 Ready to explore together?
               </h3>
               {!hasSelectedFiles && (
@@ -717,9 +717,9 @@ const ChatBox = ({
                       // Strong/Bold
                       strong: ({node, ...props}) => <strong className="font-semibold text-text-primary" {...props} />,
                       // Lists
-                      ul: ({node, ...props}) => <ul className="list-disc list-inside mb-3 space-y-1" {...props} />,
-                      ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-3 space-y-1" {...props} />,
-                      li: ({node, ...props}) => <li className="body-normal text-text-primary leading-relaxed ml-4" {...props} />,
+                      ul: ({node, ...props}) => <ul className="list-disc list-outside pl-6 mb-3 space-y-1" {...props} />,
+                      ol: ({node, ...props}) => <ol className="list-decimal list-outside pl-6 mb-3 space-y-1" {...props} />,
+                      li: ({node, ...props}) => <li className="body-normal text-text-primary leading-normal" {...props} />,
                       // Tables
                       table: ({node, ...props}) => (
                         <div className="overflow-x-auto my-4">

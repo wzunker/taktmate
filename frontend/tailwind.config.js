@@ -52,8 +52,6 @@ module.exports = {
           500: '#E16809',  // Takt Orange (main)
           600: '#cc5d08',  // Darker orange
           700: '#a84a07',  // Dark orange
-          800: '#8a3c0a',  // Very dark orange
-          900: '#72340c',  // Darkest orange
         },
         // Secondary color mapping to Takt Green
         secondary: {
@@ -65,8 +63,6 @@ module.exports = {
           500: '#3E553C',  // Takt Green (main)
           600: '#374d34',  // Darker green
           700: '#2f402d',  // Dark green
-          800: '#283426',  // Very dark green
-          900: '#222c21',  // Darkest green
         },
         // Background and neutral colors
         background: {
