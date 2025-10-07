@@ -758,7 +758,7 @@ const ChatBox = ({
                         className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 font-mono mb-2"
                       >
                         <span>{debugDropdownOpen[index] ? '▼' : '▶'}</span>
-                        <span>🐛 Debug Info</span>
+                        <span>Info</span>
                       </button>
                       
                       {debugDropdownOpen[index] && (

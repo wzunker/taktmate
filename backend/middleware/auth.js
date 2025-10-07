@@ -18,17 +18,30 @@
 function requireAuth(req, res, next) {
   try {
     // LOCAL DEVELOPMENT BYPASS - Multiple safety checks
+    // ⚠️ SECURITY: This bypass should NEVER be enabled in production
+    const isLocalDev = process.env.LOCAL_DEVELOPMENT === 'true';
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const isLocalhost = req.hostname === 'localhost' || req.hostname === '127.0.0.1';
+    
+    // Additional safety: Explicitly reject if LOCAL_DEVELOPMENT is set in production
+    if (isLocalDev && process.env.NODE_ENV === 'production') {
+      console.error('🚨 SECURITY ERROR: LOCAL_DEVELOPMENT is set to true in production environment! This is a critical security misconfiguration.');
+      return res.status(500).json({
+        error: 'Configuration error',
+        message: 'Server is misconfigured. Please contact system administrator.'
+      });
+    }
+    
     console.log('🔍 Auth Debug:', {
-      LOCAL_DEVELOPMENT: process.env.LOCAL_DEVELOPMENT,
+      LOCAL_DEVELOPMENT: isLocalDev,
       NODE_ENV: process.env.NODE_ENV,
       hostname: req.hostname,
-      host: req.headers.host
+      host: req.headers.host,
+      isLocalhost: isLocalhost
     });
     
-    if (process.env.LOCAL_DEVELOPMENT === 'true' && 
-        process.env.NODE_ENV === 'development' && 
-        (req.hostname === 'localhost' || req.hostname === '127.0.0.1')) {
-      
+    // Only allow bypass if ALL conditions are met: local dev flag + development mode + localhost
+    if (isLocalDev && isDevelopment && isLocalhost) {
       console.log('🔧 Using mock user for local development');
       req.user = {
         id: 'local-dev-user',
