@@ -686,8 +686,11 @@ const ChatBox = ({
                     remarkPlugins={[remarkGfm]}
                     components={{
                       // Headings
+                      // eslint-disable-next-line jsx-a11y/heading-has-content
                       h1: ({node, ...props}) => <h1 className="text-2xl font-bold text-text-primary mt-6 mb-4" {...props} />,
+                      // eslint-disable-next-line jsx-a11y/heading-has-content
                       h2: ({node, ...props}) => <h2 className="text-xl font-semibold text-text-primary mt-5 mb-3" {...props} />,
+                      // eslint-disable-next-line jsx-a11y/heading-has-content
                       h3: ({node, ...props}) => <h3 className="text-lg font-semibold text-text-primary mt-4 mb-2" {...props} />,
                       // Paragraphs
                       p: ({node, ...props}) => <p className="body-normal text-text-primary leading-relaxed mb-3" {...props} />,
@@ -716,6 +719,7 @@ const ChatBox = ({
                           <code className="block bg-gray-100 text-text-primary p-3 rounded text-sm font-mono overflow-x-auto mb-3" {...props} />
                         ),
                       // Links
+                      // eslint-disable-next-line jsx-a11y/anchor-has-content
                       a: ({node, ...props}) => <a className="text-primary-600 hover:text-primary-700 underline" {...props} />,
                       // Blockquotes
                       blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-text-secondary my-3" {...props} />,
