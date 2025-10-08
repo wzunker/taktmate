@@ -3,18 +3,11 @@ import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getAuthHeaders } from '../utils/auth';
-import Card, { CardHeader, CardContent } from './Card';
+import Card, { CardContent } from './Card';
 import useAuth from '../hooks/useAuth';
 
-// Try to load debug config (local only, not in git)
-let SHOW_DEBUG_INFO = false;
-try {
-  const debugConfig = require('../debug.config.js');
-  SHOW_DEBUG_INFO = debugConfig.SHOW_DEBUG_INFO;
-  if (SHOW_DEBUG_INFO) console.log('🐛 Debug mode enabled');
-} catch (e) {
-  // debug.config.js doesn't exist, that's fine
-}
+// Debug mode disabled in production
+const SHOW_DEBUG_INFO = false;
 
 const ChatBox = ({ 
   fileData, 
@@ -305,23 +298,6 @@ const ChatBox = ({
       if (interval) clearInterval(interval);
     };
   }, [sending]);
-
-
-  // Handle starting a new conversation
-  const handleStartConversation = async () => {
-    if (!selectedFileIds || selectedFileIds.length === 0) return;
-    
-    setStartingConversation(true);
-    try {
-      if (onStartConversation) {
-        await onStartConversation(selectedFileIds);
-      }
-    } catch (error) {
-      console.error('Error starting conversation:', error);
-    } finally {
-      setStartingConversation(false);
-    }
-  };
 
   // Show centered input as default when no messages exist
   const hasSelectedFiles = selectedFileIds && selectedFileIds.length > 0;
@@ -705,6 +681,7 @@ const ChatBox = ({
               ) : (
                 /* Assistant Message - Full Width Document Style with Markdown */
                 <div className="w-full py-2 text-text-primary prose prose-sm max-w-none">
+                  {/* eslint-disable-next-line jsx-a11y/heading-has-content, jsx-a11y/anchor-has-content */}
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{

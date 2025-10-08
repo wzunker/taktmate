@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import Card, { CardHeader, CardContent } from './Card';
+import Card, { CardContent } from './Card';
 import { getAuthHeaders } from '../utils/auth';
 
 const SourcesPanel = ({ 
@@ -17,13 +17,11 @@ const SourcesPanel = ({
   activeConversation = null,
   isInNewConversationMode = false
 }) => {
-  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [showPrivacyInfo] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const [showUploadFilesPopup, setShowUploadFilesPopup] = useState(false);
-  const [selectedForDeletion, setSelectedForDeletion] = useState([]);
   const [filesBeingDeleted, setFilesBeingDeleted] = useState([]);
   const [filesBeingUploaded, setFilesBeingUploaded] = useState([]); // Array of {name, size} for files currently uploading
   const [isDragging, setIsDragging] = useState(false);
@@ -111,62 +109,6 @@ const SourcesPanel = ({
     }
   };
 
-  // Get file type colors and styles
-  const getFileTypeStyles = (fileType) => {
-    switch (fileType) {
-      case 'csv':
-        return {
-          bgColor: 'bg-blue-100',
-          textColor: 'text-blue-600',
-          label: 'CSV',
-          labelBg: 'bg-blue-100',
-          labelText: 'text-blue-700'
-        };
-      case 'pdf':
-        return {
-          bgColor: 'bg-red-100',
-          textColor: 'text-red-600',
-          label: 'PDF',
-          labelBg: 'bg-red-100',
-          labelText: 'text-red-700'
-        };
-      case 'docx':
-        return {
-          bgColor: 'bg-indigo-100',
-          textColor: 'text-indigo-600',
-          label: 'DOCX',
-          labelBg: 'bg-indigo-100',
-          labelText: 'text-indigo-700'
-        };
-      case 'xlsx':
-        return {
-          bgColor: 'bg-green-100',
-          textColor: 'text-green-600',
-          label: 'XLSX',
-          labelBg: 'bg-green-100',
-          labelText: 'text-green-700'
-        };
-      case 'txt':
-        return {
-          bgColor: 'bg-gray-100',
-          textColor: 'text-gray-600',
-          label: 'TXT',
-          labelBg: 'bg-gray-100',
-          labelText: 'text-gray-700'
-        };
-      default:
-        return {
-          bgColor: 'bg-secondary-100',
-          textColor: 'text-secondary-600',
-          label: 'FILE',
-          labelBg: 'bg-secondary-100',
-          labelText: 'text-secondary-700'
-        };
-    }
-  };
-
-
-
   const handleFileInput = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       handleFiles(e.target.files);
@@ -174,8 +116,6 @@ const SourcesPanel = ({
       e.target.value = '';
     }
   };
-
-  const [uploadingCount, setUploadingCount] = useState(0);
 
   const handleFiles = async (fileList) => {
     // Close the popup immediately when files are selected
@@ -241,8 +181,6 @@ const SourcesPanel = ({
     }
 
     setError(null);
-    setUploading(true);
-    setUploadingCount(validFiles.length);
     
     // Immediately show all files being uploaded with loading state
     const uploadingFiles = validFiles.map(file => ({
@@ -322,9 +260,6 @@ const SourcesPanel = ({
         uploadTimeoutRef.current = null;
       }
       setFilesBeingUploaded([]);
-    } finally {
-      setUploading(false);
-      setUploadingCount(0);
     }
   };
 
@@ -365,59 +300,14 @@ const SourcesPanel = ({
     }
   };
 
-  // Bulk deletion handlers
-  const toggleFileForDeletion = (fileName) => {
-    setSelectedForDeletion(prev => 
-      prev.includes(fileName) 
-        ? prev.filter(f => f !== fileName)
-        : [...prev, fileName]
-    );
-  };
-
-  const handleBulkDelete = async () => {
-    if (selectedForDeletion.length === 0) return;
-    
-    const count = selectedForDeletion.length;
-    const fileList = selectedForDeletion.length <= 3 
-      ? selectedForDeletion.join(', ')
-      : `${selectedForDeletion.length} files`;
-    
-    if (window.confirm(`Are you sure you want to delete ${fileList}?`)) {
-      // Store files being deleted and hide them immediately
-      const filesToDelete = [...selectedForDeletion];
-      setFilesBeingDeleted(filesToDelete);
-      setSelectedForDeletion([]);
-      
-      try {
-        // Delete all files in parallel
-        await Promise.all(
-          filesToDelete.map(fileName => onFileDeleted(fileName))
-        );
-      } catch (error) {
-        console.error('Error during bulk delete:', error);
-        setError('Some files failed to delete. Please try again.');
-      } finally {
-        // Clear the files being deleted state after a short delay
-        // This ensures the UI update happens smoothly
-        setTimeout(() => {
-          setFilesBeingDeleted([]);
-        }, 100);
-      }
-    }
-  };
-
-  // Clear selection and state when popup opens/closes
+  // Clear error state when popup opens
   useEffect(() => {
     if (showUploadFilesPopup) {
-      // Clear states when popup opens
       setError(null);
       if (uploadTimeoutRef.current) {
         clearTimeout(uploadTimeoutRef.current);
         uploadTimeoutRef.current = null;
       }
-    } else {
-      // Clear selection when popup closes
-      setSelectedForDeletion([]);
     }
   }, [showUploadFilesPopup]);
 
@@ -449,7 +339,6 @@ const SourcesPanel = ({
   };
 
   const displayFiles = getDisplayFiles();
-  const isViewingActiveConversation = activeConversation && !isInNewConversationMode;
 
   const handleMenuToggle = (fileId, event) => {
     if (openMenuId === fileId) {

@@ -46,18 +46,6 @@ const ConversationItem = ({
     }
   };
 
-  const getStatusIcon = () => {
-    if (conversation.status === 'archived') {
-      return (
-        <div className="w-2 h-2 bg-amber-400 rounded-full" title="Archived" />
-      );
-    }
-    
-    return (
-      <div className="w-2 h-2 bg-green-400 rounded-full" title="Active" />
-    );
-  };
-
   // Collapsed view - show chat box icon with first letter
   if (isCollapsed && !isRenaming) {
     const firstLetter = (conversation.title || 'U').charAt(0).toUpperCase();

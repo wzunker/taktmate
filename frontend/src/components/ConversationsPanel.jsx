@@ -1,5 +1,5 @@
 import React from 'react';
-import Card, { CardHeader, CardContent } from './Card';
+import Card, { CardContent } from './Card';
 import ConversationItem from './ConversationItem';
 
 const ConversationsPanel = ({ 
