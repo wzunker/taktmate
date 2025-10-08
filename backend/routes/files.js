@@ -5,7 +5,7 @@
  * - List user's files
  * - Generate SAS tokens for secure upload/download
  * - Delete files
- * - Enforce 200MB per-user quota
+ * - Enforce 5GB per-user quota
  * 
  * All endpoints require authentication via Azure Static Web Apps
  */
@@ -73,7 +73,8 @@ setInterval(() => {
 router.use(requireAuth);
 
 // Constants
-const MAX_STORAGE_BYTES = 200 * 1024 * 1024; // 200MB per user
+const MAX_STORAGE_BYTES = 5 * 1024 * 1024 * 1024; // 5GB per user
+const MAX_FILES_PER_USER = 50; // Maximum number of files per user
 const MAX_FILENAME_LENGTH = 255;
 const ALLOWED_CONTENT_TYPES = [
   'text/csv',
@@ -200,11 +201,17 @@ router.get('/', async (req, res) => {
         remaining: Math.max(0, MAX_STORAGE_BYTES - totalBytes),
         usedDisplay: totalBytes < 1024 * 1024 ? 
           `${Math.round(totalBytes / 1024)} KB` : 
-          `${Math.round(totalBytes / 1024 / 1024 * 10) / 10} MB`,
-        limitDisplay: `${Math.round(MAX_STORAGE_BYTES / 1024 / 1024)} MB`,
+          totalBytes < 1024 * 1024 * 1024 ?
+          `${Math.round(totalBytes / 1024 / 1024 * 10) / 10} MB` :
+          `${Math.round(totalBytes / 1024 / 1024 / 1024 * 10) / 10} GB`,
+        limitDisplay: MAX_STORAGE_BYTES >= 1024 * 1024 * 1024 ?
+          `${Math.round(MAX_STORAGE_BYTES / 1024 / 1024 / 1024)} GB` :
+          `${Math.round(MAX_STORAGE_BYTES / 1024 / 1024)} MB`,
         remainingDisplay: (MAX_STORAGE_BYTES - totalBytes) < 1024 * 1024 ?
           `${Math.round((MAX_STORAGE_BYTES - totalBytes) / 1024)} KB` :
-          `${Math.round((MAX_STORAGE_BYTES - totalBytes) / 1024 / 1024)} MB`,
+          (MAX_STORAGE_BYTES - totalBytes) < 1024 * 1024 * 1024 ?
+          `${Math.round((MAX_STORAGE_BYTES - totalBytes) / 1024 / 1024)} MB` :
+          `${Math.round((MAX_STORAGE_BYTES - totalBytes) / 1024 / 1024 / 1024 * 10) / 10} GB`,
         percentUsed: Math.round((totalBytes / MAX_STORAGE_BYTES) * 100)
       },
       timestamp: new Date().toISOString()
@@ -263,11 +270,11 @@ router.post('/sas', async (req, res) => {
       });
     }
 
-    if (sizeBytes > 10 * 1024 * 1024) { // 10MB individual file limit
+    if (sizeBytes > 100 * 1024 * 1024) { // 100MB individual file limit
       return res.status(413).json({
         success: false,
         error: 'File too large',
-        message: 'Individual files cannot exceed 10MB'
+        message: 'Individual files cannot exceed 100MB'
       });
     }
 
@@ -307,6 +314,19 @@ router.post('/sas', async (req, res) => {
       });
     }
 
+    // Check file count limit
+    if (existingFiles.length >= MAX_FILES_PER_USER) {
+      return res.status(413).json({
+        success: false,
+        error: 'File limit exceeded',
+        message: `You have reached the maximum limit of ${MAX_FILES_PER_USER} files. Please delete some files before uploading new ones.`,
+        fileCount: {
+          current: existingFiles.length,
+          limit: MAX_FILES_PER_USER
+        }
+      });
+    }
+
     // Check quota before issuing SAS token
     const currentUsage = await sumBytes(userId);
     if (currentUsage + sizeBytes > MAX_STORAGE_BYTES) {
@@ -316,7 +336,7 @@ router.post('/sas', async (req, res) => {
       return res.status(413).json({
         success: false,
         error: 'Storage quota exceeded',
-        message: `Cannot upload ${requestedMB}MB file. Only ${remainingMB}MB remaining of 200MB quota.`,
+        message: `Cannot upload ${requestedMB}MB file. Only ${remainingMB}MB remaining of 5GB quota.`,
         quota: {
           used: currentUsage,
           limit: MAX_STORAGE_BYTES,

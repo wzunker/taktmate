@@ -16,6 +16,16 @@ const filesRouter = require('./routes/files');
 const conversationsRouter = require('./routes/conversations');
 const { normalPrompt } = require('./prompts/normalPrompt');
 
+// Try to load debug config (local only, not in git)
+let DEBUG_MODE = false;
+try {
+  const debugConfig = require('./debug.config.js');
+  DEBUG_MODE = debugConfig.DEBUG_MODE;
+  if (DEBUG_MODE) console.log('🐛 DEBUG MODE ENABLED - debug info will be included in responses');
+} catch (e) {
+  // debug.config.js doesn't exist, that's fine
+}
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -28,6 +38,65 @@ const openai = new OpenAI({
     'api-key': process.env.OPENAI_API_KEY,
   },
 });
+
+/**
+ * Generate a short, memorable title from a user's first message using AI
+ * @param {string} userMessage - The user's first question/message
+ * @returns {Promise<string>} - A short, memorable title (4-8 words)
+ */
+async function generateConversationTitle(userMessage) {
+  try {
+    console.log(`🎯 Generating AI title for message: "${userMessage.substring(0, 100)}..."`);
+    
+    const prompt = `You are a helpful assistant that creates short, memorable conversation titles.
+
+User's question: "${userMessage}"
+
+Generate a concise title (4-8 words) that captures the essence of this question. Be specific and descriptive. Do not use quotes or special formatting. Just return the title text directly.`;
+
+    console.log(`📤 Sending OpenAI request for title generation...`);
+    
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4.1',
+      messages: [
+        { role: 'system', content: prompt }
+      ],
+      max_tokens: 30,
+      temperature: 0.7
+    });
+
+    console.log(`📥 Received OpenAI response:`, JSON.stringify(completion.choices[0]));
+
+    const title = completion.choices[0]?.message?.content?.trim();
+    if (!title) {
+      throw new Error('No title generated from AI');
+    }
+    
+    // Remove any quotes that might have been added
+    const cleanTitle = title.replace(/^["']|["']$/g, '');
+    
+    console.log(`✨ AI-generated title SUCCESS: "${cleanTitle}"`);
+    return cleanTitle;
+  } catch (error) {
+    console.error('❌ Failed to generate AI title - ERROR DETAILS:');
+    console.error('Error message:', error.message);
+    console.error('Error name:', error.name);
+    console.error('Error code:', error.code);
+    if (error.response) {
+      console.error('Error response:', error.response);
+    }
+    console.error('Full error:', JSON.stringify(error, null, 2));
+    
+    // Fallback to simple truncation
+    const words = userMessage.trim().split(' ').slice(0, 6);
+    let fallbackTitle = words.join(' ');
+    if (userMessage.split(' ').length > 6) {
+      fallbackTitle += '...';
+    }
+    console.log(`📝 Using fallback title: "${fallbackTitle}"`);
+    return fallbackTitle;
+  }
+}
 
 // Middleware
 app.use(cors({
@@ -356,32 +425,25 @@ app.post('/api/chat', requireAuth, async (req, res) => {
         // Get existing conversation
         conversation = await cosmosService.getConversation(conversationId, user.id);
         
-        // Verify the conversation is for the same file(s)
+        // Allow dynamic file changes - update conversation's file associations to current files
         const conversationFileNames = conversation.fileNames || [conversation.fileName];
         const filesMatch = conversationFileNames.length === targetFileNames.length &&
                           conversationFileNames.every(name => targetFileNames.includes(name));
         
+        // Always update file associations if they've changed
         if (!filesMatch) {
           const conversationFiles = conversationFileNames.join(', ');
           const requestFiles = targetFileNames.join(', ');
-          return res.status(400).json({
-            success: false,
-            error: 'File mismatch',
-            message: `Conversation is associated with [${conversationFiles}], not [${requestFiles}]`
-          });
-        }
-        
-        // If files match by name but conversation might have outdated metadata,
-        // update the conversation's file associations to ensure compatibility
-        if (filesMatch && (conversation.fileNames || conversation.fileName)) {
+          console.log(`Updating conversation ${conversationId} files from [${conversationFiles}] to [${requestFiles}]`);
+          
           try {
-            // Update conversation to use current file names (handles re-uploaded files)
+            // Update conversation to use current file names (allows dynamic file changes)
             const updateData = targetFileNames.length === 1 
               ? { fileName: targetFileNames[0] }
               : { fileNames: targetFileNames };
             
             await cosmosService.updateConversation(conversationId, user.id, updateData);
-            console.log(`Updated conversation ${conversationId} file associations to current files`);
+            console.log(`Successfully updated conversation ${conversationId} file associations`);
           } catch (updateError) {
             console.warn(`Failed to update conversation file associations:`, updateError.message);
             // Continue anyway - this is not critical
@@ -398,7 +460,9 @@ app.post('/api/chat', requireAuth, async (req, res) => {
     } else {
       // Auto-create a new conversation if none provided
       try {
-        const title = cosmosService.generateTitle([{ role: 'user', content: message }], targetFileNames[0]);
+        // Generate AI-powered title from first user message
+        const title = await generateConversationTitle(message);
+        
         // For backward compatibility, use fileName for single files, fileNames for multiple
         if (targetFileNames.length === 1) {
           conversation = await cosmosService.createConversation(user.id, targetFileNames[0], title);
@@ -406,7 +470,7 @@ app.post('/api/chat', requireAuth, async (req, res) => {
           // This will need cosmos service update, but for now use first file as primary
           conversation = await cosmosService.createConversation(user.id, targetFileNames[0], title, [], targetFileNames);
         }
-        console.log(`Auto-created conversation: ${conversation.id}`);
+        console.log(`Auto-created conversation: ${conversation.id} with AI title: "${title}"`);
       } catch (error) {
         console.warn('Failed to auto-create conversation:', error.message);
         // Continue without conversation (backward compatibility)
@@ -456,6 +520,31 @@ app.post('/api/chat', requireAuth, async (req, res) => {
           await cosmosService.updateConversation(conversation.id, user.id, { suggestions: null });
         }
         
+        // Update title with AI-generated one if this is the first user message (generic title)
+        console.log(`🔍 Checking if title needs updating. Current title: "${conversation.title}", messageCount: ${conversation.messageCount}`);
+        
+        const isGenericTitle = conversation.title && (
+          conversation.title.startsWith('Conversation about ') || 
+          conversation.title.includes(' files')
+        );
+        
+        console.log(`🔍 Is generic title? ${isGenericTitle}, Is first message? ${conversation.messageCount === 0}`);
+        
+        if (isGenericTitle && conversation.messageCount === 0) {
+          try {
+            console.log(`🎨 Generating AI title for first message in conversation ${conversation.id}`);
+            const aiTitle = await generateConversationTitle(message);
+            await cosmosService.updateConversation(conversation.id, user.id, { title: aiTitle });
+            console.log(`✅ Updated conversation title from "${conversation.title}" to "${aiTitle}"`);
+            conversation.title = aiTitle; // Update local object for response
+          } catch (error) {
+            console.error('⚠️  Failed to update conversation title:', error.message);
+            // Not critical, continue
+          }
+        } else {
+          console.log(`⏭️  Skipping title update - not first message or not generic title`);
+        }
+        
         // Check if conversation needs archiving or summarization
         const updatedConversation = await cosmosService.getConversation(conversation.id, user.id);
         const archiveCheck = cosmosService.shouldArchiveConversation(updatedConversation);
@@ -491,11 +580,21 @@ app.post('/api/chat', requireAuth, async (req, res) => {
       conversationId: conversation?.id || null
     };
 
-    // Only include title for newly created conversations
-    // Existing conversations should not have their titles updated
-    if (conversation && !conversationId) {
-      // This is a newly created conversation, include the title
+    // Include title if we have a conversation
+    // This allows the frontend to update the title if it has changed (e.g., AI-generated title)
+    if (conversation) {
       response.title = conversation.title;
+    }
+
+    // Add debug info if DEBUG_MODE is enabled (local development only)
+    if (DEBUG_MODE) {
+      response.debug = {
+        promptSent: systemPrompt,
+        userMessage: message,
+        fullMessages: messages,
+        openaiResponse: completion,
+        parsedReply: reply
+      };
     }
 
     res.json(response);

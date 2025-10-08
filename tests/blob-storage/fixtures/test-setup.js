@@ -9,8 +9,8 @@ require('dotenv').config({ path: '../../../.env' });
 global.testConfig = {
   storageAccountName: process.env.STORAGE_ACCOUNT_NAME || 'taktmatetestblob',
   testTimeout: 30000,
-  maxFileSize: 10 * 1024 * 1024, // 10MB
-  maxStoragePerUser: 200 * 1024 * 1024, // 200MB
+  maxFileSize: 100 * 1024 * 1024, // 100MB
+  maxStoragePerUser: 5 * 1024 * 1024 * 1024, // 5GB
   sasTokenTTL: 10 * 60 * 1000, // 10 minutes
 };
 

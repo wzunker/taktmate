@@ -11,12 +11,6 @@ import { getAuthHeaders } from './utils/auth';
 function App() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [selectedFileIds, setSelectedFileIds] = useState([]); // Changed from activeFileId to selectedFileIds array
-  const [storageQuota, setStorageQuota] = useState({ 
-    used: 0, 
-    total: 200 * 1024 * 1024, 
-    usedDisplay: '0 KB', 
-    limitDisplay: '200 MB' 
-  });
   const [sourcesCollapsed, setSourcesCollapsed] = useState(false);
   const [conversationsCollapsed, setConversationsCollapsed] = useState(false);
   const [filesLoading, setFilesLoading] = useState(false);
@@ -25,7 +19,7 @@ function App() {
   const [conversations, setConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState(null);
   const [conversationsLoading, setConversationsLoading] = useState(false);
-  const [isInNewConversationMode, setIsInNewConversationMode] = useState(false);
+  const [isInNewConversationMode, setIsInNewConversationMode] = useState(true); // Start in new conversation mode by default
   
   const { isAuthenticated, isLoading, error } = useAuth();
 
@@ -55,12 +49,6 @@ function App() {
         }));
         
         setUploadedFiles(filesData);
-        setStorageQuota({
-          used: response.data.quota.used || 0,
-          total: response.data.quota.limit || (200 * 1024 * 1024),
-          usedDisplay: response.data.quota.usedDisplay || '0 KB',
-          limitDisplay: response.data.quota.limitDisplay || '200 MB'
-        });
 
         // Don't auto-select files - let users explicitly choose to start a conversation
       }
@@ -109,6 +97,16 @@ function App() {
       loadConversations(true); // Load conversations too
     }
   }, [isAuthenticated, isLoading, loadFiles, loadConversations]);
+
+  // Clear active conversation when entering new conversation mode
+  // This ensures clicking "new conversation" from an active conversation properly resets
+  useEffect(() => {
+    if (isInNewConversationMode && activeConversationId) {
+      // Always clear activeConversationId when in new conversation mode
+      // This handles the case of clicking "new conversation" from an existing conversation
+      setActiveConversationId(null);
+    }
+  }, [isInNewConversationMode, activeConversationId]);
 
   // Update selected files when uploadedFiles changes and we have an active conversation
   // This handles the case where files are re-uploaded while viewing a conversation
@@ -178,13 +176,6 @@ function App() {
   };
 
   const handleFileSelected = async (fileIdsOrId) => {
-    // Check if we have an active conversation with messages (file locking)
-    const activeConversation = conversations.find(conv => conv.id === activeConversationId);
-    if (activeConversation && activeConversation.messageCount > 0) {
-      console.log('Cannot change file selection: conversation has messages');
-      return; // Prevent file selection changes when conversation has messages
-    }
-
     // Handle both array (new multi-select) and single fileId (backward compatibility)
     let newSelectedIds = [];
     if (Array.isArray(fileIdsOrId)) {
@@ -199,8 +190,7 @@ function App() {
     }
     
     setSelectedFileIds(newSelectedIds);
-    // Clear active conversation when changing file selection
-    setActiveConversationId(null);
+    // Don't clear active conversation when changing file selection - allow dynamic file changes
   };
 
   // Conversation management functions
@@ -265,12 +255,12 @@ function App() {
         if (data.success && data.conversation) {
           console.log('Created conversation with suggestions:', data.conversation);
           
-          // Select the new conversation
-          setActiveConversationId(data.conversation.id);
-          // Add to conversations list
-          setConversations(prev => [data.conversation, ...prev]);
-          // Exit new conversation mode
-          setIsInNewConversationMode(false);
+          // DON'T set activeConversationId yet - let ChatBox handle it internally
+          // The conversation exists in backend but not in our frontend list
+          // Stay in new conversation mode until first message is sent
+          
+          // Return the conversation so ChatBox can use it
+          return data.conversation;
         }
       } else {
         const errorData = await response.text();
@@ -282,11 +272,31 @@ function App() {
   };
 
   const handleConversationUpdated = (conversationId, updates) => {
-    setConversations(prev => prev.map(conv => 
-      conv.id === conversationId 
-        ? { ...conv, ...updates }
-        : conv
-    ));
+    // Check if this conversation exists in our list
+    const existingConv = conversations.find(conv => conv.id === conversationId);
+    
+    if (existingConv) {
+      // Update existing conversation
+      setConversations(prev => prev.map(conv => 
+        conv.id === conversationId 
+          ? { ...conv, ...updates }
+          : conv
+      ));
+    } else if (updates.messageCount && updates.messageCount > 0) {
+      // First message sent - add conversation to list now
+      setConversations(prev => [{
+        id: conversationId,
+        ...updates
+      }, ...prev]);
+      
+      // Set this as the active conversation
+      setActiveConversationId(conversationId);
+    }
+    
+    // Exit new conversation mode when first message is sent (messageCount > 0)
+    if (isInNewConversationMode && updates.messageCount && updates.messageCount > 0) {
+      setIsInNewConversationMode(false);
+    }
   };
 
   const handleConversationRename = async (conversationId, newTitle) => {
@@ -365,16 +375,8 @@ function App() {
     }
   };
 
-  // Get the currently selected files data and check for missing files
+  // Get the currently selected files data
   const selectedFilesData = uploadedFiles.filter(file => selectedFileIds.includes(file.name));
-  
-  // Check if there are missing files in the active conversation
-  const activeConversation = conversations.find(conv => conv.id === activeConversationId);
-  const hasMissingFiles = activeConversation ? (() => {
-    const conversationFileNames = activeConversation.fileNames || [activeConversation.fileName];
-    const existingFileNames = uploadedFiles.map(file => file.name);
-    return conversationFileNames.some(fileName => !existingFileNames.includes(fileName));
-  })() : false;
 
   // Show loading spinner while checking authentication
   if (isLoading) {
@@ -413,14 +415,14 @@ function App() {
     <div className="full-height-layout bg-background-cream">
       {/* Header */}
       <header className="bg-gradient-to-r from-background-warm-white to-background-cream shadow-sm border-b border-gray-200 z-50 backdrop-blur-sm bg-opacity-95 sticky-header">
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-0 sm:py-1">
           <div className="flex items-center justify-between">
                 <div className="flex items-center min-w-0 flex-1">
                   {/* Main Takt Logo */}
                   <img 
                     src="/logo-takt.png" 
                     alt="Takt" 
-                    className="h-18 sm:h-20 w-auto"
+                    className="h-14 sm:h-16 w-auto"
                   />
                 </div>
             
@@ -457,25 +459,6 @@ function App() {
             />
           </div>
           
-          {/* Sources Column - Dynamic width based on collapse */}
-          <div className={`h-full overflow-y-auto min-h-0 ${sourcesCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} transition-all duration-300`}>
-            <SourcesPanel 
-              onFileUploaded={handleFileUploaded}
-              uploadedFiles={uploadedFiles}
-              selectedFileIds={selectedFileIds}
-              storageQuota={storageQuota}
-              onFileSelected={handleFileSelected}
-              onFileDownload={handleFileDownload}
-              onFileDeleted={handleFileDeleted}
-              isCollapsed={sourcesCollapsed}
-              onToggleCollapse={setSourcesCollapsed}
-              filesLoading={filesLoading}
-              isFilesLocked={activeConversationId && conversations.find(conv => conv.id === activeConversationId)?.messageCount > 0}
-              activeConversation={conversations.find(conv => conv.id === activeConversationId)}
-              isInNewConversationMode={isInNewConversationMode}
-            />
-          </div>
-          
           {/* Chat Column - Dynamic width based on both collapses */}
           <div className={`h-full overflow-y-auto min-h-0 ${
             conversationsCollapsed && sourcesCollapsed ? 'lg:col-span-10' :
@@ -492,7 +475,24 @@ function App() {
               selectedFileIds={selectedFileIds}
               onStartConversation={handleStartConversation}
               isNewConversationMode={isInNewConversationMode}
-              hasMissingFiles={hasMissingFiles}
+            />
+          </div>
+          
+          {/* Sources Column - Dynamic width based on collapse */}
+          <div className={`h-full overflow-y-auto min-h-0 ${sourcesCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} transition-all duration-300`}>
+            <SourcesPanel 
+              onFileUploaded={handleFileUploaded}
+              uploadedFiles={uploadedFiles}
+              selectedFileIds={selectedFileIds}
+              onFileSelected={handleFileSelected}
+              onFileDownload={handleFileDownload}
+              onFileDeleted={handleFileDeleted}
+              isCollapsed={sourcesCollapsed}
+              onToggleCollapse={setSourcesCollapsed}
+              filesLoading={filesLoading}
+              isFilesLocked={false}
+              activeConversation={conversations.find(conv => conv.id === activeConversationId)}
+              isInNewConversationMode={isInNewConversationMode}
             />
           </div>
         </div>

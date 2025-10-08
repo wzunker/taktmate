@@ -1,8 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { getAuthHeaders } from '../utils/auth';
 import Card, { CardHeader, CardContent } from './Card';
 import useAuth from '../hooks/useAuth';
+
+// Try to load debug config (local only, not in git)
+let SHOW_DEBUG_INFO = false;
+try {
+  const debugConfig = require('../debug.config.js');
+  SHOW_DEBUG_INFO = debugConfig.SHOW_DEBUG_INFO;
+  if (SHOW_DEBUG_INFO) console.log('🐛 Debug mode enabled');
+} catch (e) {
+  // debug.config.js doesn't exist, that's fine
+}
 
 const ChatBox = ({ 
   fileData, 
@@ -12,8 +24,7 @@ const ChatBox = ({
   onConversationUpdated,
   selectedFileIds = [],
   onStartConversation,
-  isNewConversationMode = false,
-  hasMissingFiles = false
+  isNewConversationMode = false
 }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -24,6 +35,8 @@ const ChatBox = ({
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [startingConversation, setStartingConversation] = useState(false);
+  const [hasActivatedInput, setHasActivatedInput] = useState(false);
+  const [debugDropdownOpen, setDebugDropdownOpen] = useState({});
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const { displayName } = useAuth();
@@ -44,7 +57,7 @@ const ChatBox = ({
 
   // Handle suggestion click
   const handleSuggestionClick = async (suggestion) => {
-    if (sending || !fileData || hasMissingFiles) return;
+    if (sending || !fileData) return;
 
     // Clear suggestions immediately since we're about to send the first message
     setSuggestions([]);
@@ -99,40 +112,34 @@ const ChatBox = ({
       });
 
       if (response.data.success) {
-        setMessages(prev => [...prev, { 
+        const assistantMessage = { 
           type: 'assistant', 
           content: response.data.reply,
           timestamp: new Date().toISOString()
-        }]);
+        };
+        
+        // Add debug info if available
+        if (response.data.debug) {
+          assistantMessage.debug = response.data.debug;
+        }
+        
+        setMessages(prev => [...prev, assistantMessage]);
         setMessageCount(prev => prev + 1);
 
-        // Handle conversation creation/updates
-        if (response.data.conversationId) {
-          if (!currentConversationId) {
-            // New conversation created
-            setCurrentConversationId(response.data.conversationId);
-            if (onConversationCreated) {
-              onConversationCreated(response.data.conversation || {
-                id: response.data.conversationId,
-                fileName: fileData.name || fileData.filename,
-                title: response.data.title || 'New Conversation',
-                updatedAt: new Date().toISOString()
-              });
-            }
-          } else if (onConversationUpdated) {
-            // Existing conversation updated - only update title if provided (shouldn't happen for existing conversations)
-            const updates = {
-              updatedAt: new Date().toISOString(),
-              messageCount: messageCount + 1
-            };
-            
-            // Only include title if it's actually provided (for new conversations)
-            if (response.data.title) {
-              updates.title = response.data.title;
-            }
-            
-            onConversationUpdated(response.data.conversationId, updates);
-          }
+        // Handle conversation updates - notify parent to add/update conversation
+        if (response.data.conversationId && onConversationUpdated) {
+          const updates = {
+            updatedAt: new Date().toISOString(),
+            messageCount: messageCount + 1,
+            title: response.data.title || (Array.isArray(fileData) 
+              ? `Conversation about ${fileData.length} files`
+              : `Conversation about ${fileData.name || fileData.filename}`),
+            fileNames: Array.isArray(fileData) 
+              ? fileData.map(f => f.name || f.filename)
+              : [fileData.name || fileData.filename]
+          };
+          
+          onConversationUpdated(response.data.conversationId, updates);
         }
       } else {
         throw new Error(response.data.error || 'Invalid response from server');
@@ -216,16 +223,70 @@ const ChatBox = ({
     scrollToBottom();
   }, [messages]);
 
-  // Load conversation when conversationId changes
+  // Reset activation state when entering new conversation mode
   useEffect(() => {
+    if (isNewConversationMode) {
+      setHasActivatedInput(false);
+    }
+  }, [isNewConversationMode]);
+
+  // Track previous file selection to detect actual changes
+  const prevSelectedFileIdsRef = useRef(selectedFileIds);
+  
+  // Handle file selection changes in new conversation mode
+  useEffect(() => {
+    // Only act if we're in new conversation mode, no actual messages, AND files actually changed
+    const filesChanged = JSON.stringify(prevSelectedFileIdsRef.current) !== JSON.stringify(selectedFileIds);
+    
+    if (isNewConversationMode && messageCount === 0 && filesChanged) {
+      // Update ref for next comparison
+      prevSelectedFileIdsRef.current = selectedFileIds;
+      
+      // If there's a backend conversation, delete it since we're discarding it
+      if (currentConversationId) {
+        const deleteConversation = async () => {
+          try {
+            const authHeaders = await getAuthHeaders();
+            await axios.delete(`/api/conversations/${currentConversationId}`, {
+              headers: authHeaders,
+              timeout: 10000
+            });
+            console.log('Deleted temporary conversation:', currentConversationId);
+          } catch (error) {
+            console.error('Failed to delete temporary conversation:', error);
+          }
+        };
+        
+        deleteConversation();
+      }
+      
+      // Always clear local state when files change
+      setSuggestions([]);
+      setHasActivatedInput(false);
+      setStartingConversation(false);
+      setCurrentConversationId(null);
+    }
+  }, [selectedFileIds, isNewConversationMode, messageCount, currentConversationId]);
+
+  // Track previous conversationId to detect actual changes from parent
+  const prevConversationIdRef = useRef(conversationId);
+  
+  // Load conversation when conversationId changes (from parent selecting a conversation)
+  useEffect(() => {
+    const prevConversationId = prevConversationIdRef.current;
+    prevConversationIdRef.current = conversationId;
+    
     if (conversationId && conversationId !== currentConversationId) {
+      // Parent selected a conversation - load it
       loadConversation(conversationId);
-    } else if (!conversationId && currentConversationId) {
-      // Clear conversation when no conversation is selected
+      setHasActivatedInput(false);
+    } else if (prevConversationId && !conversationId) {
+      // Parent cleared conversation (was something, now null) - clear local state
       setCurrentConversationId(null);
       setMessages([]);
       setMessageCount(0);
       setSuggestions([]);
+      setHasActivatedInput(false);
     }
   }, [conversationId, currentConversationId]);
 
@@ -245,82 +306,6 @@ const ChatBox = ({
     };
   }, [sending]);
 
-  useEffect(() => {
-    // Welcome message when files are selected (only if no conversation is loaded and not in new conversation mode)
-    if (fileData && !currentConversationId && !isNewConversationMode) {
-      let welcomeMessage = '';
-      
-      if (Array.isArray(fileData)) {
-        if (fileData.length === 0) {
-          setMessages([]);
-          setMessageCount(0);
-          return;
-        } else if (fileData.length === 1) {
-          // Single file in array
-          const file = fileData[0];
-          const fileName = file.filename || file.name;
-          if (file.headers) {
-            // CSV file
-            const rowCount = file.rowCount || 'unknown';
-            const columnCount = Array.isArray(file.headers) ? file.headers.length : 'unknown';
-            const columns = Array.isArray(file.headers) ? file.headers.slice(0, 5).join(', ') + (file.headers.length > 5 ? '...' : '') : 'unknown';
-            welcomeMessage = `🎉 Welcome! I've loaded your file "${fileName}". Here's what I can see:\n\n📊 **Dataset Overview:**\n• ${rowCount} rows of data\n• ${columnCount} columns\n• Key columns: ${columns}\n\n💬 **What can I help you with?**\nAsk me to analyze trends, find patterns, calculate statistics, or answer any questions about your data!`;
-          } else {
-            welcomeMessage = `🎉 Welcome! I've loaded your file "${fileName}".\n\n💬 **What can I help you with?**\nI can help you analyze the content, extract information, or answer questions about your file!`;
-          }
-        } else {
-          // Multiple files
-          const fileNames = fileData.map(file => file.filename || file.name);
-          const fileTypes = fileData.map(file => {
-            const name = file.filename || file.name;
-            const ext = name.toLowerCase().substring(name.lastIndexOf('.') + 1);
-            return ext.toUpperCase();
-          });
-          const uniqueTypes = [...new Set(fileTypes)];
-          
-          welcomeMessage = `🎉 Welcome! I've loaded ${fileData.length} files:\n\n📁 **Files:**\n${fileNames.map((name, i) => `• ${name} (${fileTypes[i]})`).join('\n')}\n\n🔍 **File Types:** ${uniqueTypes.join(', ')}\n\n💬 **What can I help you with?**\nI can analyze data across all files, compare information, find patterns, or answer questions that span multiple documents!`;
-        }
-      } else if (fileData && (fileData.filename || fileData.name)) {
-        // Single file object (backward compatibility)
-        const fileName = fileData.filename || fileData.name;
-        if (fileData.headers) {
-          // CSV file
-          const rowCount = fileData.rowCount || 'unknown';
-          const columnCount = Array.isArray(fileData.headers) ? fileData.headers.length : 'unknown';
-          const columns = Array.isArray(fileData.headers) ? fileData.headers.slice(0, 5).join(', ') + (fileData.headers.length > 5 ? '...' : '') : 'unknown';
-          welcomeMessage = `🎉 Welcome! I've loaded your file "${fileName}". Here's what I can see:\n\n📊 **Dataset Overview:**\n• ${rowCount} rows of data\n• ${columnCount} columns\n• Key columns: ${columns}\n\n💬 **What can I help you with?**\nAsk me to analyze trends, find patterns, calculate statistics, or answer any questions about your data!`;
-        } else {
-          welcomeMessage = `🎉 Welcome! I've loaded your file "${fileName}".\n\n💬 **What can I help you with?**\nI can help you analyze the content, extract information, or answer questions about your file!`;
-        }
-      }
-      
-      if (welcomeMessage) {
-        setMessages([{
-          type: 'system',
-          content: welcomeMessage,
-          timestamp: new Date().toISOString()
-        }]);
-        setMessageCount(1);
-      }
-    } else if (!fileData && !currentConversationId) {
-      setMessages([]);
-      setMessageCount(0);
-    }
-  }, [fileData, currentConversationId, isNewConversationMode]);
-
-  // Get display info for selected files
-  const getSelectedFilesDisplay = () => {
-    if (Array.isArray(fileData)) {
-      if (fileData.length === 1) {
-        return fileData[0].filename || fileData[0].name;
-      } else {
-        return `${fileData.length} files selected`;
-      }
-    } else if (fileData) {
-      return fileData.filename || fileData.name;
-    }
-    return '';
-  };
 
   // Handle starting a new conversation
   const handleStartConversation = async () => {
@@ -338,66 +323,11 @@ const ChatBox = ({
     }
   };
 
-  // Show placeholder if no files selected OR in new conversation mode (before Start is clicked)
-  // BUT always show conversation messages if we have an active conversationId (even with missing files)
-  if ((!fileData || (Array.isArray(fileData) && fileData.length === 0) || isNewConversationMode) && !conversationId) {
-    return (
-      <Card variant="elevated" className={`flex flex-col h-full ${className}`}>
-        <CardHeader
-          title={<span className="text-secondary-600 font-semibold lowercase">taktmate</span>}
-        />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center max-w-sm">
-            <div className="w-16 h-16 mx-auto mb-4 bg-primary-100 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-            </div>
-            
-            {/* Different messages for initial state vs new conversation mode */}
-            {isNewConversationMode ? (
-              <>
-                <p className="body-small text-text-secondary mb-4">select 1-5 files to start a conversation with your data</p>
-                
-                {/* Start button - only show in new conversation mode */}
-                <button
-                  onClick={handleStartConversation}
-                  disabled={!selectedFileIds || selectedFileIds.length === 0 || startingConversation}
-                  className={`mb-6 px-6 py-2.5 rounded-button body-small font-medium transition-colors ${
-                    selectedFileIds && selectedFileIds.length > 0 && !startingConversation
-                      ? 'bg-primary-600 text-white hover:bg-primary-700'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  {startingConversation ? 'Starting...' : 'Start'}
-                </button>
-              </>
-            ) : (
-              <p className="body-small text-text-secondary mb-6">start a new conversation or select existing to get started</p>
-            )}
-
-            <div className="flex items-center justify-center space-x-4 body-xs text-text-muted">
-              <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-primary-400 rounded-full"></div>
-                <span>ask questions</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-secondary-400 rounded-full"></div>
-                <span>get insights</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-primary-400 rounded-full"></div>
-                <span>analyze trends</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
-    );
-  }
+  // Show centered input as default when no messages exist
+  const hasSelectedFiles = selectedFileIds && selectedFileIds.length > 0;
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || sending || !fileData || (Array.isArray(fileData) && fileData.length === 0) || hasMissingFiles) return;
+    if (!inputMessage.trim() || sending || !fileData || (Array.isArray(fileData) && fileData.length === 0)) return;
 
     const userMessage = inputMessage.trim();
     setInputMessage('');
@@ -462,40 +392,34 @@ const ChatBox = ({
       });
 
       if (response.data.success) {
-        setMessages(prev => [...prev, { 
+        const assistantMessage = { 
           type: 'assistant', 
           content: response.data.reply,
           timestamp: new Date().toISOString()
-        }]);
+        };
+        
+        // Add debug info if available
+        if (response.data.debug) {
+          assistantMessage.debug = response.data.debug;
+        }
+        
+        setMessages(prev => [...prev, assistantMessage]);
         setMessageCount(prev => prev + 1);
 
-        // Handle conversation creation/updates
-        if (response.data.conversationId) {
-          if (!currentConversationId) {
-            // New conversation created
-            setCurrentConversationId(response.data.conversationId);
-            if (onConversationCreated) {
-              onConversationCreated(response.data.conversation || {
-                id: response.data.conversationId,
-                fileName: fileData.name || fileData.filename,
-                title: response.data.title || 'New Conversation',
-                updatedAt: new Date().toISOString()
-              });
-            }
-          } else if (onConversationUpdated) {
-            // Existing conversation updated - only update title if provided (shouldn't happen for existing conversations)
-            const updates = {
-              updatedAt: new Date().toISOString(),
-              messageCount: messageCount + 1
-            };
-            
-            // Only include title if it's actually provided (for new conversations)
-            if (response.data.title) {
-              updates.title = response.data.title;
-            }
-            
-            onConversationUpdated(response.data.conversationId, updates);
-          }
+        // Handle conversation updates - notify parent to add/update conversation
+        if (response.data.conversationId && onConversationUpdated) {
+          const updates = {
+            updatedAt: new Date().toISOString(),
+            messageCount: messageCount + 1,
+            title: response.data.title || (Array.isArray(fileData) 
+              ? `Conversation about ${fileData.length} files`
+              : `Conversation about ${fileData.name || fileData.filename}`),
+            fileNames: Array.isArray(fileData) 
+              ? fileData.map(f => f.name || f.filename)
+              : [fileData.name || fileData.filename]
+          };
+          
+          onConversationUpdated(response.data.conversationId, updates);
         }
       } else {
         throw new Error(response.data.error || 'Invalid response from server');
@@ -531,39 +455,46 @@ const ChatBox = ({
     }
   };
 
+  // Handle input focus - triggers conversation creation with suggestions
+  const handleInputFocus = async () => {
+    // Only trigger if in new conversation mode, has selected files, hasn't been activated yet, and no current conversation
+    if (isNewConversationMode && hasSelectedFiles && !hasActivatedInput && !currentConversationId && !startingConversation) {
+      setHasActivatedInput(true);
+      setStartingConversation(true);
+      
+      try {
+        if (onStartConversation) {
+          const conversation = await onStartConversation(selectedFileIds);
+          
+          if (conversation) {
+            // Set the conversation ID locally (parent doesn't know about it yet)
+            setCurrentConversationId(conversation.id);
+            
+            // Load suggestions directly from the returned conversation
+            if (conversation.suggestions && conversation.suggestions.length > 0) {
+              setSuggestions(conversation.suggestions);
+              console.log('Loaded suggestions:', conversation.suggestions);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error starting conversation:', error);
+        setHasActivatedInput(false); // Reset on error so they can try again
+      } finally {
+        setStartingConversation(false);
+      }
+    }
+  };
+
+  // Check if we should show centered input (no messages yet - always show unless loading)
+  const showCenteredInput = messages.length === 0 && !conversationLoading;
+
   return (
     <Card variant="elevated" padding="sm" className={`flex flex-col h-full ${className}`}>
-            <CardHeader
-                title={
-          <div className="flex items-center space-x-2">
-            <span className="text-secondary-600 font-semibold lowercase">taktmate</span>
-            {fileData && (
-              <span className="text-xs text-text-muted bg-gray-100 px-2 py-1 rounded-full">
-                {getSelectedFilesDisplay()}
-              </span>
-            )}
-            {currentConversationId && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
-                conversation
-              </span>
-            )}
-          </div>
-        }
-        action={
-          messageCount > 0 && (
-            <span className="body-xs text-text-muted">
-              {currentConversationId ? 
-                `${messageCount} message${messageCount !== 1 ? 's' : ''}` :
-                `${messageCount - 1} message${messageCount - 1 !== 1 ? 's' : ''}`
-              }
-            </span>
-          )
-        }
-        className="mb-4"
-      />
+
 
       {/* Messages */}
-      <CardContent className="flex-1 overflow-y-auto space-y-4 sm:space-y-6 px-2 sm:px-4 min-h-0">
+      <CardContent className={`flex-1 overflow-y-auto mobile-scrollbar px-2 sm:px-4 min-h-0 ${showCenteredInput ? 'flex items-center justify-center' : 'space-y-4 sm:space-y-6'}`}>
         {conversationLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mr-3"></div>
@@ -571,54 +502,52 @@ const ChatBox = ({
           </div>
         ) : (
           <>
-        {/* No File Selected State */}
-        {!fileData && messages.length === 0 && suggestions.length === 0 && (
-          <div className="flex items-center justify-center py-16">
-            <div className="text-center max-w-md">
-              <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
+        {/* Centered Input State - Show when no messages yet */}
+        {showCenteredInput && (
+          <div className="w-full max-w-2xl space-y-6">
+            <div className="text-center">
+              <h3 className="heading-1 text-primary-600 mb-3">
+                Ready to explore together?
+              </h3>
+              {!hasSelectedFiles && (
+                <p className="body-normal text-text-secondary">
+                  upload or select at least one file to get started
+                </p>
+              )}
+            </div>
+
+            {/* Loading state for suggestions */}
+            {startingConversation && suggestions.length === 0 && (
+              <div className="flex justify-center py-8">
+                <div className="text-center">
+                  <div className="flex items-center justify-center space-x-3 mb-4">
+                    <div className="flex flex-col items-center">
+                      <span className="body-normal text-text-primary font-medium">Preparing your conversation</span>
+                      <span className="body-xs text-text-muted">Generating suggested questions...</span>
+                    </div>
+                  </div>
+                  
+                  {/* Animated dots */}
+                  <div className="flex items-center justify-center space-x-2 mt-4">
+                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
                 </div>
               </div>
-              <h3 className="heading-small text-text-primary font-medium mb-2">
-                Select a file to start a conversation
-              </h3>
-              <p className="body-normal text-text-secondary mb-6">
-                Choose a file from your sources to analyze and ask questions about your data.
-              </p>
-              <div className="text-center">
-                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-primary-50 text-primary-700 border border-primary-200">
-                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
-                  </svg>
-                  Click a file on the left
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        {/* Suggested Questions */}
-        {suggestions.length > 0 && messages.length === 0 && (
-          <div 
-            className="space-y-4 animate-fade-in-up"
-            role="region"
-            aria-label="Suggested questions to get started"
-          >
-            <div className="flex justify-center">
-              <div className="text-center max-w-2xl w-full">
-                {/* Header with icon */}
-                <div className="flex items-center justify-center space-x-2 mb-4">
-                  <div className="flex-shrink-0">
-                    <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                    </svg>
-                  </div>
-                  <h3 className="heading-small text-text-primary font-medium">
+            {/* Suggested Questions - Show between heading and input */}
+            {suggestions.length > 0 && !startingConversation && (
+              <div 
+                className="space-y-3 animate-fade-in-up"
+                role="region"
+                aria-label="Suggested questions to get started"
+              >
+                <div className="text-center mb-4">
+                  <h4 className="body-normal text-text-secondary font-medium">
                     Get started with these questions:
-                  </h3>
+                  </h4>
                 </div>
                 
                 {/* Suggestion buttons with staggered animation */}
@@ -637,7 +566,7 @@ const ChatBox = ({
                         transform transition-all duration-300 ease-out
                         hover:scale-[1.02] hover:-translate-y-0.5
                         disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none
-                        warm-shadow hover:warm-shadow-xl
+                        warm-shadow hover:warm-shadow-lg
                         animate-fade-in-up
                       `}
                       style={{ animationDelay: `${index * 150}ms` }}
@@ -659,102 +588,229 @@ const ChatBox = ({
                           <span className="body-normal text-text-primary leading-relaxed group-hover:text-text-primary font-medium transition-all duration-200">
                             {suggestion}
                           </span>
-                          <div className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            <span className="body-xs text-primary-600 font-medium">
-                              Click to ask this question →
-                            </span>
-                          </div>
-                        </div>
-                        
-                        {/* Subtle arrow indicator */}
-                        <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transform translate-x-1 group-hover:translate-x-0 transition-all duration-200">
-                          <svg className="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                          </svg>
                         </div>
                       </div>
                     </button>
                   ))}
                 </div>
               </div>
+            )}
+            
+            {/* Centered Input */}
+            <div className="flex items-start space-x-3">
+              <div className="flex-1 relative">
+                <textarea
+                  ref={inputRef}
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  onFocus={handleInputFocus}
+                  placeholder={hasSelectedFiles ? "Looks delicious, let me know how I can help..." : "I'm hungry for data..."}
+                  className="w-full border border-gray-300 rounded-input px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-normal resize-none transition-all duration-200"
+                  disabled={sending || !hasSelectedFiles}
+                  rows="1"
+                  style={{ minHeight: '48px', maxHeight: '150px' }}
+                  onInput={(e) => {
+                    e.target.style.height = 'auto';
+                    e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
+                  }}
+                />
+                
+                {/* Character Count */}
+                {inputMessage.length > 100 && (
+                  <div className="absolute bottom-2 right-12 body-xs text-text-muted">
+                    {inputMessage.length}/500
+                  </div>
+                )}
+              </div>
+              
+              <button
+                onClick={handleSendMessage}
+                disabled={!inputMessage.trim() || sending || inputMessage.length > 500 || !hasSelectedFiles}
+                className="bg-primary-600 text-white px-4 py-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0 h-12"
+                title={!hasSelectedFiles ? "Select a file first" : !inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
+              >
+                {sending ? (
+                  <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                )}
+              </button>
             </div>
           </div>
         )}
 
         {messages.map((message, index) => (
-          <div key={index} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-            {/* Message Bubble with Avatar Inside */}
-              <div
-                className={`max-w-xs sm:max-w-lg px-3 sm:px-4 py-2 sm:py-3 rounded-card transition-all duration-200 flex items-start space-x-2 ${
-              message.type === 'user'
-                  ? 'bg-primary-600 text-background-cream warm-shadow flex-row-reverse space-x-reverse'
-                  : message.type === 'error'
-                  ? 'bg-red-50 text-red-800 border border-red-200 warm-shadow'
-                  : message.type === 'system'
-                  ? 'bg-secondary-50 text-secondary-800 border border-secondary-200 warm-shadow'
-                  : 'bg-background-warm-white text-text-primary border border-gray-200 warm-shadow'
-              } ${message.type === 'user' ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
-            >
-              {/* Avatar inside bubble */}
-              <div className="flex-shrink-0">
-                {message.type === 'user' ? (
-                  <div className="w-9 h-9 bg-white bg-opacity-20 rounded-md flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">
-                      {getUserInitials(displayName)}
-                    </span>
-                  </div>
-                ) : message.type === 'system' ? (
-                  <div className="w-9 h-9 bg-secondary-200 rounded-md flex items-center justify-center">
-                    <svg className="w-5 h-5 text-secondary-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                ) : message.type === 'error' ? (
-                  <div className="w-9 h-9 bg-red-200 rounded-md flex items-center justify-center">
-                    <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                ) : (
-                  <div className="w-9 h-9 bg-primary-100 rounded-md flex flex-col items-center justify-center px-1">
-                    {/* Simple text logo - centered */}
-                    <div className="text-primary-600 text-xs font-bold leading-tight text-center">
-                      <div>takt</div>
-                      <div>mate</div>
+          <div key={index} className="w-full flex justify-center">
+            <div className={`w-full max-w-3xl px-8 ${message.type === 'user' ? 'flex justify-end' : ''}`}>
+              {message.type === 'user' ? (
+                /* User Message - Bubble with Avatar */
+                <div className="max-w-xs sm:max-w-lg px-3 sm:px-4 py-2 sm:py-3 rounded-card transition-all duration-200 flex items-start space-x-2 bg-primary-50 text-text-primary border border-primary-200 warm-shadow flex-row-reverse space-x-reverse rounded-tr-sm">
+                  {/* Avatar inside bubble */}
+                  <div className="flex-shrink-0">
+                    <div className="w-9 h-9 bg-primary-200 rounded-md flex items-center justify-center">
+                      <span className="text-primary-700 text-sm font-medium">
+                        {getUserInitials(displayName)}
+                      </span>
                     </div>
                   </div>
-                )}
-              </div>
-              
-              {/* Message Content */}
-              <div className="flex-1 min-w-0">
-                <div className="body-small sm:body-normal whitespace-pre-wrap leading-relaxed">
-                  {message.content}
+                  
+                  {/* Message Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="body-small sm:body-normal whitespace-pre-wrap leading-relaxed">
+                      {message.content}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : message.type === 'error' ? (
+                /* Error Message - Bubble */
+                <div className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-card transition-all duration-200 bg-red-50 text-red-800 border border-red-200 warm-shadow">
+                  <div className="flex items-start space-x-2">
+                    <div className="flex-shrink-0">
+                      <div className="w-9 h-9 bg-red-200 rounded-md flex items-center justify-center">
+                        <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="body-small sm:body-normal whitespace-pre-wrap leading-relaxed">
+                        {message.content}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : message.type === 'system' ? (
+                /* System Message - Bubble */
+                <div className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-card transition-all duration-200 bg-secondary-50 text-secondary-800 border border-secondary-200 warm-shadow">
+                  <div className="flex items-start space-x-2">
+                    <div className="flex-shrink-0">
+                      <div className="w-9 h-9 bg-secondary-200 rounded-md flex items-center justify-center">
+                        <svg className="w-5 h-5 text-secondary-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="body-small sm:body-normal whitespace-pre-wrap leading-relaxed">
+                        {message.content}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Assistant Message - Full Width Document Style with Markdown */
+                <div className="w-full py-2 text-text-primary prose prose-sm max-w-none">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      // Headings
+                      h1: ({node, ...props}) => <h1 className="text-2xl font-bold text-text-primary mt-6 mb-4" {...props} />,
+                      h2: ({node, ...props}) => <h2 className="text-xl font-semibold text-text-primary mt-5 mb-3" {...props} />,
+                      h3: ({node, ...props}) => <h3 className="text-lg font-semibold text-text-primary mt-4 mb-2" {...props} />,
+                      // Paragraphs
+                      p: ({node, ...props}) => <p className="body-normal text-text-primary leading-relaxed mb-3" {...props} />,
+                      // Strong/Bold
+                      strong: ({node, ...props}) => <strong className="font-semibold text-text-primary" {...props} />,
+                      // Lists
+                      ul: ({node, ...props}) => <ul className="list-disc list-outside pl-6 mb-3 space-y-1" {...props} />,
+                      ol: ({node, ...props}) => <ol className="list-decimal list-outside pl-6 mb-3 space-y-1" {...props} />,
+                      li: ({node, ...props}) => <li className="body-normal text-text-primary leading-normal" {...props} />,
+                      // Tables
+                      table: ({node, ...props}) => (
+                        <div className="overflow-x-auto my-4">
+                          <table className="min-w-full border-collapse border border-gray-300" {...props} />
+                        </div>
+                      ),
+                      thead: ({node, ...props}) => <thead className="bg-gray-100" {...props} />,
+                      tbody: ({node, ...props}) => <tbody {...props} />,
+                      tr: ({node, ...props}) => <tr className="border-b border-gray-300" {...props} />,
+                      th: ({node, ...props}) => <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-text-primary bg-gray-50" {...props} />,
+                      td: ({node, ...props}) => <td className="border border-gray-300 px-4 py-2 body-normal text-text-primary" {...props} />,
+                      // Code
+                      code: ({node, inline, ...props}) => 
+                        inline ? (
+                          <code className="bg-gray-100 text-text-primary px-1.5 py-0.5 rounded text-sm font-mono" {...props} />
+                        ) : (
+                          <code className="block bg-gray-100 text-text-primary p-3 rounded text-sm font-mono overflow-x-auto mb-3" {...props} />
+                        ),
+                      // Links
+                      a: ({node, ...props}) => <a className="text-primary-600 hover:text-primary-700 underline" {...props} />,
+                      // Blockquotes
+                      blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-text-secondary my-3" {...props} />,
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                  
+                  {/* Debug Dropdown - Only visible if debug config enabled and debug info present */}
+                  {SHOW_DEBUG_INFO && message.debug && (
+                    <div className="mt-4 border-t border-gray-200 pt-4">
+                      <button
+                        onClick={() => setDebugDropdownOpen(prev => ({
+                          ...prev,
+                          [index]: !prev[index]
+                        }))}
+                        className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 font-mono mb-2"
+                      >
+                        <span>{debugDropdownOpen[index] ? '▼' : '▶'}</span>
+                        <span>Info</span>
+                      </button>
+                      
+                      {debugDropdownOpen[index] && (
+                        <div className="bg-gray-50 rounded p-4 text-xs font-mono space-y-4 overflow-x-auto">
+                          {/* User Message */}
+                          <div>
+                            <div className="font-bold text-gray-700 mb-2">User Message:</div>
+                            <div className="bg-white p-2 rounded border border-gray-200">
+                              {message.debug.userMessage}
+                            </div>
+                          </div>
+                          
+                          {/* System Prompt */}
+                          <div>
+                            <div className="font-bold text-gray-700 mb-2">System Prompt Sent to OpenAI:</div>
+                            <div className="bg-white p-2 rounded border border-gray-200 max-h-96 overflow-y-auto whitespace-pre-wrap">
+                              {message.debug.promptSent}
+                            </div>
+                          </div>
+                          
+                          {/* OpenAI Response */}
+                          <div>
+                            <div className="font-bold text-gray-700 mb-2">Full OpenAI Response:</div>
+                            <div className="bg-white p-2 rounded border border-gray-200 max-h-96 overflow-y-auto">
+                              <pre>{JSON.stringify(message.debug.openaiResponse, null, 2)}</pre>
+                            </div>
+                          </div>
+                          
+                          {/* Parsed Reply */}
+                          <div>
+                            <div className="font-bold text-gray-700 mb-2">Parsed Reply:</div>
+                            <div className="bg-white p-2 rounded border border-gray-200 whitespace-pre-wrap">
+                              {message.debug.parsedReply}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         ))}
         {sending && (
-          <div className="flex justify-start">
-            {/* Typing Indicator Bubble with Avatar Inside */}
-            <div className="bg-background-warm-white text-text-primary px-3 sm:px-4 py-2 sm:py-3 rounded-card rounded-tl-sm border border-gray-200 warm-shadow flex items-start space-x-2">
-              {/* Avatar inside bubble */}
-              <div className="flex-shrink-0">
-                <div className="w-9 h-9 bg-primary-100 rounded-md flex flex-col items-center justify-center px-1">
-                  {/* Simple text logo with pulse - centered */}
-                  <div className="text-primary-600 text-xs font-bold leading-tight text-center animate-pulse">
-                    <div>takt</div>
-                    <div>mate</div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Typing Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-1">
-                  <span className="body-small sm:body-normal text-text-secondary">Analyzing your data</span>
-                  <div className="flex space-x-1 ml-2">
+          <div className="w-full flex justify-center">
+            <div className="w-full max-w-3xl px-8">
+              <div className="py-2">
+                {/* Typing Indicator - Document Style (No Bubble, No Icon) */}
+                <div className="flex items-center space-x-2">
+                  <span className="body-normal text-text-secondary">Analyzing your data</span>
+                  <div className="flex space-x-1">
                     <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary-400 rounded-full transition-opacity duration-300 ${typingDots >= 1 ? 'opacity-100' : 'opacity-30'}`}></div>
                     <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary-400 rounded-full transition-opacity duration-300 ${typingDots >= 2 ? 'opacity-100' : 'opacity-30'}`}></div>
                     <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 bg-primary-400 rounded-full transition-opacity duration-300 ${typingDots >= 3 ? 'opacity-100' : 'opacity-30'}`}></div>
@@ -764,65 +820,90 @@ const ChatBox = ({
             </div>
           </div>
         )}
+        
+        {/* No Files Selected in Active Conversation */}
+        {messages.length > 0 && (!fileData || (Array.isArray(fileData) && fileData.length === 0)) && (
+          <div className="flex justify-center py-8">
+            <div className="bg-primary-50 border-2 border-primary-200 rounded-card px-6 py-4 max-w-md warm-shadow">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h4 className="body-normal font-semibold text-text-primary mb-1">
+                    No files selected
+                  </h4>
+                  <p className="body-small text-text-secondary">
+                    Please select at least one file to continue chatting.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div ref={messagesEndRef} />
           </>
         )}
       </CardContent>
 
-              {/* Enhanced Input Area */}
-              <div className="pt-3 sm:pt-4 border-t border-gray-200 mt-4 px-2 sm:px-0">
-                {/* Input Row */}
-        <div className="flex items-start space-x-2 sm:space-x-3">
-          <div className="flex-1 relative">
-            <textarea
-              ref={inputRef}
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-                placeholder={!fileData ? "Select a file to start chatting..." : hasMissingFiles ? "Cannot send messages - files are missing" : "How can I help you today?"}
-                className="w-full border border-gray-300 rounded-input px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-small sm:body-normal resize-none transition-all duration-200"
-                disabled={sending || !fileData || hasMissingFiles}
-              rows="1"
-                    style={{ minHeight: '40px', maxHeight: '150px' }}
-              onInput={(e) => {
-                e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
-              }}
-            />
-            
-            {/* Character Count */}
-            {inputMessage.length > 100 && (
-              <div className="absolute bottom-1 right-10 sm:right-12 body-xs text-text-muted">
-                {inputMessage.length}/500
+              {/* Enhanced Input Area - Hide when showing centered input */}
+              {!showCenteredInput && (
+              <div className="pt-3 sm:pt-4 border-t border-transparent mt-4">
+                {/* Centered Input Container */}
+                <div className="w-full flex justify-center">
+                  <div className="w-full max-w-3xl px-8">
+                    {/* Input Row */}
+                    <div className="flex items-start space-x-2 sm:space-x-3">
+                      <div className="flex-1 relative">
+                        <textarea
+                          ref={inputRef}
+                          value={inputMessage}
+                          onChange={(e) => setInputMessage(e.target.value)}
+                          onKeyPress={handleKeyPress}
+                          onFocus={handleInputFocus}
+                          placeholder={!fileData ? "Select a file to start chatting..." : "What would you like to investigate next?"}
+                          className="w-full border border-gray-300 rounded-input px-3 sm:px-4 py-2 sm:py-3 pr-10 sm:pr-12 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent body-small sm:body-normal resize-none transition-all duration-200"
+                          disabled={sending || !fileData}
+                          rows="1"
+                          style={{ minHeight: '40px', maxHeight: '150px' }}
+                          onInput={(e) => {
+                            e.target.style.height = 'auto';
+                            e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
+                          }}
+                        />
+                        
+                        {/* Character Count */}
+                        {inputMessage.length > 100 && (
+                          <div className="absolute bottom-1 right-10 sm:right-12 body-xs text-text-muted">
+                            {inputMessage.length}/500
+                          </div>
+                        )}
+                      </div>
+                      
+                      <button
+                        onClick={handleSendMessage}
+                        disabled={!inputMessage.trim() || sending || inputMessage.length > 500 || !fileData}
+                        className="bg-primary-600 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0 min-w-[44px] h-10 sm:h-12"
+                        title={!fileData ? "Select a file first" : !inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
+                      >
+                        {sending ? (
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-          
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!inputMessage.trim() || sending || inputMessage.length > 500 || !fileData || hasMissingFiles}
-                  className="bg-primary-600 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-button hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 warm-shadow hover:warm-shadow-lg flex-shrink-0 min-w-[44px] h-10 sm:h-12"
-                  title={!fileData ? "Select a file first" : hasMissingFiles ? "Cannot send - files are missing" : !inputMessage.trim() ? "Enter a message" : sending ? "Sending..." : "Send message"}
-                >
-                  {sending ? (
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                  ) : (
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                    </svg>
-                  )}
-                </button>
-        </div>
-        
-        {/* Processing indicator */}
-        {sending && (
-          <div className="mt-2 body-xs text-primary-600 font-medium text-center">
-            Processing your request...
-          </div>
-        )}
-      </div>
+              )}
     </Card>
   );
 };

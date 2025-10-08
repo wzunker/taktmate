@@ -16,14 +16,6 @@ const ConversationsPanel = ({
   onToggleCollapse
 }) => {
 
-  // Check if all files for a conversation exist (for enabling/disabling)
-  const hasAllRequiredFiles = (conversation) => {
-    const convFileNames = conversation.fileNames || [conversation.fileName];
-    return convFileNames.every(fileName => 
-      uploadedFiles.some(file => file.name === fileName)
-    );
-  };
-
   // Get all conversations sorted by most recent
   const getAllConversations = () => {
     return conversations
@@ -42,32 +34,75 @@ const ConversationsPanel = ({
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader
-        title={!isCollapsed ? <span className="text-secondary-600 font-semibold lowercase">conversations</span> : null}
-        action={
+      {/* Custom compact header with divider */}
+      <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-200 -mx-6 px-6">
+        <div className="flex-1 min-w-0">
+          {!isCollapsed && (
+            <h3 className="heading-4"><span className="text-secondary-600 font-semibold lowercase">conversations</span></h3>
+          )}
+        </div>
+        <div className={`flex-shrink-0 ${isCollapsed ? 'w-full flex justify-center' : 'ml-4'}`}>
           <button
             onClick={() => onToggleCollapse(!isCollapsed)}
-            className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors"
+            className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors flex items-center justify-center"
             title={isCollapsed ? "Expand conversations" : "Collapse conversations"}
           >
             <svg 
-              className={`w-4 h-4 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`}
+              className="w-4 h-4"
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              {/* Rounded square box */}
+              <rect x="1" y="1" width="22" height="22" rx="2" strokeWidth="2" />
+              {/* Vertical divider line at 1/3 from left */}
+              <line x1="9.33" y1="1" x2="9.33" y2="23" strokeWidth="2" />
             </svg>
           </button>
-        }
-      />
+        </div>
+      </div>
 
-      {!isCollapsed && (
+      {isCollapsed ? (
+        <CardContent className="flex-1 flex flex-col items-center space-y-3 overflow-y-auto mobile-scrollbar min-h-0 py-4">
+          {/* Compact New Conversation Button - Circle with + */}
+          <button
+            type="button"
+            onClick={handleCreateNewConversation}
+            className="w-10 h-10 bg-secondary-500 text-white rounded-full hover:bg-secondary-700 transition-colors warm-shadow flex items-center justify-center flex-shrink-0"
+            title="Start a new conversation"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+
+          {/* Collapsed Conversations List */}
+          <div className="w-full space-y-2">
+            {conversationsLoading ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600"></div>
+              </div>
+            ) : displayConversations.length > 0 ? (
+              displayConversations.map((conversation) => (
+                <ConversationItem
+                  key={conversation.id}
+                  conversation={conversation}
+                  isActive={conversation.id === activeConversationId}
+                  onSelect={onConversationSelected}
+                  onRename={onConversationRename}
+                  onDelete={onConversationDelete}
+                  isCollapsed={true}
+                />
+              ))
+            ) : null}
+          </div>
+        </CardContent>
+      ) : (
         <CardContent className="flex-1 flex flex-col min-h-0">
           {/* New Conversation Button - Full Width */}
           <button
             onClick={handleCreateNewConversation}
-            className="w-full bg-primary-600 text-white px-4 py-2.5 rounded-button body-small font-medium hover:bg-primary-700 transition-colors warm-shadow mb-4"
+            className="w-full bg-secondary-500 text-white px-4 py-2.5 rounded-button body-small font-medium hover:bg-secondary-700 transition-colors warm-shadow mb-4"
             title="Start a new conversation"
           >
             new conversation
@@ -90,7 +125,7 @@ const ConversationsPanel = ({
                     onSelect={onConversationSelected}
                     onRename={onConversationRename}
                     onDelete={onConversationDelete}
-                    hasValidFile={hasAllRequiredFiles(conversation)}
+                    isCollapsed={false}
                   />
                 )) 
               ) : (

@@ -98,7 +98,7 @@ Based on code review, TaktMate currently uses:
   - [X] `POST /api/files/sas` - Request upload SAS token
   - [X] `GET /api/files/:blobName/sas` - Request download SAS token
   - [X] `DELETE /api/files/:blobName` - Delete file
-- [X] Implement 200MB quota check before issuing upload SAS
+- [X] Implement 5GB quota check before issuing upload SAS
 - [X] Maintain 5-file analysis limit in UI (separate from storage)
 - [X] Add request validation and error handling
 - [X] Integrate with existing `requireAuth` middleware
@@ -198,7 +198,7 @@ Since there are no active users, perform a clean hard transition to eliminate al
   - [x] Handle SAS token expiration
 - [x] Update delete functionality to call new delete endpoint
 - [x] Add file size and last modified display
-- [x] Show storage quota usage (current/200MB)
+- [x] Show storage quota usage (current/5GB)
 
 **Deliverables**: Complete file management UI
 
@@ -260,7 +260,7 @@ Enable support for four specific file types while maintaining CSV-only parsing f
 - [ ] Update any remaining "CSV Chat" references to "Document Chat" or similar
 
 **Validation & Security**:
-- [ ] Ensure file size limits apply to all file types (10MB per file, 200MB total)
+- [ ] Ensure file size limits apply to all file types (100MB per file, 5GB total)
 - [ ] Validate both MIME type and file extension for security
 - [ ] Add file signature validation for enhanced security (optional)
 - [ ] Test upload/download/delete for all supported file types
@@ -410,7 +410,7 @@ Enable support for four specific file types while maintaining CSV-only parsing f
 - Easy to identify and manage
 
 ### Quota Management
-- **Storage Quota**: 200MB per user (enforced before SAS generation)
+- **Storage Quota**: 5GB per user (enforced before SAS generation)
 - **Analysis Quota**: 5 files max (UI-level restriction, separate from storage)
 - Users can store more than 5 files but analyze only 5 at a time
 
@@ -457,7 +457,7 @@ Enable support for four specific file types while maintaining CSV-only parsing f
 
 - [ ] Users can upload CSV files directly to blob storage
 - [ ] Files persist across sessions and server restarts
-- [ ] 200MB per-user quota enforced accurately
+- [ ] 5GB per-user quota enforced accurately
 - [ ] Files automatically deleted after 90 days of inactivity
 - [ ] Chat functionality works with blob-stored files
 - [ ] No degradation in upload/download performance
