@@ -14,51 +14,48 @@
 ## 🔧 **Phase 1: Azure OpenAI Setup**
 
 ### 1.1 Deploy GPT-5-mini Model
-- [ ] Log into [Azure Portal](https://portal.azure.com)
-- [ ] Navigate to your Azure OpenAI resource: `taktmate` (eastus)
-- [ ] Go to **Model deployments** → **Manage Deployments**
-- [ ] Click **Create new deployment**
+- [X] Log into [Azure Portal](https://portal.azure.com)
+- [X] Navigate to your Azure OpenAI resource: `taktmate` (eastus)
+- [X] Go to **Model deployments** → **Manage Deployments**
+- [X] Click **Create new deployment**
   - Model: `gpt-5-mini`
   - Deployment name: `gpt-5-mini` (use this exact name)
   - Model version: `2025-08-07` (or latest available)
-- [ ] Verify deployment is successful and shows as "Succeeded"
-- [ ] Note the endpoint: `https://taktmate.openai.azure.com/openai/deployments/gpt-5-mini`
+- [X] Verify deployment is successful and shows as "Succeeded"
+- [X] Note the endpoint: `https://taktmate.openai.azure.com/openai/deployments/gpt-5-mini`
 
 ### 1.2 Update Azure Key Vault
-- [ ] Navigate to **TaktMate-KeyVault** in Azure Portal
-- [ ] Go to **Secrets**
-- [ ] Verify `OpenAI-API-Key` secret exists (should already be there)
+- [X] Navigate to **TaktMate-KeyVault** in Azure Portal
+- [X] Go to **Secrets**
+- [X] Verify `OpenAI-API-Key` secret exists (should already be there)
   - ✅ This same key works for both `gpt-4.1` and `gpt-5-mini` since they're in the same resource
-- [ ] **Optional**: Add a new secret for model selection
-  - Name: `Active-OpenAI-Model`
-  - Value: `gpt-5-mini` or `gpt-4.1`
 
 ### 1.3 Update App Service Environment Variables
-- [ ] Navigate to **taktmate-backend-api** App Service
-- [ ] Go to **Settings** → **Environment variables**
-- [ ] Add/update these settings:
+- [X] Navigate to **taktmate-backend-api** App Service
+- [X] Go to **Settings** → **Environment variables**
+- [X] Add/update these settings:
   ```
   AZURE_OPENAI_DEPLOYMENT_GPT4=gpt-4.1
   AZURE_OPENAI_DEPLOYMENT_GPT5_MINI=gpt-5-mini
   ACTIVE_MODEL=gpt-5-mini
   ```
   **Note**: You don't need to add `AZURE_OPENAI_ENDPOINT` since both models are in the same `taktmate` resource
-- [ ] **Save** the configuration
-- [ ] **Restart** the App Service
+- [X] **Save** the configuration
+- [X] **Restart** the App Service
 
 ---
 
 ## 📦 **Phase 2: Backend Dependencies**
 
 ### 2.1 Install Required Packages
-- [ ] Navigate to `/backend` directory
-- [ ] Install `mathjs` for mathematical operations:
+- [X] Navigate to `/backend` directory
+- [X] Install `mathjs` for mathematical operations:
   ```bash
   npm install mathjs
   ```
-- [ ] Verify `package.json` includes:
+- [X] Verify `package.json` includes:
   ```json
-  "mathjs": "^12.0.0"
+  "mathjs": "^15.0.0"
   ```
 - [ ] Commit updated `package.json` and `package-lock.json`
 
@@ -67,9 +64,9 @@
 ## 🛠️ **Phase 3: Toolkit System Implementation**
 
 ### 3.1 Create Toolkit Directory Structure
-- [ ] Create `/backend/toolkit/` directory
-- [ ] Create `/backend/toolkit/index.js` (tool loader)
-- [ ] Create `/backend/toolkit/computeAverage.js` (first tool)
+- [X] Create `/backend/toolkit/` directory
+- [X] Create `/backend/toolkit/index.js` (tool loader)
+- [X] Create `/backend/toolkit/computeAverage.js` (first tool)
 
 ### 3.2 Implement Tool Loader (`/backend/toolkit/index.js`)
 ```javascript
@@ -136,11 +133,14 @@ module.exports = {
 ```
 
 **Checklist:**
-- [ ] Create the file at `/backend/toolkit/index.js`
-- [ ] Copy the code above into the file
-- [ ] Verify syntax (no missing brackets, semicolons, etc.)
+- [X] Create the file at `/backend/toolkit/index.js`
+- [X] Copy the code above into the file
+- [X] Verify syntax (no missing brackets, semicolons, etc.)
 
 ### 3.3 Implement First Tool: Compute Average (`/backend/toolkit/computeAverage.js`)
+
+**Important**: Tool descriptions are limited to 1024 characters by Azure OpenAI.
+
 ```javascript
 const math = require('mathjs');
 
@@ -196,16 +196,17 @@ module.exports = {
 ```
 
 **Checklist:**
-- [ ] Create the file at `/backend/toolkit/computeAverage.js`
-- [ ] Copy the code above into the file
-- [ ] Test that `mathjs` is properly installed
+- [X] Create the file at `/backend/toolkit/computeAverage.js`
+- [X] Copy the code above into the file
+- [X] Test that `mathjs` is properly installed
 
 ---
 
 ## 🔄 **Phase 4: Backend Services Update**
 
 ### 4.1 Create OpenAI Service (`/backend/services/openaiService.js`)
-This centralizes OpenAI client initialization and model selection.
+
+✅ **Created** - This centralizes OpenAI client initialization and model selection.
 
 ```javascript
 const { OpenAI } = require('openai');
@@ -281,12 +282,12 @@ module.exports = {
 ```
 
 **Checklist:**
-- [ ] Create the file at `/backend/services/openaiService.js`
-- [ ] Copy the code above into the file
-- [ ] Verify all exports are correct
+- [X] Create the file at `/backend/services/openaiService.js`
+- [X] Copy the code above into the file
+- [X] Verify all exports are correct
 
 ### 4.2 Update Configuration (`/backend/config.js`)
-- [ ] Update `/backend/config.js` to include new environment variables:
+- [X] Update `/backend/config.js` to include new environment variables:
 
 ```javascript
 // Azure OpenAI Configuration

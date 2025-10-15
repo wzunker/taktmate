@@ -3,13 +3,17 @@
 
 module.exports = {
   // Azure OpenAI Settings
-  AZURE_OPENAI_API_KEY: process.env.OPENAI_API_KEY || 'BT4uTZtbBEx9a6ulvMS4w9m8qmJsZPl0lIosOOCu2dOsn2G1DLH5JQQJ99BHACYeBjFXJ3w3AAABACOGB5lu',
-  AZURE_OPENAI_ENDPOINT: 'https://taktmate.openai.azure.com/openai/deployments/gpt-4.1',
-  AZURE_OPENAI_API_VERSION: '2025-01-01-preview',
-  AZURE_OPENAI_DEPLOYMENT_NAME: 'gpt-4.1',
+  AZURE_OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+  AZURE_OPENAI_ENDPOINT: process.env.AZURE_OPENAI_ENDPOINT || 'https://taktmate.openai.azure.com',
+  AZURE_OPENAI_API_VERSION: process.env.AZURE_OPENAI_API_VERSION || '2025-01-01-preview',
+  
+  // Model Deployments
+  AZURE_OPENAI_DEPLOYMENT_GPT4: process.env.AZURE_OPENAI_DEPLOYMENT_GPT4 || 'gpt-4.1',
+  AZURE_OPENAI_DEPLOYMENT_GPT5_MINI: process.env.AZURE_OPENAI_DEPLOYMENT_GPT5_MINI || 'gpt-5-mini',
+  ACTIVE_MODEL: process.env.ACTIVE_MODEL || 'gpt-5-mini',
   
   // Server Settings
-  PORT: process.env.PORT || 5000,
+  PORT: process.env.PORT || 3001,
   
   // Application Settings
   MAX_FILE_SIZE: 100 * 1024 * 1024, // 100MB
