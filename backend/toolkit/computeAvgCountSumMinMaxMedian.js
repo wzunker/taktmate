@@ -5,8 +5,8 @@ const math = require('mathjs');
  * Calculates the mean/average of an array of numbers
  */
 module.exports = {
-  name: 'compute_average',
-  description: 'Calculate the average (mean) of an array of numbers. Useful for analyzing numerical data from CSV files, spreadsheets, or any numeric datasets.',
+  name: 'compute_avg_count_sum_min_max_median',
+  description: 'Calculate the average (mean), count, sum, min, max, and median of an array of numbers. Useful for analyzing numerical data from CSV files, spreadsheets, or any numeric datasets.',
   
   parameters: {
     type: 'object',
@@ -38,14 +38,13 @@ module.exports = {
       throw new Error('No valid numbers provided');
     }
     
-    const average = math.mean(validNumbers);
-    
     return {
-      average: average,
+      average:math.mean(validNumbers),
       count: validNumbers.length,
       sum: math.sum(validNumbers),
       min: math.min(validNumbers),
-      max: math.max(validNumbers)
+      max: math.max(validNumbers),
+      median: math.median(validNumbers)
     };
   }
 };
