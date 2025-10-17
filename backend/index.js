@@ -15,6 +15,9 @@ const summarizerService = require('./services/summarizerService');
 const filesRouter = require('./routes/files');
 const conversationsRouter = require('./routes/conversations');
 const { normalPrompt } = require('./prompts/normalPrompt');
+const openaiService = require('./services/openaiService');
+const { loadTools, executeTool } = require('./toolkit');
+const config = require('./config');
 
 // Try to load debug config (local only, not in git)
 let DEBUG_MODE = false;
@@ -29,15 +32,12 @@ try {
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Initialize Azure OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://taktmate.openai.azure.com/openai/deployments/gpt-4.1',
-  defaultQuery: { 'api-version': '2025-01-01-preview' },
-  defaultHeaders: {
-    'api-key': process.env.OPENAI_API_KEY,
-  },
-});
+// Initialize Azure OpenAI using centralized service
+const openai = openaiService.createOpenAIClient();
+
+// Log active model on startup
+console.log(`🤖 Active OpenAI Model: ${openaiService.getActiveDeployment()}`);
+console.log(`🔧 Tool calling enabled: ${openaiService.supportsToolCalling()}`);
 
 /**
  * Generate a short, memorable title from a user's first message using AI
@@ -56,7 +56,9 @@ Generate a concise title (4-8 words) that captures the essence of this question.
 
     console.log(`📤 Sending OpenAI request for title generation...`);
     
-    const completion = await openai.chat.completions.create({
+    // Always use GPT-4.1 for title generation
+    const titleClient = openaiService.createOpenAIClient('gpt-4.1');
+    const completion = await titleClient.chat.completions.create({
       model: 'gpt-4.1',
       messages: [
         { role: 'system', content: prompt }
@@ -486,15 +488,124 @@ app.post('/api/chat', requireAuth, async (req, res) => {
       { role: 'user', content: message }
     ];
 
-    // Call Azure OpenAI GPT-4.1
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4.1', // This matches your Azure deployment name
-      messages,
-      max_tokens: 500,
-      temperature: 0.1
-    });
+    // Prepare chat options
+    const chatOptions = {
+      model: openaiService.getActiveDeployment(),
+      messages
+    };
+    
+    // GPT-5-mini has different parameter requirements than GPT-4.1
+    if (openaiService.supportsToolCalling()) {
+      // GPT-5-mini: uses max_completion_tokens, only supports temperature=1 (default)
+      chatOptions.max_completion_tokens = config.MAX_COMPLETION_TOKENS;
+    } else {
+      // GPT-4.1: uses max_tokens, supports custom temperature
+      chatOptions.max_tokens = config.MAX_TOKENS;
+      chatOptions.temperature = config.TEMPERATURE;
+    }
 
-    const reply = completion.choices[0].message.content;
+    // Add tools if the active model supports them
+    let tools = [];
+    if (openaiService.supportsToolCalling()) {
+      tools = await loadTools();
+      if (tools.length > 0) {
+        chatOptions.tools = tools;
+        chatOptions.tool_choice = 'auto';
+        console.log(`🔧 Tool calling enabled with ${tools.length} tools`);
+      }
+    }
+
+    // Initial API call
+    let completion;
+    try {
+      console.log('📤 Making initial OpenAI API call with options:', JSON.stringify({
+        model: chatOptions.model,
+        hasTools: !!chatOptions.tools,
+        toolCount: chatOptions.tools?.length || 0,
+        messageCount: chatOptions.messages.length,
+        maxTokens: chatOptions.max_tokens || chatOptions.max_completion_tokens
+      }));
+      
+      completion = await openai.chat.completions.create(chatOptions);
+      console.log('📥 Received completion, finish_reason:', completion.choices[0].finish_reason);
+    } catch (error) {
+      console.error('❌ OpenAI API call failed:', error.message);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      throw error;
+    }
+    
+    let reply = completion.choices[0].message.content;
+    
+    // Handle tool calls if present
+    const toolCalls = completion.choices[0].message.tool_calls;
+    let chartData = null; // Track chart data if create_plot is called
+    
+    if (toolCalls && toolCalls.length > 0) {
+      console.log(`🛠️ Model requested ${toolCalls.length} tool call(s)`);
+      
+      // Execute all requested tools
+      const toolMessages = [];
+      for (const toolCall of toolCalls) {
+        try {
+          const toolName = toolCall.function.name;
+          const toolArgs = JSON.parse(toolCall.function.arguments);
+          
+          console.log(`🔧 Executing tool: ${toolName}`);
+          console.log(`   Tool arguments:`, JSON.stringify(toolArgs, null, 2));
+          
+          const toolResult = await executeTool(toolName, toolArgs, user.id);
+          
+          console.log(`✅ Tool ${toolName} executed successfully`);
+          console.log(`   Tool result:`, JSON.stringify(toolResult, null, 2));
+          
+          // If this is a create_plot tool, save the chart data for the frontend
+          if (toolName === 'create_plot') {
+            chartData = toolResult;
+            console.log(`📊 Chart data captured for frontend rendering`);
+          }
+          
+          toolMessages.push({
+            role: 'tool',
+            content: JSON.stringify(toolResult),
+            tool_call_id: toolCall.id
+          });
+        } catch (error) {
+          console.error(`❌ Tool execution failed:`, error.message);
+          console.error(`   Error stack:`, error.stack);
+          toolMessages.push({
+            role: 'tool',
+            content: JSON.stringify({ error: error.message }),
+            tool_call_id: toolCall.id
+          });
+        }
+      }
+      
+      // Send tool results back to the model for final response
+      const followUpMessages = [
+        ...messages,
+        completion.choices[0].message,
+        ...toolMessages
+      ];
+      
+      // Follow-up call after tool execution (always gpt-5-mini when tools are used)
+      const followUpCompletion = await openai.chat.completions.create({
+        model: openaiService.getActiveDeployment(),
+        messages: followUpMessages,
+        max_completion_tokens: config.MAX_COMPLETION_TOKENS
+        // Note: temperature omitted, gpt-5-mini only supports default (1)
+      });
+      
+      reply = followUpCompletion.choices[0].message.content;
+      
+      if (!reply) {
+        console.warn('⚠️  Follow-up completion returned null content');
+        console.log('Follow-up response:', JSON.stringify(followUpCompletion.choices[0]));
+        // Fallback: describe what the tool found
+        reply = 'I executed the calculation but received an empty response. Please try again.';
+      } else {
+        console.log(`✅ Generated final response after tool execution: ${reply.substring(0, 100)}...`);
+      }
+    }
 
     // Save messages to conversation if we have one
     if (conversation) {
@@ -586,6 +697,12 @@ app.post('/api/chat', requireAuth, async (req, res) => {
       response.title = conversation.title;
     }
 
+    // Include chart data if create_plot tool was called
+    if (chartData) {
+      response.chartData = chartData;
+      console.log(`📊 Attaching chart data to response`);
+    }
+
     // Add debug info if DEBUG_MODE is enabled (local development only)
     if (DEBUG_MODE) {
       response.debug = {
@@ -593,7 +710,13 @@ app.post('/api/chat', requireAuth, async (req, res) => {
         userMessage: message,
         fullMessages: messages,
         openaiResponse: completion,
-        parsedReply: reply
+        parsedReply: reply,
+        toolsAvailable: tools.length > 0 ? tools : null,
+        toolCalling: {
+          enabled: openaiService.supportsToolCalling(),
+          activeModel: openaiService.getActiveDeployment(),
+          toolsCount: tools.length
+        }
       };
     }
 

@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import { getAuthHeaders } from '../utils/auth';
 import Card, { CardHeader, CardContent } from './Card';
 import useAuth from '../hooks/useAuth';
+import ChartDisplay from './ChartDisplay';
 
 // Try to load debug config (local only, not in git)
 let SHOW_DEBUG_INFO = false;
@@ -108,7 +109,7 @@ const ChatBox = ({
       // Call backend with auth headers
       const response = await axios.post('/api/chat', requestBody, {
         headers: authHeaders,
-        timeout: 30000
+        timeout: 60000 // 60 second timeout for AI responses (increased for tool calling)
       });
 
       if (response.data.success) {
@@ -117,6 +118,11 @@ const ChatBox = ({
           content: response.data.reply,
           timestamp: new Date().toISOString()
         };
+        
+        // Add chart data if available
+        if (response.data.chartData) {
+          assistantMessage.chartData = response.data.chartData;
+        }
         
         // Add debug info if available
         if (response.data.debug) {
@@ -388,7 +394,7 @@ const ChatBox = ({
       // Call backend with auth headers
       const response = await axios.post('/api/chat', requestBody, {
         headers: authHeaders,
-        timeout: 30000 // 30 second timeout for AI responses
+        timeout: 60000 // 60 second timeout for AI responses (increased for tool calling)
       });
 
       if (response.data.success) {
@@ -397,6 +403,11 @@ const ChatBox = ({
           content: response.data.reply,
           timestamp: new Date().toISOString()
         };
+        
+        // Add chart data if available
+        if (response.data.chartData) {
+          assistantMessage.chartData = response.data.chartData;
+        }
         
         // Add debug info if available
         if (response.data.debug) {
@@ -705,6 +716,11 @@ const ChatBox = ({
               ) : (
                 /* Assistant Message - Full Width Document Style with Markdown */
                 <div className="w-full py-2 text-text-primary prose prose-sm max-w-none">
+                  {/* Render Chart if available */}
+                  {message.chartData && (
+                    <ChartDisplay chartData={message.chartData} />
+                  )}
+                  
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
@@ -778,6 +794,30 @@ const ChatBox = ({
                               {message.debug.promptSent}
                             </div>
                           </div>
+                          
+                          {/* Tool Calling Info */}
+                          {message.debug.toolCalling && (
+                            <div>
+                              <div className="font-bold text-gray-700 mb-2">🔧 Tool Calling Status:</div>
+                              <div className="bg-white p-2 rounded border border-gray-200">
+                                <div className="space-y-1">
+                                  <div><span className="font-semibold">Enabled:</span> {message.debug.toolCalling.enabled ? '✅ Yes' : '❌ No'}</div>
+                                  <div><span className="font-semibold">Active Model:</span> {message.debug.toolCalling.activeModel}</div>
+                                  <div><span className="font-semibold">Tools Count:</span> {message.debug.toolCalling.toolsCount}</div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Available Tools */}
+                          {message.debug.toolsAvailable && message.debug.toolsAvailable.length > 0 && (
+                            <div>
+                              <div className="font-bold text-gray-700 mb-2">🛠️ Tools Available to GPT-5-mini:</div>
+                              <div className="bg-white p-2 rounded border border-gray-200 max-h-96 overflow-y-auto">
+                                <pre>{JSON.stringify(message.debug.toolsAvailable, null, 2)}</pre>
+                              </div>
+                            </div>
+                          )}
                           
                           {/* OpenAI Response */}
                           <div>

@@ -424,16 +424,16 @@ const completion = await openai.chat.completions.create({
 ```
 
 **Checklist:**
-- [ ] Back up `/backend/index.js` first
-- [ ] Add imports for `openaiService` and toolkit
-- [ ] Replace OpenAI client initialization
-- [ ] Update the chat completion logic to support tool calling
-- [ ] Test syntax - ensure no missing brackets or commas
+- [X] Back up `/backend/index.js` first (committed to GitHub)
+- [X] Add imports for `openaiService` and toolkit
+- [X] Replace OpenAI client initialization
+- [X] Update the chat completion logic to support tool calling
+- [X] Test syntax - ensure no missing brackets or commas
 
 ### 5.2 Update Other OpenAI Clients
 
 **Update `/backend/services/summarizerService.js`:**
-- [ ] Replace lines 1-14 with:
+- [X] Replace lines 1-14 with:
 ```javascript
 const { OpenAI } = require('openai');
 const { BlobServiceClient } = require('@azure/storage-blob');
@@ -446,7 +446,7 @@ const openai = openaiService.createOpenAIClient('gpt-4.1');
 ```
 
 **Update `/backend/routes/conversations.js`:**
-- [ ] Replace lines 1-24 with:
+- [X] Replace lines 1-24 with:
 ```javascript
 const express = require('express');
 const router = express.Router();
@@ -471,8 +471,8 @@ router.use(requireAuth);
 ```
 
 **Update title generation in `/backend/index.js`:**
-- [ ] Find the `generateConversationTitle` function (around line 47)
-- [ ] Replace line 59 with:
+- [X] Find the `generateConversationTitle` function (around line 47)
+- [X] Replace line 59 with:
 ```javascript
     const titleClient = openaiService.createOpenAIClient('gpt-4.1');
     const completion = await titleClient.chat.completions.create({
@@ -483,7 +483,7 @@ router.use(requireAuth);
 ## 📝 **Phase 6: Local Environment Configuration**
 
 ### 6.1 Update Local `.env` File
-- [ ] Add to `/backend/.env`:
+- [X] Add to `/backend/.env`:
 ```bash
 # Azure OpenAI Configuration
 OPENAI_API_KEY=your-api-key-here
@@ -504,7 +504,7 @@ LOCAL_DEVELOPMENT=true
 **Note**: No need to set `AZURE_OPENAI_ENDPOINT` - both models use the same endpoint since they're in the `taktmate` resource.
 
 ### 6.2 Update Environment Variables Documentation
-- [ ] Update `/backend/ENVIRONMENT_VARIABLES.md` to include:
+- [X] Update `/backend/ENVIRONMENT_VARIABLES.md` to include:
   - `AZURE_OPENAI_DEPLOYMENT_GPT4` - Deployment name for GPT-4.1 (default: `gpt-4.1`)
   - `AZURE_OPENAI_DEPLOYMENT_GPT5_MINI` - Deployment name for GPT-5-mini (default: `gpt-5-mini`)
   - `ACTIVE_MODEL` - Which model to use for chat (options: `gpt-4.1` or `gpt-5-mini`)

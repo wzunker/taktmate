@@ -1,10 +1,11 @@
 /**
  * Numeric Filter Tool
  * 
- * Filters array data based on numeric comparisons.
+ * Filters file data based on numeric comparisons.
  * Supports: =, !=, >, <, >=, <=, BETWEEN
  * 
- * @param {Array} data - Array of objects to filter
+ * @param {string} userId - User ID for file access
+ * @param {string} filename - Name of the file to load
  * @param {string} field - Field name to filter on
  * @param {string} operator - Comparison operator (=, !=, >, <, >=, <=, between)
  * @param {number} value - Primary comparison value
@@ -12,17 +13,22 @@
  * @returns {Object} - Filtered results with metadata
  */
 
+const { loadFileData } = require('./dataLoader');
+
 module.exports = {
   name: 'filter_numeric',
-  description: 'Filter data based on numeric comparisons. REQUIRED: You must extract the actual data from the file and pass it in the data array. Returns filtered subset and metadata. Supports: = (equal), != (not equal), > (greater), < (less), >= (greater/equal), <= (less/equal), BETWEEN (range). Example: To filter employees with salary > 70000, extract employee data and pass: {data: [{name: "Alice", salary: 95000}, ...], field: "salary", operator: ">", value: 70000}',
+  description: 'Filter file data based on numeric comparisons. Reference file by name and specify the field to filter. DO NOT pass data arrays - the backend handles data loading. Returns filtered subset and metadata. Supports: = (equal), != (not equal), > (greater), < (less), >= (greater/equal), <= (less/equal), BETWEEN (range). Example: {filename: "employee_payroll.csv", field: "salary", operator: ">=", value: 70000}',
   
   parameters: {
     type: 'object',
     properties: {
-      data: {
-        type: 'array',
-        items: { type: 'object' },
-        description: 'REQUIRED array of data objects extracted from the file (e.g., [{name: "Alice", salary: 50000}, {name: "Bob", salary: 60000}]). You MUST populate this with actual data from the document.'
+      userId: {
+        type: 'string',
+        description: 'User ID for file access (automatically provided by system)'
+      },
+      filename: {
+        type: 'string',
+        description: 'Name of the file to load (e.g., "employee_payroll.csv", "sales_data.xlsx")'
       },
       field: {
         type: 'string',
@@ -42,10 +48,12 @@ module.exports = {
         description: 'Upper bound value (only required for BETWEEN operator)'
       }
     },
-    required: ['data', 'field', 'operator', 'value']
+    required: ['userId', 'filename', 'field', 'operator', 'value']
   },
   
-  execute: async ({ data, field, operator, value, value2 }) => {
+  execute: async ({ userId, filename, field, operator, value, value2 }) => {
+    // Load file data using data loader
+    const data = await loadFileData(userId, filename);
     // Validate inputs
     if (!Array.isArray(data) || data.length === 0) {
       throw new Error('data must be a non-empty array');
@@ -74,44 +82,44 @@ module.exports = {
       case '=':
       case '==':
         filteredData = data.filter(item => {
-          const fieldValue = item[field];
-          return typeof fieldValue === 'number' && fieldValue === value;
+          const fieldValue = Number(item[field]);
+          return !isNaN(fieldValue) && fieldValue === value;
         });
         break;
 
       case '!=':
       case '<>':
         filteredData = data.filter(item => {
-          const fieldValue = item[field];
-          return typeof fieldValue === 'number' && fieldValue !== value;
+          const fieldValue = Number(item[field]);
+          return !isNaN(fieldValue) && fieldValue !== value;
         });
         break;
 
       case '>':
         filteredData = data.filter(item => {
-          const fieldValue = item[field];
-          return typeof fieldValue === 'number' && fieldValue > value;
+          const fieldValue = Number(item[field]);
+          return !isNaN(fieldValue) && fieldValue > value;
         });
         break;
 
       case '<':
         filteredData = data.filter(item => {
-          const fieldValue = item[field];
-          return typeof fieldValue === 'number' && fieldValue < value;
+          const fieldValue = Number(item[field]);
+          return !isNaN(fieldValue) && fieldValue < value;
         });
         break;
 
       case '>=':
         filteredData = data.filter(item => {
-          const fieldValue = item[field];
-          return typeof fieldValue === 'number' && fieldValue >= value;
+          const fieldValue = Number(item[field]);
+          return !isNaN(fieldValue) && fieldValue >= value;
         });
         break;
 
       case '<=':
         filteredData = data.filter(item => {
-          const fieldValue = item[field];
-          return typeof fieldValue === 'number' && fieldValue <= value;
+          const fieldValue = Number(item[field]);
+          return !isNaN(fieldValue) && fieldValue <= value;
         });
         break;
 
@@ -119,8 +127,8 @@ module.exports = {
         const lowerBound = Math.min(value, value2);
         const upperBound = Math.max(value, value2);
         filteredData = data.filter(item => {
-          const fieldValue = item[field];
-          return typeof fieldValue === 'number' && 
+          const fieldValue = Number(item[field]);
+          return !isNaN(fieldValue) && 
                  fieldValue >= lowerBound && 
                  fieldValue <= upperBound;
         });

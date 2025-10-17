@@ -1,13 +1,16 @@
 # TaktMate - Enterprise Document Analytics Platform
 
-A comprehensive, cloud-hosted web application that allows users to upload CSV, PDF, DOCX, XLSX, and TXT files and chat with their data using Azure OpenAI's GPT-4.1. Features enterprise-grade security with Entra ID authentication, Azure Blob Storage for persistent file management, and an advanced evaluation framework for testing AI performance across multiple domains.
+A comprehensive, cloud-hosted web application that allows users to upload CSV, PDF, DOCX, XLSX, and TXT files and chat with their data using Azure OpenAI (GPT-5-mini with tool calling, GPT-4.1 for stable operations). Features enterprise-grade security with Entra ID authentication, Azure Blob Storage for persistent file management, and intelligent data analysis tools.
 
 ## Features
 
 ### Core Application
-- 📁 **Multi-File Upload**: Upload CSV, PDF, DOCX, XLSX, and TXT files up to 5MB with Azure Blob Storage persistence
+- 📁 **Multi-File Upload**: Upload CSV, PDF, DOCX, XLSX, and TXT files up to 100MB with Azure Blob Storage persistence
 - 💬 **AI Chat**: Ask questions about your data in natural language with conversation memory
-- 🧠 **Smart Analysis**: GPT-4.1 analyzes and responds using only your document data
+- 🧠 **Smart Analysis**: AI analyzes and responds using only your document data
+- 🔧 **Tool Calling**: GPT-5-mini uses specialized tools for data filtering, visualization, and statistical analysis
+- 📊 **Data Visualization**: Create charts and plots directly from your data
+- 🔢 **Statistical Analysis**: Calculate averages, medians, sums, and other statistics automatically
 - 💾 **Stateful Conversations**: Persistent chat history with context across sessions
 - 📚 **Conversation Management**: Create, rename, delete, and export chat histories
 - 🔄 **Auto-Archiving**: Intelligent conversation archiving with AI summarization
@@ -15,7 +18,16 @@ A comprehensive, cloud-hosted web application that allows users to upload CSV, P
 - ⚡ **Real-time**: Instant responses and file processing
 - 🔒 **Enterprise Security**: Entra ID authentication with user isolation
 - ☁️ **Cloud-Native**: Fully hosted on Azure with auto-scaling
-- 🔍 **Debug Mode**: Environment-based prompt debugging for development
+
+### AI-Powered Data Tools
+- 🔢 **Numeric Filtering**: Filter data by numeric comparisons (>, <, >=, <=, =, !=, BETWEEN)
+  - Example: "Show employees earning more than $90,000"
+- 📊 **Data Visualization**: Create bar charts and XY plots from your data
+  - Example: "Plot employee salaries as a bar chart"
+- 📈 **Statistical Analysis**: Calculate average, median, sum, min, max, count
+  - Example: "What's the average salary?"
+- 🚀 **Backend Processing**: All data processing happens server-side with file caching for performance
+- 🔒 **User Isolation**: Tools automatically enforce user-specific data access
 
 ### Stateful Conversation Memory
 - 🗨️ **Persistent Chat History**: All conversations automatically saved with context
@@ -26,15 +38,6 @@ A comprehensive, cloud-hosted web application that allows users to upload CSV, P
 - ⚡ **Smart Loading**: Recent messages loaded for conversation context
 - 🔄 **Hybrid Storage**: Active conversations in Cosmos DB, archived in Blob Storage
 - 🤖 **AI Summarization**: Long conversations automatically summarized
-- 📅 **TTL Management**: Automatic cleanup of old conversations
-- 🔍 **Conversation Search**: Find past conversations by file or content
-
-### Advanced Evaluation System
-- 🧪 **Multi-Domain Testing**: 5 diverse datasets (Sports, Astronomy, HR, Inventory, Transportation)
-- 📊 **Comprehensive Scoring**: Penalty-based evaluation with invalid value detection
-- 🎯 **40+ Test Cases**: Structured and semantic query testing
-- 📈 **Performance Analytics**: Detailed scoring, bonus points, and failure analysis
-- 🔄 **Automated Evaluation**: Run full test suites with single commands
 
 ## Tech Stack
 
@@ -43,35 +46,32 @@ A comprehensive, cloud-hosted web application that allows users to upload CSV, P
 - **Azure App Service**: Backend API hosting with auto-scaling
 - **Azure Blob Storage**: Persistent file storage with user isolation
 - **Azure Cosmos DB**: NoSQL database for conversation storage and management
-- **Azure OpenAI Service**: GPT-4.1 for natural language processing and summarization
+- **Azure OpenAI Service**: GPT-5-mini (tool calling) and GPT-4.1 (stable operations)
 - **Microsoft Entra ID (External ID)**: Authentication and user management
 - **Azure Key Vault**: Secure secrets management
 - **Azure Application Insights**: Monitoring and telemetry
 
 ### Frontend
 - React 18
-- TailwindCSS
+- TailwindCSS with custom configuration
+- Recharts for data visualization
 - Axios for API calls
 - Azure Static Web Apps authentication integration
 
 ### Backend
 - Node.js with Express.js
-- Azure OpenAI GPT-4.1 integration
+- Azure OpenAI dual-model integration (GPT-5-mini + GPT-4.1)
+- **Tool Calling System**:
+  - `filter_numeric`: Numeric data filtering
+  - `create_plot`: Chart and plot generation
+  - `compute_avg_count_sum_min_max_median`: Statistical calculations
+  - Backend-side data loading with caching
 - Azure Blob Storage SDK (@azure/storage-blob)
 - Azure Cosmos DB SDK (@azure/cosmos)
 - Azure Identity SDK (@azure/identity) for Managed Identity
-- csv-parser for CSV processing
+- File processors: csv-parser, xlsx, pdf-parse, mammoth (DOCX)
 - Conversation management and archiving services
 - AI-powered conversation summarization
-- Environment-based debug logging
-- CORS enabled with Azure domain support
-
-### Evaluation Framework
-- Advanced similarity matching (Jaro-Winkler distance)
-- Penalty-based scoring system
-- Multi-domain test datasets
-- Comprehensive reporting (JSON, CSV, TXT)
-- Automated performance analysis
 
 ## Azure Resources
 
@@ -102,7 +102,9 @@ The application is deployed using the following Azure resources:
 - **Resource Name**: `taktmate`
 - **Type**: Azure OpenAI Service
 - **Endpoint**: `https://taktmate.openai.azure.com`
-- **Deployment**: `gpt-4.1` (API version: 2025-01-01-preview)
+- **Deployments**: 
+  - `gpt-5-mini`: Tool calling, data analysis (API version: 2025-01-01-preview)
+  - `gpt-4.1`: Title generation, summarization, suggestions (API version: 2025-01-01-preview)
 
 #### Cosmos DB
 - **Resource Name**: `taktmate-conversations-db`
@@ -201,10 +203,13 @@ For local development, you'll need to configure the following:
 #### Backend Configuration (`backend/config.js`)
 ```javascript
 module.exports = {
-  AZURE_OPENAI_API_KEY: process.env.OPENAI_API_KEY || 'your-api-key',
-  AZURE_OPENAI_ENDPOINT: 'https://taktmate.openai.azure.com/openai/deployments/gpt-4.1',
+  AZURE_OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+  AZURE_OPENAI_ENDPOINT: 'https://taktmate.openai.azure.com',
   AZURE_OPENAI_API_VERSION: '2025-01-01-preview',
-  AZURE_OPENAI_DEPLOYMENT_NAME: 'gpt-4.1'
+  AZURE_OPENAI_DEPLOYMENT_GPT4: 'gpt-4.1',
+  AZURE_OPENAI_DEPLOYMENT_GPT5_MINI: 'gpt-5-mini',
+  ACTIVE_MODEL: 'gpt-5-mini', // 'gpt-5-mini' for tool calling or 'gpt-4.1' for standard chat
+  MAX_FILE_SIZE: 100 * 1024 * 1024 // 100MB
 };
 ```
 
@@ -213,9 +218,10 @@ Create `backend/.env` for local development:
 ```env
 OPENAI_API_KEY=your-azure-openai-api-key
 STORAGE_ACCOUNT_NAME=taktmateblob
-DEBUG_PROMPTS=true
-PORT=5000
+ACTIVE_MODEL=gpt-5-mini
+PORT=3001
 NODE_ENV=development
+LOCAL_DEVELOPMENT=true
 ```
 
 ### Azure Production Environment Variables
@@ -225,6 +231,9 @@ The following variables are configured in Azure App Service:
 #### Required Variables
 - `OPENAI_API_KEY`: Azure OpenAI API key (from Key Vault)
 - `STORAGE_ACCOUNT_NAME`: `taktmateblob`
+- `ACTIVE_MODEL`: `gpt-5-mini` or `gpt-4.1` (set to `gpt-5-mini` for tool calling)
+- `AZURE_OPENAI_DEPLOYMENT_GPT4`: Deployment name for GPT-4.1
+- `AZURE_OPENAI_DEPLOYMENT_GPT5_MINI`: Deployment name for GPT-5-mini
 - `NODE_ENV`: `production`
 - `CORS_ORIGIN`: Frontend domain URLs
 
@@ -233,23 +242,7 @@ The following variables are configured in Azure App Service:
 - `ENTRA_EXTERNAL_ID_CLIENT_SECRET`: Entra ID application secret
 
 #### Optional Variables
-- `DEBUG_PROMPTS`: `false` (set to `true` for debugging)
 - `APPLICATION_INSIGHTS_CONNECTION_STRING`: For telemetry
-
-## Debug Mode
-
-Enable detailed prompt debugging to see exactly what's sent to GPT-4.1:
-
-```bash
-# Start with debug enabled
-DEBUG_PROMPTS=true npm run backend
-```
-
-This will show:
-- Complete system prompts with CSV data
-- User questions
-- GPT responses
-- Timing information
 
 ## Usage
 
@@ -283,12 +276,21 @@ For local testing and development:
 - "How much data is available?"
 - "Summarize the key information"
 
-### CSV Files - Structured Data Analysis
-- "What are the column names in this data?"
-- "What's the average value in the salary column?"
-- "Find employees earning more than $80,000"
-- "Which products are out of stock?"
-- "Show events happening in March 2024"
+### CSV/XLSX Files - Data Analysis with AI Tools
+**Filtering Data:**
+- "Show me employees earning more than $90,000"
+- "Which products have quantity less than 20?"
+- "Find events between magnitude 1.0 and 3.0"
+
+**Statistical Analysis:**
+- "What's the average salary?"
+- "Calculate the median, min, and max prices"
+- "What's the total revenue?"
+
+**Data Visualization:**
+- "Plot employee salaries as a bar chart"
+- "Create an XY plot of performance vs salary"
+- "Show me a bar chart of product quantities"
 
 ### PDF Files - Document Analysis
 - "What is the main conclusion of this document?"
@@ -300,20 +302,11 @@ For local testing and development:
 - "Summarize the document in bullet points"
 - "What are the action items mentioned?"
 - "Extract all the names and contact information"
-- "What is the document's purpose?"
-
-### XLSX Files - Spreadsheet Analysis
-- "What data is in each sheet?"
-- "Calculate totals from the financial data"
-- "Which sheet contains the sales information?"
-- "Compare values across different worksheets"
 
 ### TXT Files - Plain Text Analysis
 - "What are the main themes in this text?"
 - "Extract all the important information"
 - "Summarize the content in key points"
-- "Find specific information or keywords"
-- "What questions does this text answer?"
 
 ## API Endpoints
 
@@ -500,7 +493,17 @@ taktmate/
 ├── backend/                    # Backend server (Azure App Service)
 │   ├── index.js               # Main server with Azure integrations
 │   ├── config.js              # Azure OpenAI configuration
+│   ├── toolkit/               # AI tool calling system
+│   │   ├── index.js           # Tool loader and executor
+│   │   ├── dataLoader.js      # File data loading with caching
+│   │   ├── filterNumeric.js   # Numeric filtering tool
+│   │   ├── createPlot.js      # Chart/plot generation tool
+│   │   └── computeAvgCountSumMinMaxMedian.js # Statistical analysis tool
 │   ├── processCsv.js          # CSV parsing utilities
+│   ├── processPdf.js          # PDF parsing utilities
+│   ├── processDocx.js         # DOCX parsing utilities
+│   ├── processXlsx.js         # XLSX parsing utilities
+│   ├── processTxt.js          # TXT parsing utilities
 │   ├── middleware/
 │   │   └── auth.js            # Authentication middleware
 │   ├── routes/
@@ -509,7 +512,11 @@ taktmate/
 │   ├── services/
 │   │   ├── storage.js         # Azure Blob Storage service
 │   │   ├── cosmos.js          # Azure Cosmos DB service for conversations
+│   │   ├── openaiService.js   # OpenAI service with dual-model support
 │   │   └── summarizerService.js # AI summarization and archiving service
+│   ├── prompts/
+│   │   ├── normalPrompt.js    # Main chat system prompt
+│   │   └── suggestionPrompt.js # Suggestion generation prompt
 │   ├── ENVIRONMENT_VARIABLES.md # Azure deployment guide
 │   └── package.json
 ├── frontend/                   # React frontend (Azure Static Web Apps)
@@ -518,6 +525,7 @@ taktmate/
 │   │   ├── components/
 │   │   │   ├── Card.jsx       # UI card component
 │   │   │   ├── ChatBox.jsx    # Chat interface with conversation support
+│   │   │   ├── ChartDisplay.jsx # Chart and plot visualization component
 │   │   │   ├── ConversationItem.jsx # Individual conversation display component
 │   │   │   ├── DataTable.jsx  # Data display component
 │   │   │   ├── Logo.jsx       # TaktMate logo component
@@ -651,12 +659,12 @@ Questions can award bonus points for additional criteria:
 
 ## Limitations
 
-- **File Size**: Maximum 5MB per file (configurable in Azure)
+- **File Size**: Maximum 100MB per file
 - **File Types**: Supports CSV, PDF, DOCX, XLSX, and TXT files only
-- **File Limit**: 5 files per user for analysis (storage is unlimited)
-- **Context Window**: Large files may exceed GPT-4.1 limits (~128K tokens)
+- **Context Window**: Large files may exceed model token limits
+- **Tool Calling**: Only available with GPT-5-mini (data analysis tools work with CSV/XLSX files only)
 - **PDF Parsing**: Text-based PDFs only (no OCR for scanned documents)
-- **TXT Parsing**: UTF-8, Latin1, and ASCII encodings supported (automatic detection)
+- **File Encoding**: UTF-8, Latin1, and ASCII supported (automatic detection)
 - **Regional Availability**: Hosted in East US region
 - **Authentication**: Requires Microsoft account for Entra ID authentication
 
@@ -720,18 +728,21 @@ This application is production-ready with enterprise features. Current capabilit
 ### ✅ Production Features Implemented
 - **Azure Blob Storage**: Persistent, secure file storage
 - **User Authentication**: Entra ID integration with session management
-- **Multi-file Support**: Users can upload and manage multiple CSV files
+- **Multi-file Support**: Upload and manage multiple files (CSV, PDF, DOCX, XLSX, TXT)
+- **Tool Calling**: AI-powered data filtering, visualization, and statistical analysis
+- **Data Visualization**: Bar charts and XY plots with Recharts
+- **Backend Data Processing**: File caching and server-side computation
 - **Security**: Managed identity, SAS tokens, user isolation
 - **Scalability**: Auto-scaling Azure App Service and Static Web Apps
 - **Monitoring**: Application Insights integration
+- **Conversation Management**: Persistent chat history with AI summarization
 
 ### 🚀 Future Enhancement Opportunities
-- **Advanced Analytics**: Interactive data visualizations (Chart.js, D3.js)
 - **Real-time Collaboration**: Multi-user shared datasets
-- **API Rate Limiting**: Enhanced throttling and quota management
 - **Multi-region Deployment**: Global distribution for lower latency
-- **Advanced AI Features**: Data insights, trend analysis, predictive modeling
+- **Advanced Tool Calling**: More data analysis tools (groupBy, join, pivot tables)
 - **Export Capabilities**: PDF reports, Excel exports
+- **Advanced Visualizations**: More chart types (scatter, heatmap, time series)
 - **Database Integration**: Azure SQL for metadata and user preferences
 
 ## License
@@ -745,16 +756,17 @@ The application follows a secure, scalable cloud-native architecture:
 
 ```
 Internet → Azure Front Door → Static Web App (Frontend)
-                                    ↓ (API calls)
-                           Azure App Service (Backend)
-                                    ↓ (Managed Identity)
-                    ┌─── Azure OpenAI (GPT-4.1 + Summarization)
-                    │
-                    ├─── Azure Cosmos DB (Conversations)
-                    │
-                    ├─── Azure Blob Storage (User Files + Archives)
-                    │
-                    └─── Entra ID (Authentication)
+                                   ↓ (API calls)
+                          Azure App Service (Backend)
+                                   ↓ (Managed Identity)
+                   ┌─── Azure OpenAI (GPT-5-mini + GPT-4.1)
+                   │      └─ Tool Calling: filter, plot, stats
+                   │
+                   ├─── Azure Cosmos DB (Conversations)
+                   │
+                   ├─── Azure Blob Storage (User Files + Archives)
+                   │
+                   └─── Entra ID (Authentication)
 ```
 
 ### Key Architecture Features
@@ -763,18 +775,29 @@ Internet → Azure Front Door → Static Web App (Frontend)
 - **Hybrid Storage**: Active conversations in Cosmos DB, archived conversations in Blob Storage
 - **Auto-Scaling**: Both frontend and backend scale automatically
 - **High Availability**: Multi-region deployment capability
-- **AI-Powered**: GPT-4.1 for chat responses and conversation summarization
+- **AI-Powered**: Dual-model system (GPT-5-mini for tool calling, GPT-4.1 for stable operations)
+- **Tool Calling**: Backend-side data processing with file caching for performance
 - **Monitoring**: Application Insights for performance and error tracking
 
 ### Azure OpenAI Integration
-The application uses Azure OpenAI GPT-4.1 with:
+The application uses a dual-model Azure OpenAI architecture:
+
+**GPT-5-mini (Tool Calling & Data Analysis):**
+- **Primary Use**: Data analysis with tool calling capabilities
+- **Max Completion Tokens**: 2000
+- **Temperature**: 1.0 (default, required)
+- **Tools**: filter_numeric, create_plot, compute_avg_count_sum_min_max_median
+- **Features**: Parallel function execution, structured outputs
+
+**GPT-4.1 (Stable Operations):**
+- **Primary Use**: Title generation, summarization, suggestions
+- **Max Tokens**: 500 (chat), 150 (summaries)
+- **Temperature**: 0.1 (consistent) / 0.3 (summarization)
+- **Benefits**: Stable, reliable for production workflows
+
+**Common Configuration:**
 - **Endpoint**: `https://taktmate.openai.azure.com`
 - **API Version**: `2025-01-01-preview`
-- **Model**: `gpt-4.1` deployment
-- **Chat Temperature**: 0.1 for consistent responses
-- **Summarization Temperature**: 0.3 for creative summarization
-- **Max Tokens**: 500 for concise answers, 150 for summaries
-- **Use Cases**: Data analysis, conversation context, automatic summarization
 - **Authentication**: API key via Azure Key Vault
 - **Error Handling**: Comprehensive retry logic and fallback responses
 

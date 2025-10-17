@@ -16,15 +16,20 @@ async function loadTools() {
       const toolPath = path.join(toolsDir, file);
       const tool = require(toolPath);
       
-      // Convert tool definition to OpenAI function format
-      tools.push({
-        type: 'function',
-        function: {
-          name: tool.name,
-          description: tool.description,
-          parameters: tool.parameters
-        }
-      });
+      // Only load files that are actual tools (have name, description, parameters, execute)
+      if (tool.name && tool.description && tool.parameters && tool.execute) {
+        // Convert tool definition to OpenAI function format
+        tools.push({
+          type: 'function',
+          function: {
+            name: tool.name,
+            description: tool.description,
+            parameters: tool.parameters
+          }
+        });
+      } else {
+        console.log(`⏭️  Skipping non-tool file: ${file}`);
+      }
     }
   }
   
@@ -36,9 +41,10 @@ async function loadTools() {
  * Get a specific tool by name and execute it
  * @param {string} toolName - Name of the tool to execute
  * @param {object} args - Arguments to pass to the tool
+ * @param {string} userId - User ID for file access and isolation
  * @returns {Promise<object>} Tool execution result
  */
-async function executeTool(toolName, args) {
+async function executeTool(toolName, args, userId) {
   const toolsDir = __dirname;
   const files = fs.readdirSync(toolsDir);
   
@@ -46,7 +52,10 @@ async function executeTool(toolName, args) {
     if (file.endsWith('.js') && file !== 'index.js') {
       const tool = require(path.join(toolsDir, file));
       if (tool.name === toolName) {
-        return await tool.execute(args);
+        // Inject userId into args for user isolation
+        const argsWithUserId = { ...args, userId };
+        console.log(`🔒 Injecting userId into ${toolName} for user isolation`);
+        return await tool.execute(argsWithUserId);
       }
     }
   }

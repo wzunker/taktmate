@@ -2,16 +2,10 @@ const { OpenAI } = require('openai');
 const { BlobServiceClient } = require('@azure/storage-blob');
 const { DefaultAzureCredential } = require('@azure/identity');
 const cosmosService = require('./cosmos');
+const openaiService = require('./openaiService');
 
-// Initialize Azure OpenAI for summarization
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: 'https://taktmate.openai.azure.com/openai/deployments/gpt-4.1',
-  defaultQuery: { 'api-version': '2025-01-01-preview' },
-  defaultHeaders: {
-    'api-key': process.env.OPENAI_API_KEY,
-  },
-});
+// Initialize Azure OpenAI for summarization (always use GPT-4.1 for this)
+const openai = openaiService.createOpenAIClient('gpt-4.1');
 
 class SummarizerService {
   constructor() {

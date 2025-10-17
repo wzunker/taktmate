@@ -1,23 +1,36 @@
 /**
  * Create Plot Tool
  * 
- * Creates chart/plot configurations from data for visualization in the frontend.
+ * Creates chart/plot configurations from file data for visualization in the frontend.
  * Supports bar charts and xy plots.
  * 
+ * @param {string} userId - User ID for file access
+ * @param {string} filename - Name of the file to load
  * @param {string} type - Chart type: "bar" or "xy"
  * @param {string} title - Chart title
- * @param {Array<Object>} data - Array of data objects with appropriate keys
+ * @param {string} xField - Field name for x-axis/categories
+ * @param {string} yField - Field name for y-axis/values
  * @param {string} xLabel - X-axis label (optional)
  * @param {string} yLabel - Y-axis label (optional)
  * @returns {Object} - Chart configuration object for frontend rendering
  */
 
+const { loadFileData, extractColumn } = require('./dataLoader');
+
 module.exports = {
   name: 'create_plot',
-  description: 'Create a visual chart/plot from data extracted from files. REQUIRED: You must extract the actual data from the file and pass it in the data array. For bar charts, pass [{name: "Alice", value: 50000}, {name: "Bob", value: 60000}]. For xy plots, pass [{x: 1, y: 10}, {x: 2, y: 20}]. Do NOT describe the chart - actually create it by passing the data.',
+  description: 'Create a visual chart/plot from file data. Reference file by name and specify column names. DO NOT extract or pass data arrays - the backend handles data loading. For bar charts: specify xField (category names) and yField (values). For xy plots: specify xField (x values) and yField (y values). Example: {filename: "employee_payroll.csv", type: "bar", xField: "name", yField: "salary", title: "Employee Salaries"}',
   parameters: {
     type: 'object',
     properties: {
+      userId: {
+        type: 'string',
+        description: 'User ID for file access (automatically provided by system)'
+      },
+      filename: {
+        type: 'string',
+        description: 'Name of the file to load (e.g., "sales_data.csv", "results.xlsx")'
+      },
       type: {
         type: 'string',
         enum: ['bar', 'xy'],
@@ -27,25 +40,33 @@ module.exports = {
         type: 'string',
         description: 'Title for the chart'
       },
-      data: {
-        type: 'array',
-        items: {
-          type: 'object'
-        },
-        description: 'REQUIRED array of data points extracted from the file. Bar charts: [{name: "CategoryName", value: 123}]. XY plots: [{x: 10, y: 20}]. You MUST populate this with actual data from the document.'
+      xField: {
+        type: 'string',
+        description: 'Column name for x-axis. For bar charts: category names. For xy plots: x values'
+      },
+      yField: {
+        type: 'string',
+        description: 'Column name for y-axis values'
       },
       xLabel: {
         type: 'string',
-        description: 'Label for the X-axis (optional)'
+        description: 'Label for the X-axis (optional, defaults to xField name)'
       },
       yLabel: {
         type: 'string',
-        description: 'Label for the Y-axis (optional)'
+        description: 'Label for the Y-axis (optional, defaults to yField name)'
       }
     },
-    required: ['type', 'title', 'data']
+    required: ['userId', 'filename', 'type', 'title', 'xField', 'yField']
   },
-  execute: async ({ type, title, data, xLabel, yLabel }) => {
+  execute: async ({ userId, filename, type, title, xField, yField, xLabel, yLabel }) => {
+    // Load file data
+    const fileData = await loadFileData(userId, filename);
+    
+    // Extract columns
+    const xData = extractColumn(fileData, xField);
+    const yData = extractColumn(fileData, yField);
+    
     // Validate inputs
     if (!type || !['bar', 'xy'].includes(type)) {
       throw new Error('type must be either "bar" or "xy"');
@@ -55,62 +76,44 @@ module.exports = {
       throw new Error('title must be a non-empty string');
     }
 
-    if (!Array.isArray(data) || data.length === 0) {
-      throw new Error('data must be a non-empty array');
+    if (xData.length === 0 || yData.length === 0) {
+      throw new Error('Extracted columns must have data');
     }
 
-    // Validate data structure based on chart type
-    if (type === 'bar') {
-      // Bar chart data should have 'name' and 'value' properties
-      const isValid = data.every(item => 
-        typeof item === 'object' && 
-        ('name' in item || 'label' in item) && 
-        ('value' in item || 'y' in item)
-      );
-      
-      if (!isValid) {
-        throw new Error('Bar chart data must have "name" (or "label") and "value" (or "y") properties');
-      }
+    if (xData.length !== yData.length) {
+      throw new Error(`Column lengths don't match: ${xField} has ${xData.length} rows, ${yField} has ${yData.length} rows`);
+    }
 
-      // Normalize data to consistent format
-      const normalizedData = data.map(item => ({
-        name: item.name || item.label || 'Unknown',
-        value: item.value || item.y || 0
+    // Build chart data based on chart type
+    if (type === 'bar') {
+      // Bar chart: x is categories (names), y is values
+      const chartData = xData.map((name, index) => ({
+        name: String(name),
+        value: Number(yData[index]) || 0
       }));
 
       return {
         type: 'bar',
         title,
-        data: normalizedData,
-        xLabel: xLabel || 'Category',
-        yLabel: yLabel || 'Value',
-        dataPoints: normalizedData.length
+        data: chartData,
+        xLabel: xLabel || xField,
+        yLabel: yLabel || yField,
+        dataPoints: chartData.length
       };
     } else if (type === 'xy') {
-      // XY plot data should have 'x' and 'y' properties
-      const isValid = data.every(item => 
-        typeof item === 'object' && 
-        'x' in item && 
-        'y' in item
-      );
-      
-      if (!isValid) {
-        throw new Error('XY plot data must have "x" and "y" properties');
-      }
-
-      // Ensure x and y are numbers
-      const normalizedData = data.map(item => ({
-        x: Number(item.x),
-        y: Number(item.y)
+      // XY plot: both x and y are numeric values
+      const chartData = xData.map((x, index) => ({
+        x: Number(x),
+        y: Number(yData[index])
       }));
 
       return {
         type: 'xy',
         title,
-        data: normalizedData,
-        xLabel: xLabel || 'X',
-        yLabel: yLabel || 'Y',
-        dataPoints: normalizedData.length
+        data: chartData,
+        xLabel: xLabel || xField,
+        yLabel: yLabel || yField,
+        dataPoints: chartData.length
       };
     }
 

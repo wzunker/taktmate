@@ -17,6 +17,7 @@ module.exports = {
   
   // Application Settings
   MAX_FILE_SIZE: 100 * 1024 * 1024, // 100MB
-  MAX_TOKENS: 500,
+  MAX_TOKENS: 500, // For GPT-4.1 responses
+  MAX_COMPLETION_TOKENS: 2000, // For GPT-5-mini responses (can increase up to 16k if needed)
   TEMPERATURE: 0.1
 };
